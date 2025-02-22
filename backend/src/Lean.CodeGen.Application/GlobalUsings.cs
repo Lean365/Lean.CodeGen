@@ -15,7 +15,10 @@ global using Mapster;
 
 //global using StackExchange.Redis;
 global using Scriban;
-
+using System.ComponentModel.DataAnnotations;
+using Lean.CodeGen.Common.Enums;
+using Lean.CodeGen.Common.Models;
+using Lean.CodeGen.Domain.Entities;
 // 项目命名空间
 //global using Lean.CodeGen.Common.Enums;
 //global using Lean.CodeGen.Common.Extensions;
