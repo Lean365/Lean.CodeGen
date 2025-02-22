@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <Version>0.0.1</Version>
+        <Authors>Lean.CodeGen Team</Authors>
+        <Product>Lean.CodeGen</Product>
+        <Description>A code generator based on .NET 8 and DDD architecture.</Description>
+        <LangVersion>latest</LangVersion>
+    </PropertyGroup>
+</Project> 

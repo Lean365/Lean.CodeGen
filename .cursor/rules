@@ -1,0 +1,363 @@
+{
+  "version": "1.0",
+  "language": {
+    "csharp": {
+      "indent": {
+        "size": 4,
+        "style": "space"
+      },
+      "lineLength": 120,
+      "naming": {
+        "namespace": "PascalCase",
+        "class": "PascalCase",
+        "interface": "IPascalCase",
+        "method": "PascalCase",
+        "property": "PascalCase",
+        "field": "_camelCase",
+        "parameter": "camelCase",
+        "variable": "camelCase",
+        "constant": "PascalCase",
+        "enum": "PascalCase",
+        "enumMember": "PascalCase"
+      },
+      "organization": {
+        "usings": {
+          "sort": true,
+          "separate": true,
+          "systemFirst": true
+        }
+      }
+    },
+    "typescript": {
+      "indent": {
+        "size": 2,
+        "style": "space"
+      },
+      "lineLength": 100,
+      "quotes": "single",
+      "semicolons": true
+    },
+    "vue": {
+      "indent": {
+        "size": 2,
+        "style": "space"
+      },
+      "lineLength": 100
+    }
+  },
+  "folders": {
+    "backend": {
+      "src": {
+        "Common": {
+          "rules": [
+            "只允许放置公共代码",
+            "不允许引用其他层的代码"
+          ],
+          "structure": {
+            "Enums": "枚举定义目录",
+            "Extensions": "扩展方法目录",
+            "Helpers": "帮助类目录",
+            "Constants": "常量定义目录",
+            "Utils": "工具类目录"
+          }
+        },
+        "Domain": {
+          "rules": [
+            "只允许包含实体和接口定义",
+            "不允许引用Application层代码"
+          ],
+          "structure": {
+            "Interfaces": "接口定义目录",
+            "Entities": {
+              "System": "系统管理实体",
+              "Security": "权限管理实体"
+            }
+          }
+        },
+        "Application": {
+          "rules": [
+            "服务实现必须继承相应接口",
+            "DTO必须使用Mapster映射"
+          ],
+          "structure": {
+            "Services": {
+              "System": "系统管理服务",
+              "Security": "权限管理服务"
+            },
+            "Caching": {
+              "Redis": "Redis缓存实现",
+              "Memory": "内存缓存实现"
+            },
+            "Dtos": {
+              "_rules": [
+                "按模块分类存放",
+                "使用Input/Output/Query后缀"
+              ]
+            }
+          }
+        },
+        "Infrastructure": {
+          "rules": [
+            "仓储实现必须继承仓储接口",
+            "数据访问必须通过Context"
+          ],
+          "structure": {
+            "Data": {
+              "Context": "数据库上下文",
+              "Config": "实体配置"
+            },
+            "Repositories": "仓储实现",
+            "Services": "外部服务实现"
+          }
+        },
+        "WebApi": {
+          "rules": [
+            "控制器必须继承ControllerBase",
+            "必须使用特性路由"
+          ],
+          "structure": {
+            "Controllers": {
+              "_rules": [
+                "按模块分类存放",
+                "使用区域特性"
+              ]
+            },
+            "Filters": "过滤器",
+            "Middlewares": "中间件"
+          }
+        }
+      }
+    },
+    "frontend": {
+      "src": {
+        "api": {
+          "_rules": [
+            "按模块分类",
+            "使用统一的请求封装"
+          ],
+          "system": "系统管理接口",
+          "security": "权限管理接口"
+        },
+        "assets": {
+          "images": "图片资源",
+          "styles": "样式文件",
+          "icons": "图标文件"
+        },
+        "components": {
+          "_rules": [
+            "组件名使用PascalCase",
+            "文件名与组件名一致"
+          ],
+          "common": "公共组件",
+          "business": "业务组件"
+        },
+        "composables": "组合式函数",
+        "config": "配置文件",
+        "directives": "自定义指令",
+        "enums": "枚举定义",
+        "hooks": "自定义钩子",
+        "layouts": "布局组件",
+        "router": {
+          "modules": "路由模块",
+          "guards": "路由守卫"
+        },
+        "store": {
+          "modules": "状态模块",
+          "_rules": [
+            "使用Pinia",
+            "按模块分类"
+          ]
+        },
+        "utils": "工具函数",
+        "views": {
+          "_rules": [
+            "按模块分类",
+            "文件名使用PascalCase"
+          ],
+          "system": "系统管理页面",
+          "security": "权限管理页面"
+        }
+      }
+    }
+  },
+  "naming": {
+    "backend": {
+      "prefixes": {
+        "global": {
+          "pattern": "Lean",
+          "description": "所有后端项目相关的类都必须以Lean开头",
+          "rules": [
+            "所有Controller必须以Lean开头，如LeanUserController",
+            "所有Service必须以Lean开头，如LeanUserService",
+            "所有Repository必须以Lean开头，如LeanUserRepository",
+            "所有Entity必须以Lean开头，如LeanUser",
+            "所有DTO必须以Lean开头Dto结尾，如LeanCreateUserDto"
+          ]
+        },
+        "interface": {
+          "pattern": "ILean",
+          "description": "接口必须以ILean开头",
+          "rules": [
+            "所有接口必须以ILean开头",
+            "通用接口如ILeanEntity、ILeanRepository",
+            "业务接口如ILeanUserService、ILeanOrderService"
+          ]
+        }
+      },
+      "files": {
+        "controller": {
+          "pattern": "Lean{Name}Controller.cs",
+          "examples": [
+            "LeanUserController.cs",
+            "LeanRoleController.cs"
+          ]
+        },
+        "service": {
+          "pattern": "ILean{Name}Service.cs",
+          "implementation": "Lean{Name}Service.cs",
+          "examples": [
+            "ILeanUserService.cs",
+            "LeanUserService.cs"
+          ]
+        },
+        "repository": {
+          "pattern": "ILean{Name}Repository.cs",
+          "implementation": "Lean{Name}Repository.cs",
+          "examples": [
+            "ILeanUserRepository.cs",
+            "LeanUserRepository.cs"
+          ]
+        },
+        "entity": {
+          "pattern": "Lean{Name}.cs",
+          "description": "实体类文件必须以Lean开头",
+          "examples": [
+            "LeanUser.cs",
+            "LeanRole.cs",
+            "LeanOrder.cs",
+            "LeanProduct.cs",
+            "LeanAddress.cs"
+          ]
+        },
+        "dto": {
+          "pattern": "Lean{Name}Dto.cs",
+          "description": "所有DTO文件必须以LeanXxxDto.cs结尾",
+          "rules": [
+            "查询参数使用Query前缀，如LeanQueryUserDto",
+            "创建操作使用Create前缀，如LeanCreateUserDto",
+            "更新操作使用Update前缀，如LeanUpdateUserDto",
+            "删除操作使用Delete前缀，如LeanDeleteUserDto",
+            "批量操作添加Batch前缀，如LeanBatchCreateUserDto",
+            "列表类型使用List前缀，如LeanListUserDto",
+            "详情类型使用Detail前缀，如LeanDetailUserDto",
+            "分页查询使用Page前缀，如LeanPageUserDto",
+            "高级查询使用Advanced前缀，如LeanAdvancedUserDto",
+            "导入模板使用ImportTemplate前缀，如LeanImportTemplateUserDto",
+            "导入数据使用Import前缀，如LeanImportUserDto",
+            "导出参数使用Export前缀，如LeanExportUserDto"
+          ],
+          "examples": [
+            "LeanQueryUserDto.cs",
+            "LeanCreateUserDto.cs",
+            "LeanUpdateUserDto.cs",
+            "LeanDeleteUserDto.cs",
+            "LeanBatchCreateUserDto.cs",
+            "LeanListUserDto.cs",
+            "LeanDetailUserDto.cs",
+            "LeanPageUserDto.cs",
+            "LeanAdvancedUserDto.cs",
+            "LeanImportTemplateUserDto.cs",
+            "LeanImportUserDto.cs",
+            "LeanExportUserDto.cs"
+          ]
+        },
+        "enum": {
+          "pattern": "Lean{Name}Enum.cs",
+          "examples": [
+            "LeanStatusEnum.cs",
+            "LeanTypeEnum.cs"
+          ]
+        },
+        "config": {
+          "pattern": "Lean{Name}Config.cs",
+          "examples": [
+            "LeanUserConfig.cs",
+            "LeanRoleConfig.cs"
+          ]
+        }
+      }
+    },
+    "frontend": {
+      "files": {
+        "component": {
+          "pattern": "{Name}.vue",
+          "description": "Vue组件文件命名",
+          "rules": [
+            "使用PascalCase命名",
+            "文件名必须与组件名一致"
+          ],
+          "examples": [
+            "UserList.vue",
+            "RoleSelect.vue"
+          ]
+        },
+        "api": {
+          "pattern": "{name}Api.ts",
+          "description": "API接口文件命名",
+          "rules": [
+            "使用camelCase命名",
+            "必须以Api结尾"
+          ],
+          "examples": [
+            "userApi.ts",
+            "roleApi.ts"
+          ]
+        },
+        "store": {
+          "pattern": "{name}Store.ts",
+          "description": "Pinia状态管理文件命名",
+          "rules": [
+            "使用camelCase命名",
+            "必须以Store结尾"
+          ],
+          "examples": [
+            "userStore.ts",
+            "roleStore.ts"
+          ]
+        },
+        "hook": {
+          "pattern": "use{Name}.ts",
+          "description": "组合式函数文件命名",
+          "rules": [
+            "必须以use开头",
+            "使用PascalCase命名"
+          ],
+          "examples": [
+            "useUserList.ts",
+            "useRoleSelect.ts"
+          ]
+        },
+        "type": {
+          "pattern": "{name}Types.ts",
+          "description": "类型定义文件命名",
+          "rules": [
+            "使用camelCase命名",
+            "必须以Types结尾"
+          ],
+          "examples": [
+            "userTypes.ts",
+            "roleTypes.ts"
+          ]
+        }
+      }
+    }
+  },
+  "documentation": {
+    "xmlComments": true,
+    "requireSummary": true
+  },
+  "testing": {
+    "naming": "{ClassName}Tests.cs",
+    "location": "tests/{ProjectName}.Tests"
+  }
+}
