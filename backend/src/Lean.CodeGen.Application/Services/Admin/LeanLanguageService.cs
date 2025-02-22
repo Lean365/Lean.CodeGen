@@ -23,23 +23,23 @@ namespace Lean.CodeGen.Application.Services.Admin;
 /// </summary>
 public class LeanLanguageService : LeanBaseService, ILeanLanguageService
 {
-  private readonly ILogger<LeanLanguageService> _logger;
-  private readonly ILeanRepository<LeanLanguage> _repository;
+  private readonly ILeanRepository<LeanLanguage> _languageRepository;
   private readonly LeanUniqueValidator<LeanLanguage> _uniqueValidator;
+  private readonly ILogger<LeanLanguageService> _logger;
 
   /// <summary>
   /// 构造函数
   /// </summary>
   public LeanLanguageService(
-      ILogger<LeanLanguageService> logger,
-      ILeanRepository<LeanLanguage> repository,
+      ILeanRepository<LeanLanguage> languageRepository,
       ILeanSqlSafeService sqlSafeService,
-      IOptions<LeanSecurityOptions> securityOptions)
-      : base(sqlSafeService, securityOptions)
+      IOptions<LeanSecurityOptions> securityOptions,
+      ILogger<LeanLanguageService> logger)
+      : base(sqlSafeService, securityOptions, logger)
   {
+    _languageRepository = languageRepository;
+    _uniqueValidator = new LeanUniqueValidator<LeanLanguage>(languageRepository);
     _logger = logger;
-    _repository = repository;
-    _uniqueValidator = new LeanUniqueValidator<LeanLanguage>(_repository);
   }
 
   /// <summary>
@@ -50,7 +50,7 @@ public class LeanLanguageService : LeanBaseService, ILeanLanguageService
     try
     {
       // 检查语言代码是否存在
-      var exists = await _repository.AnyAsync(x => x.LangCode == input.LangCode);
+      var exists = await _languageRepository.AnyAsync(x => x.LangCode == input.LangCode);
       if (exists)
       {
         return LeanApiResult<long>.Error($"语言代码 {input.LangCode} 已存在");
@@ -58,7 +58,7 @@ public class LeanLanguageService : LeanBaseService, ILeanLanguageService
 
       var entity = input.Adapt<LeanLanguage>();
       entity.Status = LeanStatus.Normal;
-      await _repository.CreateAsync(entity);
+      await _languageRepository.CreateAsync(entity);
 
       return LeanApiResult<long>.Ok(entity.Id);
     }
@@ -75,7 +75,7 @@ public class LeanLanguageService : LeanBaseService, ILeanLanguageService
   {
     try
     {
-      var entity = await _repository.GetByIdAsync(input.Id);
+      var entity = await _languageRepository.GetByIdAsync(input.Id);
       if (entity == null)
       {
         return LeanApiResult.Error($"语言 {input.Id} 不存在");
@@ -87,14 +87,14 @@ public class LeanLanguageService : LeanBaseService, ILeanLanguageService
       }
 
       // 检查语言代码是否存在
-      var exists = await _repository.AnyAsync(x => x.LangCode == input.LangCode && x.Id != input.Id);
+      var exists = await _languageRepository.AnyAsync(x => x.LangCode == input.LangCode && x.Id != input.Id);
       if (exists)
       {
         return LeanApiResult.Error($"语言代码 {input.LangCode} 已存在");
       }
 
       input.Adapt(entity);
-      await _repository.UpdateAsync(entity);
+      await _languageRepository.UpdateAsync(entity);
 
       return LeanApiResult.Ok();
     }
@@ -111,7 +111,7 @@ public class LeanLanguageService : LeanBaseService, ILeanLanguageService
   {
     try
     {
-      var entity = await _repository.GetByIdAsync(id);
+      var entity = await _languageRepository.GetByIdAsync(id);
       if (entity == null)
       {
         return LeanApiResult.Error($"语言 {id} 不存在");
@@ -122,7 +122,7 @@ public class LeanLanguageService : LeanBaseService, ILeanLanguageService
         return LeanApiResult.Error("内置语言不允许删除");
       }
 
-      await _repository.DeleteAsync(entity);
+      await _languageRepository.DeleteAsync(entity);
 
       return LeanApiResult.Ok();
     }
@@ -139,13 +139,13 @@ public class LeanLanguageService : LeanBaseService, ILeanLanguageService
   {
     try
     {
-      var entities = await _repository.GetListAsync(x => ids.Contains(x.Id));
+      var entities = await _languageRepository.GetListAsync(x => ids.Contains(x.Id));
       if (entities.Any(x => x.IsBuiltin == LeanBuiltinStatus.Yes))
       {
         return LeanApiResult.Error("选中的语言中包含内置语言，不允许删除");
       }
 
-      await _repository.DeleteAsync(x => ids.Contains(x.Id));
+      await _languageRepository.DeleteAsync(x => ids.Contains(x.Id));
 
       return LeanApiResult.Ok();
     }
@@ -162,7 +162,7 @@ public class LeanLanguageService : LeanBaseService, ILeanLanguageService
   {
     try
     {
-      var entity = await _repository.GetByIdAsync(id);
+      var entity = await _languageRepository.GetByIdAsync(id);
       if (entity == null)
       {
         return LeanApiResult<LeanLanguageDto>.Error($"语言 {id} 不存在");
@@ -213,7 +213,7 @@ public class LeanLanguageService : LeanBaseService, ILeanLanguageService
         predicate = LeanExpressionExtensions.And(predicate, x => x.CreateTime <= input.EndTime.Value);
       }
 
-      var (total, items) = await _repository.GetPageListAsync(predicate, input.PageSize, input.PageIndex);
+      var (total, items) = await _languageRepository.GetPageListAsync(predicate, input.PageSize, input.PageIndex);
       var dtos = items.Select(t => t.Adapt<LeanLanguageDto>()).ToList();
 
       var result = new LeanPageResult<LeanLanguageDto>
@@ -239,7 +239,7 @@ public class LeanLanguageService : LeanBaseService, ILeanLanguageService
   {
     try
     {
-      var entity = await _repository.GetByIdAsync(input.Id);
+      var entity = await _languageRepository.GetByIdAsync(input.Id);
       if (entity == null)
       {
         return LeanApiResult.Error($"语言 {input.Id} 不存在");
@@ -251,7 +251,7 @@ public class LeanLanguageService : LeanBaseService, ILeanLanguageService
       }
 
       entity.Status = input.Status;
-      await _repository.UpdateAsync(entity);
+      await _languageRepository.UpdateAsync(entity);
 
       return LeanApiResult.Ok();
     }
@@ -297,7 +297,7 @@ public class LeanLanguageService : LeanBaseService, ILeanLanguageService
         predicate = LeanExpressionExtensions.And(predicate, x => x.CreateTime <= input.EndTime.Value);
       }
 
-      var items = await _repository.GetListAsync(predicate);
+      var items = await _languageRepository.GetListAsync(predicate);
       var dtos = items.Select(t => t.Adapt<LeanLanguageExportDto>()).ToList();
 
       var bytes = LeanExcelHelper.Export(dtos);
@@ -330,7 +330,7 @@ public class LeanLanguageService : LeanBaseService, ILeanLanguageService
           try
           {
             // 检查语言代码是否存在
-            var exists = await _repository.AnyAsync(x => x.LangCode == item.LangCode);
+            var exists = await _languageRepository.AnyAsync(x => x.LangCode == item.LangCode);
             if (exists)
             {
               result.Errors.Add(new LeanExcelImportError
@@ -344,7 +344,7 @@ public class LeanLanguageService : LeanBaseService, ILeanLanguageService
             // 创建实体
             var entity = item.Adapt<LeanLanguage>();
             entity.Status = LeanStatus.Normal;
-            await _repository.CreateAsync(entity);
+            await _languageRepository.CreateAsync(entity);
           }
           catch (Exception ex)
           {
@@ -393,7 +393,7 @@ public class LeanLanguageService : LeanBaseService, ILeanLanguageService
   {
     try
     {
-      var items = await _repository.GetListAsync(x => x.Status == LeanStatus.Normal);
+      var items = await _languageRepository.GetListAsync(x => x.Status == LeanStatus.Normal);
       var dtos = items.Select(t => t.Adapt<LeanLanguageDto>()).ToList();
       return LeanApiResult<List<LeanLanguageDto>>.Ok(dtos);
     }
@@ -410,7 +410,7 @@ public class LeanLanguageService : LeanBaseService, ILeanLanguageService
   {
     try
     {
-      var entity = await _repository.GetByIdAsync(id);
+      var entity = await _languageRepository.GetByIdAsync(id);
       if (entity == null)
       {
         return LeanApiResult.Error($"语言 {id} 不存在");
@@ -422,16 +422,16 @@ public class LeanLanguageService : LeanBaseService, ILeanLanguageService
       }
 
       // 将其他语言的默认状态设为否
-      var defaultLanguages = await _repository.GetListAsync(x => x.IsDefault == LeanYesNo.Yes);
+      var defaultLanguages = await _languageRepository.GetListAsync(x => x.IsDefault == LeanYesNo.Yes);
       foreach (var lang in defaultLanguages)
       {
         lang.IsDefault = LeanYesNo.No;
-        await _repository.UpdateAsync(lang);
+        await _languageRepository.UpdateAsync(lang);
       }
 
       // 设置当前语言为默认语言
       entity.IsDefault = LeanYesNo.Yes;
-      await _repository.UpdateAsync(entity);
+      await _languageRepository.UpdateAsync(entity);
 
       return LeanApiResult.Ok();
     }

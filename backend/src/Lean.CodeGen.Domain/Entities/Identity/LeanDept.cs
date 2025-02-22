@@ -119,4 +119,9 @@ public class LeanDept : LeanBaseEntity
   /// </remarks>
   [SugarColumn(ColumnName = "data_scope", ColumnDescription = "数据权限范围", IsNullable = false, DefaultValue = "5", ColumnDataType = "int")]
   public LeanDataScopeType DataScope { get; set; } = LeanDataScopeType.Self;
+
+  /// <summary>
+  /// 状态
+  /// </summary>
+  public LeanStatus Status { get; set; }
 }

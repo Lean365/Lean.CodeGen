@@ -23,6 +23,7 @@ using Lean.CodeGen.Application.Services.Base;
 using Lean.CodeGen.Common.Options;
 using Lean.CodeGen.Application.Services.Security;
 using Lean.CodeGen.Common.Extensions;
+using Microsoft.Extensions.Logging;
 
 namespace Lean.CodeGen.Application.Services.Audit
 {
@@ -33,6 +34,7 @@ namespace Lean.CodeGen.Application.Services.Audit
   {
     private readonly ILeanRepository<LeanAuditLog> _auditLogRepository;
     private readonly ILeanRepository<LeanSqlDiffLog> _sqlDiffLogRepository;
+    private readonly ILogger<LeanAuditLogService> _logger;
 
     /// <summary>
     /// 构造函数
@@ -41,11 +43,13 @@ namespace Lean.CodeGen.Application.Services.Audit
         ILeanRepository<LeanAuditLog> auditLogRepository,
         ILeanRepository<LeanSqlDiffLog> sqlDiffLogRepository,
         ILeanSqlSafeService sqlSafeService,
-        IOptions<LeanSecurityOptions> securityOptions)
-        : base(sqlSafeService, securityOptions)
+        IOptions<LeanSecurityOptions> securityOptions,
+        ILogger<LeanAuditLogService> logger)
+        : base(sqlSafeService, securityOptions, logger)
     {
       _auditLogRepository = auditLogRepository;
       _sqlDiffLogRepository = sqlDiffLogRepository;
+      _logger = logger;
     }
 
     /// <summary>

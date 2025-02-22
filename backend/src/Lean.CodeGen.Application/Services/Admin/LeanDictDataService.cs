@@ -37,7 +37,7 @@ public class LeanDictDataService : LeanBaseService, ILeanDictDataService
       ILeanRepository<LeanDictType> dictTypeRepository,
       ILeanSqlSafeService sqlSafeService,
       IOptions<LeanSecurityOptions> securityOptions)
-      : base(sqlSafeService, securityOptions)
+      : base(sqlSafeService, securityOptions, logger)
   {
     _logger = logger;
     _dictDataRepository = dictDataRepository;

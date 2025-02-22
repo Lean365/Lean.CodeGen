@@ -15,6 +15,8 @@ using Lean.CodeGen.Application.Services.Base;
 using Lean.CodeGen.Common.Options;
 using Lean.CodeGen.Application.Services.Security;
 using Lean.CodeGen.Common.Extensions;
+using Microsoft.Extensions.Logging;
+using Lean.CodeGen.Domain.Validators;
 
 namespace Lean.CodeGen.Application.Services.Generator
 {
@@ -23,24 +25,29 @@ namespace Lean.CodeGen.Application.Services.Generator
   /// </summary>
   public class LeanDbTableService : LeanBaseService, ILeanDbTableService
   {
-    private readonly ILeanRepository<LeanDbTable> _tableRepository;
+    private readonly ILogger<LeanDbTableService> _logger;
+    private readonly ILeanRepository<LeanDbTable> _repository;
     private readonly ILeanRepository<LeanDbColumn> _columnRepository;
     private readonly ILeanRepository<LeanDataSource> _dataSourceRepository;
+    private readonly LeanUniqueValidator<LeanDbTable> _uniqueValidator;
 
     /// <summary>
     /// 构造函数
     /// </summary>
     public LeanDbTableService(
-        ILeanRepository<LeanDbTable> tableRepository,
+        ILeanRepository<LeanDbTable> repository,
         ILeanRepository<LeanDbColumn> columnRepository,
         ILeanRepository<LeanDataSource> dataSourceRepository,
         ILeanSqlSafeService sqlSafeService,
-        IOptions<LeanSecurityOptions> securityOptions)
-        : base(sqlSafeService, securityOptions)
+        IOptions<LeanSecurityOptions> securityOptions,
+        ILogger<LeanDbTableService> logger)
+        : base(sqlSafeService, securityOptions, logger)
     {
-      _tableRepository = tableRepository;
+      _logger = logger;
+      _repository = repository;
       _columnRepository = columnRepository;
       _dataSourceRepository = dataSourceRepository;
+      _uniqueValidator = new LeanUniqueValidator<LeanDbTable>(_repository);
     }
 
     /// <summary>
@@ -49,7 +56,7 @@ namespace Lean.CodeGen.Application.Services.Generator
     public async Task<LeanPageResult<LeanDbTableDto>> GetPageListAsync(LeanDbTableQueryDto queryDto)
     {
       var predicate = BuildQueryPredicate(queryDto);
-      var (total, items) = await _tableRepository.GetPageListAsync(predicate, queryDto.PageSize, queryDto.PageIndex);
+      var (total, items) = await _repository.GetPageListAsync(predicate, queryDto.PageSize, queryDto.PageIndex);
       var list = items.Select(t => t.Adapt<LeanDbTableDto>()).ToList();
 
       await FillTableRelationsAsync(list);
@@ -66,7 +73,7 @@ namespace Lean.CodeGen.Application.Services.Generator
     /// </summary>
     public async Task<LeanDbTableDto> GetAsync(long id)
     {
-      var table = await _tableRepository.FirstOrDefaultAsync(t => t.Id == id);
+      var table = await _repository.FirstOrDefaultAsync(t => t.Id == id);
       if (table == null)
       {
         throw new Exception($"数据库表 {id} 不存在");
@@ -83,7 +90,7 @@ namespace Lean.CodeGen.Application.Services.Generator
       var entity = createDto.Adapt<LeanDbTable>();
       entity.CreateTime = DateTime.Now;
 
-      await _tableRepository.CreateAsync(entity);
+      await _repository.CreateAsync(entity);
 
       if (createDto.Columns?.Count > 0)
       {
@@ -106,7 +113,7 @@ namespace Lean.CodeGen.Application.Services.Generator
     /// </summary>
     public async Task<LeanDbTableDto> UpdateAsync(long id, LeanUpdateDbTableDto updateDto)
     {
-      var entity = await _tableRepository.FirstOrDefaultAsync(t => t.Id == id);
+      var entity = await _repository.FirstOrDefaultAsync(t => t.Id == id);
       if (entity == null)
       {
         throw new Exception($"数据库表 {id} 不存在");
@@ -115,7 +122,7 @@ namespace Lean.CodeGen.Application.Services.Generator
       updateDto.Adapt(entity);
       entity.UpdateTime = DateTime.Now;
 
-      await _tableRepository.UpdateAsync(entity);
+      await _repository.UpdateAsync(entity);
 
       // 删除原有的列
       await _columnRepository.DeleteAsync(t => t.TableId == entity.Id);
@@ -142,7 +149,7 @@ namespace Lean.CodeGen.Application.Services.Generator
     /// </summary>
     public async Task<bool> DeleteAsync(long id)
     {
-      var table = await _tableRepository.FirstOrDefaultAsync(t => t.Id == id);
+      var table = await _repository.FirstOrDefaultAsync(t => t.Id == id);
       if (table == null)
       {
         throw new Exception($"数据库表 {id} 不存在");
@@ -151,7 +158,7 @@ namespace Lean.CodeGen.Application.Services.Generator
       // 删除关联的列
       await _columnRepository.DeleteAsync(t => t.TableId == table.Id);
 
-      return await _tableRepository.DeleteAsync(t => t.Id == table.Id);
+      return await _repository.DeleteAsync(t => t.Id == table.Id);
     }
 
     /// <summary>
@@ -160,7 +167,7 @@ namespace Lean.CodeGen.Application.Services.Generator
     public async Task<LeanFileResult> ExportAsync(LeanDbTableQueryDto queryDto)
     {
       var predicate = BuildQueryPredicate(queryDto);
-      var items = await _tableRepository.GetListAsync(predicate);
+      var items = await _repository.GetListAsync(predicate);
       var list = items.Select(t => t.Adapt<LeanDbTableExportDto>()).ToList();
 
       var excelBytes = LeanExcelHelper.Export(list);
@@ -189,7 +196,7 @@ namespace Lean.CodeGen.Application.Services.Generator
             var entity = item.Adapt<LeanDbTable>();
             entity.CreateTime = DateTime.Now;
 
-            await _tableRepository.CreateAsync(entity);
+            await _repository.CreateAsync(entity);
             result.Data.Add(item);
           }
           catch (Exception ex)
@@ -251,7 +258,7 @@ namespace Lean.CodeGen.Application.Services.Generator
     /// </summary>
     public async Task<bool> SyncStructureAsync(long id)
     {
-      var table = await _tableRepository.FirstOrDefaultAsync(t => t.Id == id);
+      var table = await _repository.FirstOrDefaultAsync(t => t.Id == id);
       if (table == null)
       {
         throw new Exception($"数据库表 {id} 不存在");

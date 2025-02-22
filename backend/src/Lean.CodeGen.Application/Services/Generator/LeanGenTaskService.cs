@@ -15,6 +15,8 @@ using Lean.CodeGen.Domain.Interfaces.Repositories;
 using Lean.CodeGen.Application.Services.Base;
 using Lean.CodeGen.Application.Services.Security;
 using Lean.CodeGen.Common.Extensions;
+using Microsoft.Extensions.Logging;
+using Lean.CodeGen.Domain.Validators;
 
 namespace Lean.CodeGen.Application.Services.Generator
 {
@@ -23,27 +25,32 @@ namespace Lean.CodeGen.Application.Services.Generator
   /// </summary>
   public class LeanGenTaskService : LeanBaseService, ILeanGenTaskService
   {
-    private readonly ILeanRepository<LeanGenTask> _taskRepository;
+    private readonly ILogger<LeanGenTaskService> _logger;
+    private readonly ILeanRepository<LeanGenTask> _repository;
     private readonly ILeanRepository<LeanGenConfig> _configRepository;
     private readonly ILeanRepository<LeanDbTable> _tableRepository;
     private readonly ILeanRepository<LeanGenHistory> _historyRepository;
+    private readonly LeanUniqueValidator<LeanGenTask> _uniqueValidator;
 
     /// <summary>
     /// 构造函数
     /// </summary>
     public LeanGenTaskService(
-        ILeanRepository<LeanGenTask> taskRepository,
+        ILeanRepository<LeanGenTask> repository,
         ILeanRepository<LeanGenConfig> configRepository,
         ILeanRepository<LeanDbTable> tableRepository,
         ILeanRepository<LeanGenHistory> historyRepository,
         ILeanSqlSafeService sqlSafeService,
-        IOptions<LeanSecurityOptions> securityOptions)
-        : base(sqlSafeService, securityOptions)
+        IOptions<LeanSecurityOptions> securityOptions,
+        ILogger<LeanGenTaskService> logger)
+        : base(sqlSafeService, securityOptions, logger)
     {
-      _taskRepository = taskRepository;
+      _logger = logger;
+      _repository = repository;
       _configRepository = configRepository;
       _tableRepository = tableRepository;
       _historyRepository = historyRepository;
+      _uniqueValidator = new LeanUniqueValidator<LeanGenTask>(_repository);
     }
 
     /// <summary>
@@ -52,7 +59,7 @@ namespace Lean.CodeGen.Application.Services.Generator
     public async Task<LeanPageResult<LeanGenTaskDto>> GetPageListAsync(LeanGenTaskQueryDto queryDto)
     {
       var predicate = BuildQueryPredicate(queryDto);
-      var (total, items) = await _taskRepository.GetPageListAsync(predicate, queryDto.PageSize, queryDto.PageIndex);
+      var (total, items) = await _repository.GetPageListAsync(predicate, queryDto.PageSize, queryDto.PageIndex);
       var list = items.Select(t => t.Adapt<LeanGenTaskDto>()).ToList();
 
       return new LeanPageResult<LeanGenTaskDto>
@@ -67,7 +74,7 @@ namespace Lean.CodeGen.Application.Services.Generator
     /// </summary>
     public async Task<LeanGenTaskDto> GetAsync(long id)
     {
-      var task = await _taskRepository.GetByIdAsync(id);
+      var task = await _repository.GetByIdAsync(id);
       if (task == null)
       {
         throw new Exception($"任务 {id} 不存在");
@@ -85,7 +92,7 @@ namespace Lean.CodeGen.Application.Services.Generator
       entity.Status = 0; // 等待执行
       entity.CreateTime = DateTime.Now;
 
-      var id = await _taskRepository.CreateAsync(entity);
+      var id = await _repository.CreateAsync(entity);
       return await GetAsync(id);
     }
 
@@ -94,7 +101,7 @@ namespace Lean.CodeGen.Application.Services.Generator
     /// </summary>
     public async Task<LeanGenTaskDto> UpdateAsync(long id, LeanUpdateGenTaskDto updateDto)
     {
-      var entity = await _taskRepository.GetByIdAsync(id);
+      var entity = await _repository.GetByIdAsync(id);
       if (entity == null)
       {
         throw new Exception($"任务 {id} 不存在");
@@ -103,7 +110,7 @@ namespace Lean.CodeGen.Application.Services.Generator
       updateDto.Adapt(entity);
       entity.UpdateTime = DateTime.Now;
 
-      await _taskRepository.UpdateAsync(entity);
+      await _repository.UpdateAsync(entity);
       return await GetAsync(id);
     }
 
@@ -112,13 +119,13 @@ namespace Lean.CodeGen.Application.Services.Generator
     /// </summary>
     public async Task<bool> DeleteAsync(long id)
     {
-      var task = await _taskRepository.GetByIdAsync(id);
+      var task = await _repository.GetByIdAsync(id);
       if (task == null)
       {
         throw new Exception($"任务 {id} 不存在");
       }
 
-      return await _taskRepository.DeleteAsync(t => t.Id == id);
+      return await _repository.DeleteAsync(t => t.Id == id);
     }
 
     /// <summary>
@@ -127,7 +134,7 @@ namespace Lean.CodeGen.Application.Services.Generator
     public async Task<LeanFileResult> ExportAsync(LeanGenTaskQueryDto queryDto)
     {
       var predicate = BuildQueryPredicate(queryDto);
-      var items = await _taskRepository.GetListAsync(predicate);
+      var items = await _repository.GetListAsync(predicate);
       var list = items.Select(t => t.Adapt<LeanGenTaskExportDto>()).ToList();
 
       var excelBytes = LeanExcelHelper.Export(list);
@@ -157,7 +164,7 @@ namespace Lean.CodeGen.Application.Services.Generator
             entity.Status = 0; // 等待执行
             entity.CreateTime = DateTime.Now;
 
-            await _taskRepository.CreateAsync(entity);
+            await _repository.CreateAsync(entity);
             result.Data.Add(item);
           }
           catch (Exception ex)
@@ -204,7 +211,7 @@ namespace Lean.CodeGen.Application.Services.Generator
     /// </summary>
     public async Task<bool> StartAsync(long id)
     {
-      var task = await _taskRepository.GetByIdAsync(id);
+      var task = await _repository.GetByIdAsync(id);
       if (task == null)
       {
         throw new Exception($"任务 {id} 不存在");
@@ -219,7 +226,7 @@ namespace Lean.CodeGen.Application.Services.Generator
       task.StartTime = DateTime.Now;
       task.UpdateTime = DateTime.Now;
 
-      return await _taskRepository.UpdateAsync(task);
+      return await _repository.UpdateAsync(task);
     }
 
     /// <summary>
@@ -227,7 +234,7 @@ namespace Lean.CodeGen.Application.Services.Generator
     /// </summary>
     public async Task<bool> StopAsync(long id)
     {
-      var task = await _taskRepository.GetByIdAsync(id);
+      var task = await _repository.GetByIdAsync(id);
       if (task == null)
       {
         throw new Exception($"任务 {id} 不存在");
@@ -243,7 +250,7 @@ namespace Lean.CodeGen.Application.Services.Generator
       task.UpdateTime = DateTime.Now;
       task.ErrorMessage = "任务被手动停止";
 
-      return await _taskRepository.UpdateAsync(task);
+      return await _repository.UpdateAsync(task);
     }
 
     /// <summary>
@@ -251,7 +258,7 @@ namespace Lean.CodeGen.Application.Services.Generator
     /// </summary>
     public async Task<bool> RetryAsync(long id)
     {
-      var task = await _taskRepository.GetByIdAsync(id);
+      var task = await _repository.GetByIdAsync(id);
       if (task == null)
       {
         throw new Exception($"任务 {id} 不存在");
@@ -268,7 +275,7 @@ namespace Lean.CodeGen.Application.Services.Generator
       task.ErrorMessage = null;
       task.UpdateTime = DateTime.Now;
 
-      return await _taskRepository.UpdateAsync(task);
+      return await _repository.UpdateAsync(task);
     }
 
     /// <summary>

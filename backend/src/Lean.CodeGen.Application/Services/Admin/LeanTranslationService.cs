@@ -30,17 +30,17 @@ public class LeanTranslationService : LeanBaseService, ILeanTranslationService
   /// 构造函数
   /// </summary>
   public LeanTranslationService(
-      ILogger<LeanTranslationService> logger,
-      ILeanRepository<LeanTranslation> repository,
+      ILeanRepository<LeanTranslation> translationRepository,
       ILeanRepository<LeanLanguage> languageRepository,
       ILeanSqlSafeService sqlSafeService,
-      IOptions<LeanSecurityOptions> securityOptions)
-      : base(sqlSafeService, securityOptions)
+      IOptions<LeanSecurityOptions> securityOptions,
+      ILogger<LeanTranslationService> logger)
+      : base(sqlSafeService, securityOptions, logger)
   {
-    _logger = logger;
-    _repository = repository;
+    _repository = translationRepository;
     _languageRepository = languageRepository;
     _uniqueValidator = new LeanUniqueValidator<LeanTranslation>(_repository);
+    _logger = logger;
   }
 
   /// <summary>

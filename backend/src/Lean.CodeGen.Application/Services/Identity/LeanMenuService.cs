@@ -11,6 +11,7 @@ using Lean.CodeGen.Application.Services.Security;
 using Microsoft.Extensions.Options;
 using Lean.CodeGen.Common.Enums;
 using Lean.CodeGen.Common.Extensions;
+using Microsoft.Extensions.Logging;
 
 namespace Lean.CodeGen.Application.Services.Identity;
 
@@ -24,6 +25,7 @@ public class LeanMenuService : LeanBaseService, ILeanMenuService
   private readonly ILeanRepository<LeanRoleMenu> _roleMenuRepository;
   private readonly ILeanRepository<LeanMenuOperation> _menuOperationRepository;
   private readonly LeanUniqueValidator<LeanMenu> _uniqueValidator;
+  private readonly ILogger<LeanMenuService> _logger;
 
   public LeanMenuService(
       ILeanRepository<LeanMenu> menuRepository,
@@ -31,14 +33,16 @@ public class LeanMenuService : LeanBaseService, ILeanMenuService
       ILeanRepository<LeanRoleMenu> roleMenuRepository,
       ILeanRepository<LeanMenuOperation> menuOperationRepository,
       ILeanSqlSafeService sqlSafeService,
-      IOptions<LeanSecurityOptions> securityOptions)
-      : base(sqlSafeService, securityOptions)
+      IOptions<LeanSecurityOptions> securityOptions,
+      ILogger<LeanMenuService> logger)
+      : base(sqlSafeService, securityOptions, logger)
   {
     _menuRepository = menuRepository;
     _userMenuRepository = userMenuRepository;
     _roleMenuRepository = roleMenuRepository;
     _menuOperationRepository = menuOperationRepository;
     _uniqueValidator = new LeanUniqueValidator<LeanMenu>(menuRepository);
+    _logger = logger;
   }
 
   /// <summary>

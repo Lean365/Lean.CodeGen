@@ -17,6 +17,8 @@ using Lean.CodeGen.Common.Extensions;
 using Microsoft.Extensions.Options;
 using Lean.CodeGen.Common.Exceptions;
 using Lean.CodeGen.Common.Security;
+using Microsoft.Extensions.Logging;
+using Lean.CodeGen.Domain.Validators;
 
 namespace Lean.CodeGen.Application.Services.Generator
 {
@@ -25,21 +27,26 @@ namespace Lean.CodeGen.Application.Services.Generator
   /// </summary>
   public class LeanGenConfigService : LeanBaseService, ILeanGenConfigService
   {
-    private readonly ILeanRepository<LeanGenConfig> _configRepository;
+    private readonly ILogger<LeanGenConfigService> _logger;
+    private readonly ILeanRepository<LeanGenConfig> _repository;
     private readonly ILeanRepository<LeanGenTemplate> _templateRepository;
+    private readonly LeanUniqueValidator<LeanGenConfig> _uniqueValidator;
 
     /// <summary>
     /// 构造函数
     /// </summary>
     public LeanGenConfigService(
-        ILeanRepository<LeanGenConfig> configRepository,
+        ILeanRepository<LeanGenConfig> repository,
         ILeanRepository<LeanGenTemplate> templateRepository,
         ILeanSqlSafeService sqlSafeService,
-        IOptions<LeanSecurityOptions> securityOptions)
-        : base(sqlSafeService, securityOptions)
+        IOptions<LeanSecurityOptions> securityOptions,
+        ILogger<LeanGenConfigService> logger)
+        : base(sqlSafeService, securityOptions, logger)
     {
-      _configRepository = configRepository;
+      _logger = logger;
+      _repository = repository;
       _templateRepository = templateRepository;
+      _uniqueValidator = new LeanUniqueValidator<LeanGenConfig>(_repository);
     }
 
     /// <summary>
@@ -48,7 +55,7 @@ namespace Lean.CodeGen.Application.Services.Generator
     public async Task<LeanPageResult<LeanGenConfigDto>> GetPageListAsync(LeanGenConfigQueryDto queryDto)
     {
       var predicate = BuildQueryPredicate(queryDto);
-      var (total, items) = await _configRepository.GetPageListAsync(predicate, queryDto.PageSize, queryDto.PageIndex);
+      var (total, items) = await _repository.GetPageListAsync(predicate, queryDto.PageSize, queryDto.PageIndex);
       var list = items.Select(t => t.Adapt<LeanGenConfigDto>()).ToList();
 
       await FillConfigRelationsAsync(list);
@@ -65,7 +72,7 @@ namespace Lean.CodeGen.Application.Services.Generator
     /// </summary>
     public async Task<LeanGenConfigDto> GetAsync(long id)
     {
-      var config = await _configRepository.FirstOrDefaultAsync(t => t.Id == id);
+      var config = await _repository.FirstOrDefaultAsync(t => t.Id == id);
       if (config == null)
       {
         throw new LeanException($"代码生成配置[{id}]不存在");
@@ -86,7 +93,7 @@ namespace Lean.CodeGen.Application.Services.Generator
       var entity = createDto.Adapt<LeanGenConfig>();
       entity.CreateTime = DateTime.Now;
 
-      await _configRepository.CreateAsync(entity);
+      await _repository.CreateAsync(entity);
 
       // 创建模板
       foreach (var templateDto in createDto.Templates)
@@ -106,14 +113,14 @@ namespace Lean.CodeGen.Application.Services.Generator
     /// </summary>
     public async Task<LeanGenConfigDto> UpdateAsync(long id, LeanUpdateGenConfigDto updateDto)
     {
-      var entity = await _configRepository.FirstOrDefaultAsync(t => t.Id == id);
+      var entity = await _repository.FirstOrDefaultAsync(t => t.Id == id);
       if (entity == null)
       {
         throw new LeanException($"代码生成配置[{id}]不存在");
       }
 
       updateDto.Adapt(entity);
-      await _configRepository.UpdateAsync(entity);
+      await _repository.UpdateAsync(entity);
 
       // 删除原有模板
       var templates = await _templateRepository.GetListAsync(t => t.ConfigId == id);
@@ -140,7 +147,7 @@ namespace Lean.CodeGen.Application.Services.Generator
     /// </summary>
     public async Task<bool> DeleteAsync(long id)
     {
-      var config = await _configRepository.FirstOrDefaultAsync(t => t.Id == id);
+      var config = await _repository.FirstOrDefaultAsync(t => t.Id == id);
       if (config == null)
       {
         throw new Exception($"配置 {id} 不存在");
@@ -149,7 +156,7 @@ namespace Lean.CodeGen.Application.Services.Generator
       // 删除关联的模板
       await _templateRepository.DeleteAsync(t => t.ConfigId == id);
 
-      return await _configRepository.DeleteAsync(t => t.Id == id);
+      return await _repository.DeleteAsync(t => t.Id == id);
     }
 
     /// <summary>
@@ -158,7 +165,7 @@ namespace Lean.CodeGen.Application.Services.Generator
     public async Task<LeanFileResult> ExportAsync(LeanGenConfigQueryDto queryDto)
     {
       var predicate = BuildQueryPredicate(queryDto);
-      var items = await _configRepository.GetListAsync(predicate);
+      var items = await _repository.GetListAsync(predicate);
       var list = items.Select(t => t.Adapt<LeanGenConfigExportDto>()).ToList();
 
       var excelBytes = LeanExcelHelper.Export(list);
@@ -187,7 +194,7 @@ namespace Lean.CodeGen.Application.Services.Generator
             var entity = item.Adapt<LeanGenConfig>();
             entity.CreateTime = DateTime.Now;
 
-            await _configRepository.CreateAsync(entity);
+            await _repository.CreateAsync(entity);
             result.Data.Add(item);
           }
           catch (Exception ex)
@@ -234,7 +241,7 @@ namespace Lean.CodeGen.Application.Services.Generator
     /// </summary>
     public async Task<LeanGenConfigDto> CopyAsync(long id)
     {
-      var config = await _configRepository.FirstOrDefaultAsync(t => t.Id == id);
+      var config = await _repository.FirstOrDefaultAsync(t => t.Id == id);
       if (config == null)
       {
         throw new LeanException($"代码生成配置[{id}]不存在");
@@ -244,7 +251,7 @@ namespace Lean.CodeGen.Application.Services.Generator
       newConfig.CreateTime = DateTime.Now;
       newConfig.Name = $"{config.Name}_Copy";
 
-      await _configRepository.CreateAsync(newConfig);
+      await _repository.CreateAsync(newConfig);
 
       // 复制模板
       var templates = await _templateRepository.GetListAsync(t => t.ConfigId == id);

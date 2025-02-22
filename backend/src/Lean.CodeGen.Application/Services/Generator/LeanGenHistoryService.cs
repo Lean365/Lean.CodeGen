@@ -15,6 +15,8 @@ using Lean.CodeGen.Application.Services.Base;
 using Lean.CodeGen.Common.Options;
 using Lean.CodeGen.Application.Services.Security;
 using Lean.CodeGen.Common.Extensions;
+using Microsoft.Extensions.Logging;
+using Lean.CodeGen.Domain.Validators;
 
 namespace Lean.CodeGen.Application.Services.Generator
 {
@@ -23,9 +25,11 @@ namespace Lean.CodeGen.Application.Services.Generator
   /// </summary>
   public class LeanGenHistoryService : LeanBaseService, ILeanGenHistoryService
   {
+    private readonly ILogger<LeanGenHistoryService> _logger;
     private readonly ILeanRepository<LeanGenHistory> _historyRepository;
     private readonly ILeanRepository<LeanGenTask> _taskRepository;
     private readonly ILeanRepository<LeanDbTable> _tableRepository;
+    private readonly LeanUniqueValidator<LeanGenHistory> _uniqueValidator;
 
     /// <summary>
     /// 构造函数
@@ -35,12 +39,15 @@ namespace Lean.CodeGen.Application.Services.Generator
         ILeanRepository<LeanGenTask> taskRepository,
         ILeanRepository<LeanDbTable> tableRepository,
         ILeanSqlSafeService sqlSafeService,
-        IOptions<LeanSecurityOptions> securityOptions)
-        : base(sqlSafeService, securityOptions)
+        IOptions<LeanSecurityOptions> securityOptions,
+        ILogger<LeanGenHistoryService> logger)
+        : base(sqlSafeService, securityOptions, logger)
     {
+      _logger = logger;
       _historyRepository = historyRepository;
       _taskRepository = taskRepository;
       _tableRepository = tableRepository;
+      _uniqueValidator = new LeanUniqueValidator<LeanGenHistory>(_historyRepository);
     }
 
     /// <summary>

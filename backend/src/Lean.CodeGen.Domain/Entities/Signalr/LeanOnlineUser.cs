@@ -14,7 +14,7 @@ namespace Lean.CodeGen.Domain.Entities.Signalr;
 /// <summary>
 /// 在线用户实体
 /// </summary>
-[SugarTable("hbt_online_user", "在线用户表")]
+[SugarTable("lean_online_user", "在线用户表")]
 [SugarIndex("uk_connection", nameof(ConnectionId), OrderByType.Asc, true)]
 public class LeanOnlineUser : LeanBaseEntity
 {

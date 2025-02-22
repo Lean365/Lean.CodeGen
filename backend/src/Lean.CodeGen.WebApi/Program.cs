@@ -13,6 +13,14 @@ using Lean.CodeGen.WebApi.Filters;
 using Lean.CodeGen.Common.Options;
 using Lean.CodeGen.Common.Extensions;
 using Lean.CodeGen.WebApi.Hubs;
+using Lean.CodeGen.Infrastructure.Services;
+using Lean.CodeGen.Application.Services.Security;
+using Lean.CodeGen.Domain.Interfaces.Caching;
+using Lean.CodeGen.Infrastructure.Services.Caching;
+using Lean.CodeGen.Infrastructure.Extensions;
+using Lean.CodeGen.Infrastructure.Data.Context;
+using Lean.CodeGen.Infrastructure.Data.Initializer;
+using StackExchange.Redis;
 
 // 创建Web应用程序构建器
 var builder = WebApplication.CreateBuilder(args);
@@ -23,6 +31,45 @@ builder.AddLeanNLog();
 // 配置安全选项
 builder.Services.Configure<LeanSecurityOptions>(
     builder.Configuration.GetSection(LeanSecurityOptions.Position));
+
+// 配置数据库选项
+builder.Services.Configure<LeanDatabaseOptions>(
+    builder.Configuration.GetSection(LeanDatabaseOptions.Position));
+
+// 添加数据库上下文
+builder.Services.AddScoped<LeanDbContext>();
+
+// 添加仓储服务
+builder.Services.AddRepositories();
+
+// 添加应用服务
+builder.Services.AddApplicationServices();
+
+// 添加数据库初始化器
+builder.Services.AddScoped<LeanDbInitializer>();
+
+// 配置缓存选项
+builder.Services.Configure<LeanCacheOptions>(
+    builder.Configuration.GetSection(LeanCacheOptions.Position));
+
+// 添加缓存服务
+var cacheOptions = builder.Configuration
+    .GetSection(LeanCacheOptions.Position)
+    .Get<LeanCacheOptions>();
+
+if (cacheOptions?.EnableRedis == true && !string.IsNullOrEmpty(cacheOptions.Redis.ConnectionString))
+{
+  // 添加Redis缓存
+  builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+      ConnectionMultiplexer.Connect(cacheOptions.Redis.ConnectionString));
+  builder.Services.AddScoped<ILeanCacheService, LeanRedisCacheService>();
+}
+else
+{
+  // 添加内存缓存
+  builder.Services.AddMemoryCache();
+  builder.Services.AddScoped<ILeanCacheService, LeanMemoryCacheService>();
+}
 
 // 添加控制器服务
 builder.Services.AddControllers(options =>
@@ -46,11 +93,8 @@ builder.Services.AddAntiforgery(options =>
   options.Cookie.Name = securityOptions?.Antiforgery.CookieName ?? "XSRF-TOKEN";
 });
 
-// 添加内存缓存服务（用于限流）
-builder.Services.AddMemoryCache();
-
 // 添加SQL注入防护服务
-builder.Services.AddScoped<LeanSqlSafeService>();
+builder.Services.AddScoped<ILeanSqlSafeService, LeanSqlSafeService>();
 
 // 添加SignalR实时通信服务
 builder.Services.AddSignalR();
@@ -66,13 +110,19 @@ builder.Services.AddLeanJwt(builder.Configuration);
 // 构建应用程序
 var app = builder.Build();
 
-// 配置HTTP请求处理管道
+// 初始化数据库
+if (builder.Configuration.GetSection("Database:EnableInitData").Get<bool>())
+{
+  using var scope = app.Services.CreateScope();
+  var initializer = scope.ServiceProvider.GetRequiredService<LeanDbInitializer>();
+  await initializer.InitializeAsync();
+}
+
+// 配置中间件
 if (app.Environment.IsDevelopment())
 {
-  // 在开发环境中启用Swagger
   app.UseSwagger();
   app.UseSwaggerUI();
-  app.UseLeanSwagger();
 }
 
 // 启用HTTPS重定向

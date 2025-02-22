@@ -15,6 +15,8 @@ using Lean.CodeGen.Application.Services.Base;
 using Lean.CodeGen.Common.Options;
 using Lean.CodeGen.Application.Services.Security;
 using Lean.CodeGen.Common.Extensions;
+using Microsoft.Extensions.Logging;
+using Lean.CodeGen.Domain.Validators;
 
 namespace Lean.CodeGen.Application.Services.Generator
 {
@@ -23,18 +25,23 @@ namespace Lean.CodeGen.Application.Services.Generator
   /// </summary>
   public class LeanDataSourceService : LeanBaseService, ILeanDataSourceService
   {
-    private readonly ILeanRepository<LeanDataSource> _dataSourceRepository;
+    private readonly ILogger<LeanDataSourceService> _logger;
+    private readonly ILeanRepository<LeanDataSource> _repository;
+    private readonly LeanUniqueValidator<LeanDataSource> _uniqueValidator;
 
     /// <summary>
     /// 构造函数
     /// </summary>
     public LeanDataSourceService(
-        ILeanRepository<LeanDataSource> dataSourceRepository,
+        ILeanRepository<LeanDataSource> repository,
         ILeanSqlSafeService sqlSafeService,
-        IOptions<LeanSecurityOptions> securityOptions)
-        : base(sqlSafeService, securityOptions)
+        IOptions<LeanSecurityOptions> securityOptions,
+        ILogger<LeanDataSourceService> logger)
+        : base(sqlSafeService, securityOptions, logger)
     {
-      _dataSourceRepository = dataSourceRepository;
+      _logger = logger;
+      _repository = repository;
+      _uniqueValidator = new LeanUniqueValidator<LeanDataSource>(_repository);
     }
 
     /// <summary>
@@ -43,7 +50,7 @@ namespace Lean.CodeGen.Application.Services.Generator
     public async Task<LeanPageResult<LeanDataSourceDto>> GetPageListAsync(LeanDataSourceQueryDto queryDto)
     {
       var predicate = BuildQueryPredicate(queryDto);
-      var (total, items) = await _dataSourceRepository.GetPageListAsync(predicate, queryDto.PageSize, queryDto.PageIndex);
+      var (total, items) = await _repository.GetPageListAsync(predicate, queryDto.PageSize, queryDto.PageIndex);
       var list = items.Select(t => t.Adapt<LeanDataSourceDto>()).ToList();
 
       return new LeanPageResult<LeanDataSourceDto>
@@ -58,7 +65,7 @@ namespace Lean.CodeGen.Application.Services.Generator
     /// </summary>
     public async Task<LeanDataSourceDto> GetAsync(long id)
     {
-      var dataSource = await _dataSourceRepository.FirstOrDefaultAsync(t => t.Id == id);
+      var dataSource = await _repository.FirstOrDefaultAsync(t => t.Id == id);
       if (dataSource == null)
       {
         throw new Exception($"数据源 {id} 不存在");
@@ -75,7 +82,7 @@ namespace Lean.CodeGen.Application.Services.Generator
       var entity = createDto.Adapt<LeanDataSource>();
       entity.CreateTime = DateTime.Now;
 
-      var id = await _dataSourceRepository.CreateAsync(entity);
+      var id = await _repository.CreateAsync(entity);
       return await GetAsync(id);
     }
 
@@ -84,7 +91,7 @@ namespace Lean.CodeGen.Application.Services.Generator
     /// </summary>
     public async Task<LeanDataSourceDto> UpdateAsync(long id, LeanUpdateDataSourceDto updateDto)
     {
-      var entity = await _dataSourceRepository.FirstOrDefaultAsync(t => t.Id == id);
+      var entity = await _repository.FirstOrDefaultAsync(t => t.Id == id);
       if (entity == null)
       {
         throw new Exception($"数据源 {id} 不存在");
@@ -93,7 +100,7 @@ namespace Lean.CodeGen.Application.Services.Generator
       updateDto.Adapt(entity);
       entity.UpdateTime = DateTime.Now;
 
-      await _dataSourceRepository.UpdateAsync(entity);
+      await _repository.UpdateAsync(entity);
       return await GetAsync(id);
     }
 
@@ -102,13 +109,13 @@ namespace Lean.CodeGen.Application.Services.Generator
     /// </summary>
     public async Task<bool> DeleteAsync(long id)
     {
-      var dataSource = await _dataSourceRepository.FirstOrDefaultAsync(t => t.Id == id);
+      var dataSource = await _repository.FirstOrDefaultAsync(t => t.Id == id);
       if (dataSource == null)
       {
         throw new Exception($"数据源 {id} 不存在");
       }
 
-      return await _dataSourceRepository.DeleteAsync(t => t.Id == id);
+      return await _repository.DeleteAsync(t => t.Id == id);
     }
 
     /// <summary>
@@ -117,7 +124,7 @@ namespace Lean.CodeGen.Application.Services.Generator
     public async Task<LeanFileResult> ExportAsync(LeanDataSourceQueryDto queryDto)
     {
       var predicate = BuildQueryPredicate(queryDto);
-      var items = await _dataSourceRepository.GetListAsync(predicate);
+      var items = await _repository.GetListAsync(predicate);
       var list = items.Select(t => t.Adapt<LeanDataSourceExportDto>()).ToList();
 
       var excelBytes = LeanExcelHelper.Export(list);
@@ -146,7 +153,7 @@ namespace Lean.CodeGen.Application.Services.Generator
             var entity = item.Adapt<LeanDataSource>();
             entity.CreateTime = DateTime.Now;
 
-            await _dataSourceRepository.CreateAsync(entity);
+            await _repository.CreateAsync(entity);
             result.Data.Add(item);
           }
           catch (Exception ex)
@@ -193,7 +200,7 @@ namespace Lean.CodeGen.Application.Services.Generator
     /// </summary>
     public async Task<bool> TestConnectionAsync(long id)
     {
-      var dataSource = await _dataSourceRepository.FirstOrDefaultAsync(t => t.Id == id);
+      var dataSource = await _repository.FirstOrDefaultAsync(t => t.Id == id);
       if (dataSource == null)
       {
         throw new Exception($"数据源 {id} 不存在");

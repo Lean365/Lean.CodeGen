@@ -14,7 +14,7 @@ namespace Lean.CodeGen.Domain.Entities.Signalr;
 /// <summary>
 /// 在线消息实体
 /// </summary>
-[SugarTable("hbt_online_message", "在线消息表")]
+[SugarTable("lean_online_message", "在线消息表")]
 [SugarIndex("idx_sender", nameof(SenderId), OrderByType.Asc)]
 [SugarIndex("idx_receiver", nameof(ReceiverId), OrderByType.Asc)]
 public class LeanOnlineMessage : LeanBaseEntity

@@ -11,6 +11,7 @@ using Lean.CodeGen.Application.Services.Security;
 using Microsoft.Extensions.Options;
 using Lean.CodeGen.Common.Enums;
 using Lean.CodeGen.Common.Extensions;
+using Microsoft.Extensions.Logging;
 
 namespace Lean.CodeGen.Application.Services.Identity;
 
@@ -24,6 +25,7 @@ public class LeanDeptService : LeanBaseService, ILeanDeptService
   private readonly ILeanRepository<LeanRoleDept> _roleDeptRepository;
   private readonly ILeanRepository<LeanDeptDataPermission> _deptDataPermissionRepository;
   private readonly LeanUniqueValidator<LeanDept> _uniqueValidator;
+  private readonly ILogger<LeanDeptService> _logger;
 
   public LeanDeptService(
       ILeanRepository<LeanDept> deptRepository,
@@ -31,14 +33,16 @@ public class LeanDeptService : LeanBaseService, ILeanDeptService
       ILeanRepository<LeanRoleDept> roleDeptRepository,
       ILeanRepository<LeanDeptDataPermission> deptDataPermissionRepository,
       ILeanSqlSafeService sqlSafeService,
-      IOptions<LeanSecurityOptions> securityOptions)
-      : base(sqlSafeService, securityOptions)
+      IOptions<LeanSecurityOptions> securityOptions,
+      ILogger<LeanDeptService> logger)
+      : base(sqlSafeService, securityOptions, logger)
   {
     _deptRepository = deptRepository;
     _userDeptRepository = userDeptRepository;
     _roleDeptRepository = roleDeptRepository;
     _deptDataPermissionRepository = deptDataPermissionRepository;
     _uniqueValidator = new LeanUniqueValidator<LeanDept>(deptRepository);
+    _logger = logger;
   }
 
   /// <summary>

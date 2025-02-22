@@ -42,7 +42,7 @@ public class LeanExceptionMiddleware
     switch (exception)
     {
       case LeanException ex:
-        result = LeanApiResult<object?>.Error(ex.Message, (LeanErrorCode)ex.Code);
+        result = LeanApiResult<object?>.Error(ex.Message, ex.ErrorCode);
         context.Response.StatusCode = (int)HttpStatusCode.OK;
         break;
 

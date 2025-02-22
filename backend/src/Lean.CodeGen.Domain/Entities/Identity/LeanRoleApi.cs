@@ -15,42 +15,42 @@ namespace Lean.CodeGen.Domain.Entities.Identity;
 /// 角色API关联实体
 /// </summary>
 [SugarTable("lean_role_api", "角色API关联表")]
-[SugarIndex("uk_role_api", $"{nameof(RoleId)},{nameof(ApiId)}", OrderByType.Asc, true)]
+[SugarIndex("uk_role_api", nameof(RoleId), OrderByType.Asc, nameof(ApiId), OrderByType.Asc)]
 public class LeanRoleApi : LeanBaseEntity
 {
-  /// <summary>
-  /// 角色ID
-  /// </summary>
-  /// <remarks>
-  /// 关联的角色ID
-  /// </remarks>
-  [SugarColumn(ColumnName = "role_id", ColumnDescription = "角色ID", IsNullable = false, ColumnDataType = "bigint")]
-  public long RoleId { get; set; }
+    /// <summary>
+    /// 角色ID
+    /// </summary>
+    /// <remarks>
+    /// 关联的角色ID
+    /// </remarks>
+    [SugarColumn(ColumnName = "role_id", ColumnDescription = "角色ID", IsNullable = false, ColumnDataType = "bigint")]
+    public long RoleId { get; set; }
 
-  /// <summary>
-  /// API ID
-  /// </summary>
-  /// <remarks>
-  /// 关联的API ID
-  /// </remarks>
-  [SugarColumn(ColumnName = "api_id", ColumnDescription = "API ID", IsNullable = false, ColumnDataType = "bigint")]
-  public long ApiId { get; set; }
+    /// <summary>
+    /// API ID
+    /// </summary>
+    /// <remarks>
+    /// 关联的API ID
+    /// </remarks>
+    [SugarColumn(ColumnName = "api_id", ColumnDescription = "API ID", IsNullable = false, ColumnDataType = "bigint")]
+    public long ApiId { get; set; }
 
-  /// <summary>
-  /// 角色
-  /// </summary>
-  /// <remarks>
-  /// 关联的角色实体
-  /// </remarks>
-  [Navigate(NavigateType.OneToOne, nameof(RoleId))]
-  public virtual LeanRole Role { get; set; } = default!;
+    /// <summary>
+    /// 角色
+    /// </summary>
+    /// <remarks>
+    /// 关联的角色实体
+    /// </remarks>
+    [Navigate(NavigateType.OneToOne, nameof(RoleId))]
+    public virtual LeanRole Role { get; set; } = default!;
 
-  /// <summary>
-  /// API
-  /// </summary>
-  /// <remarks>
-  /// 关联的API实体
-  /// </remarks>
-  [Navigate(NavigateType.OneToOne, nameof(ApiId))]
-  public virtual LeanApi Api { get; set; } = default!;
+    /// <summary>
+    /// API
+    /// </summary>
+    /// <remarks>
+    /// 关联的API实体
+    /// </remarks>
+    [Navigate(NavigateType.OneToOne, nameof(ApiId))]
+    public virtual LeanApi Api { get; set; } = default!;
 }

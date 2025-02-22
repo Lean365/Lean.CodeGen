@@ -35,7 +35,7 @@ public class LeanConfigService : LeanBaseService, ILeanConfigService
     ILeanRepository<LeanConfig> repository,
     ILeanSqlSafeService sqlSafeService,
     IOptions<LeanSecurityOptions> securityOptions)
-    : base(sqlSafeService, securityOptions)
+    : base(sqlSafeService, securityOptions, logger)
   {
     _logger = logger;
     _repository = repository;

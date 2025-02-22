@@ -1,17 +1,22 @@
 namespace Lean.CodeGen.Common.Enums;
 
 /// <summary>
-/// 通用状态枚举
+/// 状态枚举
 /// </summary>
 public enum LeanStatus
 {
   /// <summary>
-  /// 正常
+  /// 禁用
   /// </summary>
-  Normal = 0,
+  Disable = 0,
 
   /// <summary>
-  /// 停用
+  /// 启用
   /// </summary>
-  Disabled = 1
+  Enable = 1,
+
+  /// <summary>
+  /// 正常
+  /// </summary>
+  Normal = 2
 }

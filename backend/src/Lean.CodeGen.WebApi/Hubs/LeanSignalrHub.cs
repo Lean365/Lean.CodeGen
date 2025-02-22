@@ -13,6 +13,9 @@ using System.Collections.Concurrent;
 using Microsoft.AspNetCore.SignalR;
 using Lean.CodeGen.Domain.Entities.Signalr;
 using Lean.CodeGen.Common.Enums;
+using Lean.CodeGen.Application.Services.Signalr;
+using Lean.CodeGen.Application.Dtos.Signalr;
+using Microsoft.Extensions.Logging;
 
 namespace Lean.CodeGen.WebApi.Hubs;
 
@@ -21,23 +24,28 @@ namespace Lean.CodeGen.WebApi.Hubs;
 /// </summary>
 public class LeanSignalrHub : Hub
 {
-  private static readonly ConcurrentDictionary<string, LeanOnlineUser> OnlineUsers = new();
+  private readonly ILeanOnlineUserService _userService;
+  private readonly ILeanOnlineMessageService _messageService;
+  private readonly ILogger<LeanSignalrHub> _logger;
+
+  public LeanSignalrHub(
+      ILeanOnlineUserService userService,
+      ILeanOnlineMessageService messageService,
+      ILogger<LeanSignalrHub> logger)
+  {
+    _userService = userService;
+    _messageService = messageService;
+    _logger = logger;
+  }
 
   /// <summary>
   /// 客户端连接事件
   /// </summary>
   public override async Task OnConnectedAsync()
   {
-    var user = new LeanOnlineUser
-    {
-      ConnectionId = Context.ConnectionId,
-      LastActiveTime = DateTime.Now,
-      IsOnline = true,
-      CreateTime = DateTime.Now
-    };
-
-    OnlineUsers.TryAdd(Context.ConnectionId, user);
-    await Clients.All.SendAsync("UserConnected", user);
+    await _userService.UpdateUserStatusAsync(Context.ConnectionId, true);
+    var users = await _userService.GetOnlineUsersAsync();
+    await Clients.All.SendAsync("UserConnected", users);
     await base.OnConnectedAsync();
   }
 
@@ -46,12 +54,9 @@ public class LeanSignalrHub : Hub
   /// </summary>
   public override async Task OnDisconnectedAsync(Exception? exception)
   {
-    if (OnlineUsers.TryRemove(Context.ConnectionId, out var user))
-    {
-      user.IsOnline = false;
-      user.UpdateTime = DateTime.Now;
-      await Clients.All.SendAsync("UserDisconnected", user);
-    }
+    await _userService.UpdateUserStatusAsync(Context.ConnectionId, false);
+    var users = await _userService.GetOnlineUsersAsync();
+    await Clients.All.SendAsync("UserDisconnected", users);
     await base.OnDisconnectedAsync(exception);
   }
 
@@ -60,23 +65,17 @@ public class LeanSignalrHub : Hub
   /// </summary>
   public async Task UpdateUserInfo(string userId, string userName, string? avatar)
   {
-    if (OnlineUsers.TryGetValue(Context.ConnectionId, out var user))
-    {
-      user.UserId = userId;
-      user.UserName = userName;
-      user.Avatar = avatar;
-      user.UpdateTime = DateTime.Now;
-      await Clients.All.SendAsync("UserUpdated", user);
-    }
+    await _userService.UpdateUserInfoAsync(Context.ConnectionId, userId, userName, avatar);
+    var users = await _userService.GetOnlineUsersAsync();
+    await Clients.All.SendAsync("UserListUpdated", users);
   }
 
   /// <summary>
   /// 发送消息
   /// </summary>
-  public async Task SendMessage(LeanOnlineMessage message)
+  public async Task SendMessage(LeanSendMessageDto input)
   {
-    message.SendTime = DateTime.Now;
-    message.CreateTime = DateTime.Now;
+    var message = await _messageService.SendMessageAsync(input);
 
     if (string.IsNullOrEmpty(message.ReceiverId))
     {
@@ -84,7 +83,11 @@ public class LeanSignalrHub : Hub
     }
     else
     {
-      await Clients.User(message.ReceiverId).SendAsync("ReceiveMessage", message);
+      var receiverConnectionId = await _userService.GetUserConnectionIdAsync(message.ReceiverId);
+      if (!string.IsNullOrEmpty(receiverConnectionId))
+      {
+        await Clients.Client(receiverConnectionId).SendAsync("ReceiveMessage", message);
+      }
       await Clients.Caller.SendAsync("ReceiveMessage", message);
     }
   }
@@ -94,7 +97,7 @@ public class LeanSignalrHub : Hub
   /// </summary>
   public async Task MarkMessageAsRead(long messageId)
   {
-    await Clients.All.SendAsync("MessageRead", messageId);
+    await _messageService.MarkMessageAsReadAsync(messageId);
   }
 
   /// <summary>
@@ -102,7 +105,26 @@ public class LeanSignalrHub : Hub
   /// </summary>
   public async Task GetOnlineUsers()
   {
-    await Clients.Caller.SendAsync("OnlineUsers", OnlineUsers.Values);
+    var users = await _userService.GetOnlineUsersAsync();
+    await Clients.Caller.SendAsync("UserListUpdated", users);
+  }
+
+  /// <summary>
+  /// 获取未读消息
+  /// </summary>
+  public async Task GetUnreadMessages(string userId)
+  {
+    var messages = await _messageService.GetUnreadMessagesAsync(userId);
+    await Clients.Caller.SendAsync("UnreadMessages", messages);
+  }
+
+  /// <summary>
+  /// 获取消息历史
+  /// </summary>
+  public async Task GetMessageHistory(string userId, int pageSize, int pageIndex)
+  {
+    var history = await _messageService.GetMessageHistoryAsync(userId, pageSize, pageIndex);
+    await Clients.Caller.SendAsync("MessageHistory", history);
   }
 
   /// <summary>
@@ -110,11 +132,6 @@ public class LeanSignalrHub : Hub
   /// </summary>
   public async Task UpdateLastActiveTime()
   {
-    if (OnlineUsers.TryGetValue(Context.ConnectionId, out var user))
-    {
-      user.LastActiveTime = DateTime.Now;
-      user.UpdateTime = DateTime.Now;
-      await Clients.All.SendAsync("UserUpdated", user);
-    }
+    await _userService.UpdateLastActiveTimeAsync(Context.ConnectionId);
   }
 }

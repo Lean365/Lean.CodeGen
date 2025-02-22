@@ -11,6 +11,7 @@ using Lean.CodeGen.Application.Services.Security;
 using Microsoft.Extensions.Options;
 using Lean.CodeGen.Common.Enums;
 using Lean.CodeGen.Common.Extensions;
+using Microsoft.Extensions.Logging;
 
 namespace Lean.CodeGen.Application.Services.Identity;
 
@@ -25,6 +26,7 @@ public class LeanRoleService : LeanBaseService, ILeanRoleService
   private readonly ILeanRepository<LeanRoleMutex> _roleMutexRepository;
   private readonly ILeanRepository<LeanRolePrerequisite> _rolePrerequisiteRepository;
   private readonly LeanUniqueValidator<LeanRole> _uniqueValidator;
+  private readonly ILogger<LeanRoleService> _logger;
 
   public LeanRoleService(
       ILeanRepository<LeanRole> roleRepository,
@@ -33,8 +35,9 @@ public class LeanRoleService : LeanBaseService, ILeanRoleService
       ILeanRepository<LeanRoleMutex> roleMutexRepository,
       ILeanRepository<LeanRolePrerequisite> rolePrerequisiteRepository,
       ILeanSqlSafeService sqlSafeService,
-      IOptions<LeanSecurityOptions> securityOptions)
-      : base(sqlSafeService, securityOptions)
+      IOptions<LeanSecurityOptions> securityOptions,
+      ILogger<LeanRoleService> logger)
+      : base(sqlSafeService, securityOptions, logger)
   {
     _roleRepository = roleRepository;
     _roleMenuRepository = roleMenuRepository;
@@ -42,6 +45,7 @@ public class LeanRoleService : LeanBaseService, ILeanRoleService
     _roleMutexRepository = roleMutexRepository;
     _rolePrerequisiteRepository = rolePrerequisiteRepository;
     _uniqueValidator = new LeanUniqueValidator<LeanRole>(roleRepository);
+    _logger = logger;
   }
 
   /// <summary>

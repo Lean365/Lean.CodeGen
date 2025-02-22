@@ -11,6 +11,7 @@ using Lean.CodeGen.Application.Services.Security;
 using Microsoft.Extensions.Options;
 using Lean.CodeGen.Common.Enums;
 using Lean.CodeGen.Common.Extensions;
+using Microsoft.Extensions.Logging;
 using static Lean.CodeGen.Common.Extensions.LeanExpressionExtensions;
 
 namespace Lean.CodeGen.Application.Services.Identity;
@@ -25,6 +26,7 @@ public class LeanPostService : LeanBaseService, ILeanPostService
   private readonly ILeanRepository<LeanPostInheritance> _postInheritanceRepository;
   private readonly ILeanRepository<LeanPostPermission> _postPermissionRepository;
   private readonly LeanUniqueValidator<LeanPost> _uniqueValidator;
+  private readonly ILogger<LeanPostService> _logger;
 
   public LeanPostService(
       ILeanRepository<LeanPost> postRepository,
@@ -32,14 +34,16 @@ public class LeanPostService : LeanBaseService, ILeanPostService
       ILeanRepository<LeanPostInheritance> postInheritanceRepository,
       ILeanRepository<LeanPostPermission> postPermissionRepository,
       ILeanSqlSafeService sqlSafeService,
-      IOptions<LeanSecurityOptions> securityOptions)
-      : base(sqlSafeService, securityOptions)
+      IOptions<LeanSecurityOptions> securityOptions,
+      ILogger<LeanPostService> logger)
+      : base(sqlSafeService, securityOptions, logger)
   {
     _postRepository = postRepository;
     _userPostRepository = userPostRepository;
     _postInheritanceRepository = postInheritanceRepository;
     _postPermissionRepository = postPermissionRepository;
     _uniqueValidator = new LeanUniqueValidator<LeanPost>(postRepository);
+    _logger = logger;
   }
 
   /// <summary>

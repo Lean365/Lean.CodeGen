@@ -17,6 +17,7 @@ using Lean.CodeGen.Common.Enums;
 using Lean.CodeGen.Common.Extensions;
 using Lean.CodeGen.Common.Security;
 using Lean.CodeGen.Common.Exceptions;
+using Microsoft.Extensions.Logging;
 
 namespace Lean.CodeGen.Application.Services.Identity;
 
@@ -35,6 +36,7 @@ public class LeanUserService : LeanBaseService, ILeanUserService
   private readonly LeanUniqueValidator<LeanUser> _uniqueValidator;
   private readonly IOptions<LeanSecurityOptions> _securityOptions;
   private readonly ITokenService _tokenService;
+  private readonly ILogger<LeanUserService> _logger;
 
   public LeanUserService(
       ILeanRepository<LeanUser> userRepository,
@@ -46,8 +48,9 @@ public class LeanUserService : LeanBaseService, ILeanUserService
       IHttpContextAccessor httpContextAccessor,
       ILeanSqlSafeService sqlSafeService,
       IOptions<LeanSecurityOptions> securityOptions,
-      ITokenService tokenService)
-      : base(sqlSafeService, securityOptions)
+      ITokenService tokenService,
+      ILogger<LeanUserService> logger)
+      : base(sqlSafeService, securityOptions, logger)
   {
     _userRepository = userRepository;
     _userRoleRepository = userRoleRepository;
@@ -59,6 +62,7 @@ public class LeanUserService : LeanBaseService, ILeanUserService
     _uniqueValidator = new LeanUniqueValidator<LeanUser>(userRepository);
     _securityOptions = securityOptions;
     _tokenService = tokenService;
+    _logger = logger;
   }
 
   /// <summary>
@@ -66,33 +70,45 @@ public class LeanUserService : LeanBaseService, ILeanUserService
   /// </summary>
   public async Task<LeanApiResult<long>> CreateAsync(LeanCreateUserDto input)
   {
-    try
+    return await ExecuteInTransactionAsync(async () =>
     {
-      if (!await ValidateUserInputAsync(input.UserName, input.Email, input.PhoneNumber))
-      {
-        return LeanApiResult<long>.Error("输入参数验证失败");
-      }
+      // 验证用户输入
+      await ValidateUserInputAsync(input);
 
+      // 验证密码强度
       var (isValid, message) = LeanPassword.ValidatePasswordStrength(input.Password);
       if (!isValid)
       {
-        return LeanApiResult<long>.Error(message);
+        throw new LeanValidationException(message);
       }
 
+      // 创建用户实体
       var user = input.Adapt<LeanUser>();
       user.Salt = LeanPassword.GenerateSalt();
       user.Password = LeanPassword.HashPassword(input.Password, user.Salt);
       user.CreateTime = DateTime.Now;
 
-      var id = await _userRepository.CreateAsync(user);
-      await UpdateUserRelationsAsync(id, input.RoleIds, input.DeptIds, input.PostIds, input.PrimaryDeptId, input.PrimaryPostId);
+      await _userRepository.BeginTransactionAsync();
 
-      return LeanApiResult<long>.Ok(id);
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult<long>.Error($"创建用户失败: {ex.Message}");
-    }
+      try
+      {
+        // 创建用户
+        var id = await _userRepository.CreateAsync(user);
+
+        // 创建用户关联
+        await CreateUserRelationsAsync(id, input);
+
+        await _userRepository.CommitAsync();
+
+        LogAudit("CreateUser", $"创建用户: {user.UserName}");
+        return LeanApiResult<long>.Ok(id);
+      }
+      catch
+      {
+        await _userRepository.RollbackAsync();
+        throw;
+      }
+    }, "CreateUser");
   }
 
   /// <summary>
@@ -100,31 +116,38 @@ public class LeanUserService : LeanBaseService, ILeanUserService
   /// </summary>
   public async Task<LeanApiResult> UpdateAsync(LeanUpdateUserDto input)
   {
-    try
+    return await ExecuteInTransactionAsync(async () =>
     {
       var user = await GetUserByIdAsync(input.Id);
       if (user == null)
       {
-        return LeanApiResult.Error($"用户 {input.Id} 不存在");
+        throw new LeanNotFoundException($"用户 {input.Id} 不存在");
       }
 
-      if (!await ValidateUserInputAsync(input.UserName, input.Email, input.PhoneNumber, input.Id))
-      {
-        return LeanApiResult.Error("输入参数验证失败");
-      }
+      // 验证用户输入
+      await ValidateUserInputAsync(input, input.Id);
 
       input.Adapt(user);
       user.UpdateTime = DateTime.Now;
 
-      await _userRepository.UpdateAsync(user);
-      await UpdateUserRelationsAsync(user.Id, input.RoleIds, input.DeptIds, input.PostIds, input.PrimaryDeptId, input.PrimaryPostId);
+      await _userRepository.BeginTransactionAsync();
 
-      return LeanApiResult.Ok();
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult.Error($"更新用户失败: {ex.Message}");
-    }
+      try
+      {
+        await _userRepository.UpdateAsync(user);
+        await UpdateUserRelationsAsync(user.Id, input);
+
+        await _userRepository.CommitAsync();
+
+        LogAudit("UpdateUser", $"更新用户: {user.UserName}");
+        return LeanApiResult.Ok();
+      }
+      catch
+      {
+        await _userRepository.RollbackAsync();
+        throw;
+      }
+    }, "UpdateUser");
   }
 
   /// <summary>
@@ -132,28 +155,37 @@ public class LeanUserService : LeanBaseService, ILeanUserService
   /// </summary>
   public async Task<LeanApiResult> DeleteAsync(long id)
   {
-    try
+    return await ExecuteInTransactionAsync(async () =>
     {
-      var user = await _userRepository.GetByIdAsync(id);
+      var user = await GetUserByIdAsync(id);
       if (user == null)
       {
-        return LeanApiResult.Error($"用户 {id} 不存在");
+        throw new LeanNotFoundException($"用户 {id} 不存在");
       }
 
       if (user.IsBuiltin == LeanBuiltinStatus.Yes)
       {
-        return LeanApiResult.Error($"用户 {user.UserName} 是内置用户，不能删除");
+        throw new LeanBusinessException($"用户 {user.UserName} 是内置用户，不能删除");
       }
 
-      await DeleteUserRelationsAsync(id);
-      await _userRepository.DeleteAsync(u => u.Id == id);
+      await _userRepository.BeginTransactionAsync();
 
-      return LeanApiResult.Ok();
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult.Error($"删除用户失败: {ex.Message}");
-    }
+      try
+      {
+        await DeleteUserRelationsAsync(id);
+        await _userRepository.DeleteAsync(u => u.Id == id);
+
+        await _userRepository.CommitAsync();
+
+        LogAudit("DeleteUser", $"删除用户: {user.UserName}");
+        return LeanApiResult.Ok();
+      }
+      catch
+      {
+        await _userRepository.RollbackAsync();
+        throw;
+      }
+    }, "DeleteUser");
   }
 
   /// <summary>
@@ -185,23 +217,21 @@ public class LeanUserService : LeanBaseService, ILeanUserService
   /// </summary>
   public async Task<LeanApiResult<LeanUserDto>> GetAsync(long id)
   {
-    try
+    return await ExecuteInTransactionAsync(async () =>
     {
+      using var perf = LogPerformance($"GetUser_{id}");
+
       var user = await GetUserByIdAsync(id);
       if (user == null)
       {
-        return LeanApiResult<LeanUserDto>.Error($"用户 {id} 不存在");
+        throw new LeanNotFoundException($"用户 {id} 不存在");
       }
 
       var result = user.Adapt<LeanUserDto>();
       await FillUserRelationsAsync(result);
 
       return LeanApiResult<LeanUserDto>.Ok(result);
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult<LeanUserDto>.Error($"获取用户信息失败: {ex.Message}");
-    }
+    }, "GetUser");
   }
 
   /// <summary>
@@ -209,10 +239,17 @@ public class LeanUserService : LeanBaseService, ILeanUserService
   /// </summary>
   public async Task<LeanApiResult<LeanPageResult<LeanUserDto>>> GetPageAsync(LeanQueryUserDto input)
   {
-    try
+    return await ExecuteInTransactionAsync(async () =>
     {
+      using var perf = LogPerformance("GetUserPage");
+
       var predicate = BuildUserQueryPredicate(input);
-      var (total, items) = await _userRepository.GetPageListAsync(predicate, input.PageSize, input.PageIndex);
+      var (total, items) = await _userRepository.GetPageListAsync(
+        predicate,
+        input.PageSize,
+        input.PageIndex,
+        u => u.CreateTime,
+        false);
 
       var result = new LeanPageResult<LeanUserDto>
       {
@@ -226,11 +263,7 @@ public class LeanUserService : LeanBaseService, ILeanUserService
       }
 
       return LeanApiResult<LeanPageResult<LeanUserDto>>.Ok(result);
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult<LeanPageResult<LeanUserDto>>.Error($"查询用户失败: {ex.Message}");
-    }
+    }, "GetUserPage");
   }
 
   /// <summary>
@@ -791,9 +824,93 @@ public class LeanUserService : LeanBaseService, ILeanUserService
   }
 
   /// <summary>
+  /// 创建用户关联信息
+  /// </summary>
+  private async Task CreateUserRelationsAsync(long userId, LeanCreateUserDto input)
+  {
+    await UpdateUserRolesAsync(userId, input.RoleIds);
+    await UpdateUserDeptsAsync(userId, input.DeptIds, input.PrimaryDeptId);
+    await UpdateUserPostsAsync(userId, input.PostIds, input.PrimaryPostId);
+  }
+
+  /// <summary>
   /// 验证用户输入
   /// </summary>
-  private async Task<bool> ValidateUserInputAsync(string userName, string? email, string? phoneNumber, long? id = null)
+  private async Task<bool> ValidateUserInputAsync(LeanCreateUserDto input)
+  {
+    // 确保非空参数不为 null
+    if (string.IsNullOrEmpty(input.UserName))
+    {
+      return false;
+    }
+
+    // 过滤掉可能为 null 的参数
+    var inputs = new[] { input.UserName }
+        .Concat(input.Email != null ? new[] { input.Email } : Array.Empty<string>())
+        .Concat(input.PhoneNumber != null ? new[] { input.PhoneNumber } : Array.Empty<string>())
+        .ToArray();
+
+    if (!ValidateInput(inputs))
+    {
+      return false;
+    }
+
+    try
+    {
+      await _uniqueValidator.ValidateAsync(
+          (u => u.UserName, input.UserName, null, $"用户名 {input.UserName} 已存在"),
+          (u => u.PhoneNumber, input.PhoneNumber, null, input.PhoneNumber != null ? $"手机号 {input.PhoneNumber} 已存在" : null),
+          (u => u.Email, input.Email, null, input.Email != null ? $"邮箱 {input.Email} 已存在" : null)
+      );
+      return true;
+    }
+    catch
+    {
+      return false;
+    }
+  }
+
+  /// <summary>
+  /// 验证用户输入（更新时）
+  /// </summary>
+  private async Task<bool> ValidateUserInputAsync(LeanUpdateUserDto input, long userId)
+  {
+    // 确保非空参数不为 null
+    if (string.IsNullOrEmpty(input.UserName))
+    {
+      return false;
+    }
+
+    // 过滤掉可能为 null 的参数
+    var inputs = new[] { input.UserName }
+        .Concat(input.Email != null ? new[] { input.Email } : Array.Empty<string>())
+        .Concat(input.PhoneNumber != null ? new[] { input.PhoneNumber } : Array.Empty<string>())
+        .ToArray();
+
+    if (!ValidateInput(inputs))
+    {
+      return false;
+    }
+
+    try
+    {
+      await _uniqueValidator.ValidateAsync(
+          (u => u.UserName, input.UserName, userId, $"用户名 {input.UserName} 已存在"),
+          (u => u.PhoneNumber, input.PhoneNumber, userId, input.PhoneNumber != null ? $"手机号 {input.PhoneNumber} 已存在" : null),
+          (u => u.Email, input.Email, userId, input.Email != null ? $"邮箱 {input.Email} 已存在" : null)
+      );
+      return true;
+    }
+    catch
+    {
+      return false;
+    }
+  }
+
+  /// <summary>
+  /// 验证用户输入（导入时）
+  /// </summary>
+  private async Task<bool> ValidateUserInputAsync(string userName, string? email, string? phoneNumber)
   {
     // 确保非空参数不为 null
     if (string.IsNullOrEmpty(userName))
@@ -815,9 +932,9 @@ public class LeanUserService : LeanBaseService, ILeanUserService
     try
     {
       await _uniqueValidator.ValidateAsync(
-          (u => u.UserName, userName, id, $"用户名 {userName} 已存在"),
-          (u => u.PhoneNumber, phoneNumber, id, phoneNumber != null ? $"手机号 {phoneNumber} 已存在" : null),
-          (u => u.Email, email, id, email != null ? $"邮箱 {email} 已存在" : null)
+          (u => u.UserName, userName, null, $"用户名 {userName} 已存在"),
+          (u => u.PhoneNumber, phoneNumber, null, phoneNumber != null ? $"手机号 {phoneNumber} 已存在" : null),
+          (u => u.Email, email, null, email != null ? $"邮箱 {email} 已存在" : null)
       );
       return true;
     }
@@ -830,11 +947,11 @@ public class LeanUserService : LeanBaseService, ILeanUserService
   /// <summary>
   /// 更新用户关联信息
   /// </summary>
-  private async Task UpdateUserRelationsAsync(long userId, List<long> roleIds, List<long> deptIds, List<long> postIds, long primaryDeptId, long primaryPostId)
+  private async Task UpdateUserRelationsAsync(long userId, LeanUpdateUserDto input)
   {
-    await UpdateUserRolesAsync(userId, roleIds);
-    await UpdateUserDeptsAsync(userId, deptIds, primaryDeptId);
-    await UpdateUserPostsAsync(userId, postIds, primaryPostId);
+    await UpdateUserRolesAsync(userId, input.RoleIds);
+    await UpdateUserDeptsAsync(userId, input.DeptIds, input.PrimaryDeptId);
+    await UpdateUserPostsAsync(userId, input.PostIds, input.PrimaryPostId);
   }
 
   /// <summary>

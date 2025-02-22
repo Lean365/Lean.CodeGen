@@ -571,6 +571,11 @@ public class LeanUserDto
   /// 最后登录信息
   /// </summary>
   public LeanUserLoginInfo? LastLoginInfo { get; set; }
+
+  /// <summary>
+  /// 创建时间
+  /// </summary>
+  public DateTime CreateTime { get; set; }
 }
 
 /// <summary>

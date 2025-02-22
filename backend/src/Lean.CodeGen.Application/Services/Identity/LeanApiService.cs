@@ -11,6 +11,7 @@ using Lean.CodeGen.Application.Services.Security;
 using Microsoft.Extensions.Options;
 using Lean.CodeGen.Common.Enums;
 using Lean.CodeGen.Common.Extensions;
+using Microsoft.Extensions.Logging;
 
 namespace Lean.CodeGen.Application.Services.Identity;
 
@@ -25,6 +26,7 @@ public class LeanApiService : LeanBaseService, ILeanApiService
   private readonly ILeanRepository<LeanApiRateLimit> _apiRateLimitRepository;
   private readonly ILeanRepository<LeanApiAccessLog> _apiAccessLogRepository;
   private readonly LeanUniqueValidator<LeanApi> _uniqueValidator;
+  private readonly ILogger<LeanApiService> _logger;
 
   public LeanApiService(
       ILeanRepository<LeanApi> apiRepository,
@@ -33,8 +35,9 @@ public class LeanApiService : LeanBaseService, ILeanApiService
       ILeanRepository<LeanApiRateLimit> apiRateLimitRepository,
       ILeanRepository<LeanApiAccessLog> apiAccessLogRepository,
       ILeanSqlSafeService sqlSafeService,
-      IOptions<LeanSecurityOptions> securityOptions)
-      : base(sqlSafeService, securityOptions)
+      IOptions<LeanSecurityOptions> securityOptions,
+      ILogger<LeanApiService> logger)
+      : base(sqlSafeService, securityOptions, logger)
   {
     _apiRepository = apiRepository;
     _userApiRepository = userApiRepository;
@@ -42,6 +45,7 @@ public class LeanApiService : LeanBaseService, ILeanApiService
     _apiRateLimitRepository = apiRateLimitRepository;
     _apiAccessLogRepository = apiAccessLogRepository;
     _uniqueValidator = new LeanUniqueValidator<LeanApi>(_apiRepository);
+    _logger = logger;
   }
 
   /// <summary>

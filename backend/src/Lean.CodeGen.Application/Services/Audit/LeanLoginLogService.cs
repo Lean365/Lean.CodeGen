@@ -23,6 +23,7 @@ using Lean.CodeGen.Application.Services.Base;
 using Lean.CodeGen.Common.Options;
 using Lean.CodeGen.Application.Services.Security;
 using Lean.CodeGen.Common.Extensions;
+using Microsoft.Extensions.Logging;
 
 namespace Lean.CodeGen.Application.Services.Audit
 {
@@ -32,6 +33,7 @@ namespace Lean.CodeGen.Application.Services.Audit
   public class LeanLoginLogService : LeanBaseService, ILeanLoginLogService
   {
     private readonly ILeanRepository<LeanLoginLog> _loginLogRepository;
+    private readonly ILogger<LeanLoginLogService> _logger;
 
     /// <summary>
     /// 构造函数
@@ -39,10 +41,12 @@ namespace Lean.CodeGen.Application.Services.Audit
     public LeanLoginLogService(
         ILeanRepository<LeanLoginLog> loginLogRepository,
         ILeanSqlSafeService sqlSafeService,
-        IOptions<LeanSecurityOptions> securityOptions)
-        : base(sqlSafeService, securityOptions)
+        IOptions<LeanSecurityOptions> securityOptions,
+        ILogger<LeanLoginLogService> logger)
+        : base(sqlSafeService, securityOptions, logger)
     {
       _loginLogRepository = loginLogRepository;
+      _logger = logger;
     }
 
     /// <summary>

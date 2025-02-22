@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Lean.CodeGen.Common.Models;
+using Lean.CodeGen.Domain.Entities;
 
 namespace Lean.CodeGen.Domain.Interfaces.Repositories;
 
@@ -22,6 +23,21 @@ namespace Lean.CodeGen.Domain.Interfaces.Repositories;
 /// <typeparam name="TKey">主键类型</typeparam>
 public interface ILeanRepository<TEntity, TKey> where TEntity : class
 {
+  /// <summary>
+  /// 开始事务
+  /// </summary>
+  Task BeginTransactionAsync();
+
+  /// <summary>
+  /// 提交事务
+  /// </summary>
+  Task CommitAsync();
+
+  /// <summary>
+  /// 回滚事务
+  /// </summary>
+  Task RollbackAsync();
+
   /// <summary>
   /// 创建实体
   /// </summary>
@@ -73,12 +89,17 @@ public interface ILeanRepository<TEntity, TKey> where TEntity : class
   Task<List<TEntity>> GetListAsync(Expression<Func<TEntity, bool>> predicate);
 
   /// <summary>
-  /// 根据条件获取分页列表
+  /// 分页查询
   /// </summary>
-  Task<(long Total, List<TEntity> Items)> GetPageListAsync(Expression<Func<TEntity, bool>> predicate, int pageSize, int pageIndex);
+  Task<(long Total, List<TEntity> Items)> GetPageListAsync(
+      Expression<Func<TEntity, bool>> predicate,
+      int pageSize,
+      int pageIndex,
+      Expression<Func<TEntity, object>>? orderByExpression = null,
+      bool isAsc = true);
 
   /// <summary>
-  /// 根据条件判断是否存在
+  /// 检查是否存在
   /// </summary>
   Task<bool> AnyAsync(Expression<Func<TEntity, bool>> predicate);
 
@@ -86,12 +107,17 @@ public interface ILeanRepository<TEntity, TKey> where TEntity : class
   /// 根据条件获取数量
   /// </summary>
   Task<long> CountAsync(Expression<Func<TEntity, bool>> predicate);
+
+  /// <summary>
+  /// 批量查询
+  /// </summary>
+  Task<List<TEntity>> GetBatchAsync(Expression<Func<TEntity, bool>> predicate, int batchSize = 1000);
 }
 
 /// <summary>
 /// 通用仓储接口（使用 long 作为主键类型）
 /// </summary>
 /// <typeparam name="TEntity">实体类型</typeparam>
-public interface ILeanRepository<TEntity> : ILeanRepository<TEntity, long> where TEntity : class
+public interface ILeanRepository<TEntity> : ILeanRepository<TEntity, long> where TEntity : LeanBaseEntity
 {
 }

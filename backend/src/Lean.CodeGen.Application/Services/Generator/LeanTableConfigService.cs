@@ -15,6 +15,8 @@ using Lean.CodeGen.Application.Services.Base;
 using Lean.CodeGen.Common.Options;
 using Lean.CodeGen.Application.Services.Security;
 using Lean.CodeGen.Common.Extensions;
+using Microsoft.Extensions.Logging;
+using Lean.CodeGen.Domain.Validators;
 
 namespace Lean.CodeGen.Application.Services.Generator
 {
@@ -23,24 +25,29 @@ namespace Lean.CodeGen.Application.Services.Generator
   /// </summary>
   public class LeanTableConfigService : LeanBaseService, ILeanTableConfigService
   {
-    private readonly ILeanRepository<LeanDbTable> _tableRepository;
-    private readonly ILeanRepository<LeanGenConfig> _configRepository;
-    private readonly ILeanRepository<LeanTableConfig> _tableConfigRepository;
+    private readonly ILogger<LeanTableConfigService> _logger;
+    private readonly ILeanRepository<LeanTableConfig> _repository;
+    private readonly ILeanRepository<LeanDbTable> _dbTableRepository;
+    private readonly ILeanRepository<LeanDataSource> _dataSourceRepository;
+    private readonly LeanUniqueValidator<LeanTableConfig> _uniqueValidator;
 
     /// <summary>
     /// 构造函数
     /// </summary>
     public LeanTableConfigService(
-        ILeanRepository<LeanDbTable> tableRepository,
-        ILeanRepository<LeanGenConfig> configRepository,
-        ILeanRepository<LeanTableConfig> tableConfigRepository,
+        ILeanRepository<LeanTableConfig> repository,
+        ILeanRepository<LeanDbTable> dbTableRepository,
+        ILeanRepository<LeanDataSource> dataSourceRepository,
         ILeanSqlSafeService sqlSafeService,
-        IOptions<LeanSecurityOptions> securityOptions)
-        : base(sqlSafeService, securityOptions)
+        IOptions<LeanSecurityOptions> securityOptions,
+        ILogger<LeanTableConfigService> logger)
+        : base(sqlSafeService, securityOptions, logger)
     {
-      _tableRepository = tableRepository;
-      _configRepository = configRepository;
-      _tableConfigRepository = tableConfigRepository;
+      _logger = logger;
+      _repository = repository;
+      _dbTableRepository = dbTableRepository;
+      _dataSourceRepository = dataSourceRepository;
+      _uniqueValidator = new LeanUniqueValidator<LeanTableConfig>(_repository);
     }
 
     /// <summary>
@@ -49,7 +56,7 @@ namespace Lean.CodeGen.Application.Services.Generator
     public async Task<LeanPageResult<LeanTableConfigDto>> GetPageListAsync(LeanTableConfigQueryDto queryDto)
     {
       var predicate = BuildQueryPredicate(queryDto);
-      var (total, items) = await _tableConfigRepository.GetPageListAsync(predicate, queryDto.PageSize, queryDto.PageIndex);
+      var (total, items) = await _repository.GetPageListAsync(predicate, queryDto.PageSize, queryDto.PageIndex);
       var list = items.Select(t => t.Adapt<LeanTableConfigDto>()).ToList();
 
       await FillTableConfigRelationsAsync(list);
@@ -66,7 +73,7 @@ namespace Lean.CodeGen.Application.Services.Generator
     /// </summary>
     public async Task<LeanTableConfigDto> GetAsync(long id)
     {
-      var tableConfig = await _tableConfigRepository.FirstOrDefaultAsync(t => t.Id == id);
+      var tableConfig = await _repository.FirstOrDefaultAsync(t => t.Id == id);
       if (tableConfig == null)
       {
         throw new Exception($"表配置关联 {id} 不存在");
@@ -84,21 +91,21 @@ namespace Lean.CodeGen.Application.Services.Generator
     public async Task<LeanTableConfigDto> CreateAsync(LeanCreateTableConfigDto createDto)
     {
       // 查找表
-      var table = await _tableRepository.FirstOrDefaultAsync(t => t.Id == createDto.TableId);
+      var table = await _dbTableRepository.FirstOrDefaultAsync(t => t.Id == createDto.TableId);
       if (table == null)
       {
         throw new Exception($"数据库表 {createDto.TableId} 不存在");
       }
 
       // 查找配置
-      var config = await _configRepository.FirstOrDefaultAsync(t => t.Id == createDto.ConfigId);
+      var config = await _dataSourceRepository.FirstOrDefaultAsync(t => t.Id == createDto.ConfigId);
       if (config == null)
       {
         throw new Exception($"代码生成配置 {createDto.ConfigId} 不存在");
       }
 
       // 检查是否已存在关联
-      var exists = await _tableConfigRepository.AnyAsync(t => t.TableId == createDto.TableId && t.ConfigId == createDto.ConfigId);
+      var exists = await _repository.AnyAsync(t => t.TableId == createDto.TableId && t.ConfigId == createDto.ConfigId);
       if (exists)
       {
         throw new Exception($"表 {createDto.TableId} 与配置 {createDto.ConfigId} 的关联已存在");
@@ -107,7 +114,7 @@ namespace Lean.CodeGen.Application.Services.Generator
       var entity = createDto.Adapt<LeanTableConfig>();
       entity.CreateTime = DateTime.Now;
 
-      await _tableConfigRepository.CreateAsync(entity);
+      await _repository.CreateAsync(entity);
 
       var result = entity.Adapt<LeanTableConfigDto>();
       await FillTableConfigRelationsAsync(new List<LeanTableConfigDto> { result });
@@ -120,35 +127,35 @@ namespace Lean.CodeGen.Application.Services.Generator
     /// </summary>
     public async Task<LeanTableConfigDto> UpdateAsync(long id, LeanUpdateTableConfigDto updateDto)
     {
-      var entity = await _tableConfigRepository.FirstOrDefaultAsync(t => t.Id == id);
+      var entity = await _repository.FirstOrDefaultAsync(t => t.Id == id);
       if (entity == null)
       {
         throw new Exception($"表配置关联 {id} 不存在");
       }
 
       // 查找表
-      var table = await _tableRepository.FirstOrDefaultAsync(t => t.Id == updateDto.TableId);
+      var table = await _dbTableRepository.FirstOrDefaultAsync(t => t.Id == updateDto.TableId);
       if (table == null)
       {
         throw new Exception($"数据库表 {updateDto.TableId} 不存在");
       }
 
       // 查找配置
-      var config = await _configRepository.FirstOrDefaultAsync(t => t.Id == updateDto.ConfigId);
+      var config = await _dataSourceRepository.FirstOrDefaultAsync(t => t.Id == updateDto.ConfigId);
       if (config == null)
       {
         throw new Exception($"代码生成配置 {updateDto.ConfigId} 不存在");
       }
 
       // 检查是否已存在关联
-      var exists = await _tableConfigRepository.AnyAsync(t => t.Id != id && t.TableId == updateDto.TableId && t.ConfigId == updateDto.ConfigId);
+      var exists = await _repository.AnyAsync(t => t.Id != id && t.TableId == updateDto.TableId && t.ConfigId == updateDto.ConfigId);
       if (exists)
       {
         throw new Exception($"表 {updateDto.TableId} 与配置 {updateDto.ConfigId} 的关联已存在");
       }
 
       updateDto.Adapt(entity);
-      await _tableConfigRepository.UpdateAsync(entity);
+      await _repository.UpdateAsync(entity);
 
       var result = entity.Adapt<LeanTableConfigDto>();
       await FillTableConfigRelationsAsync(new List<LeanTableConfigDto> { result });
@@ -161,13 +168,13 @@ namespace Lean.CodeGen.Application.Services.Generator
     /// </summary>
     public async Task<bool> DeleteAsync(long id)
     {
-      var tableConfig = await _tableConfigRepository.FirstOrDefaultAsync(t => t.Id == id);
+      var tableConfig = await _repository.FirstOrDefaultAsync(t => t.Id == id);
       if (tableConfig == null)
       {
         throw new Exception($"表配置关联 {id} 不存在");
       }
 
-      return await _tableConfigRepository.DeleteAsync(tableConfig);
+      return await _repository.DeleteAsync(tableConfig);
     }
 
     /// <summary>
@@ -176,7 +183,7 @@ namespace Lean.CodeGen.Application.Services.Generator
     public async Task<LeanFileResult> ExportAsync(LeanTableConfigQueryDto queryDto)
     {
       var predicate = BuildQueryPredicate(queryDto);
-      var items = await _tableConfigRepository.GetListAsync(predicate);
+      var items = await _repository.GetListAsync(predicate);
       var list = items.Select(t => t.Adapt<LeanTableConfigExportDto>()).ToList();
 
       var excelBytes = LeanExcelHelper.Export(list);
@@ -301,10 +308,10 @@ namespace Lean.CodeGen.Application.Services.Generator
       }
 
       var tableIds = tableConfigs.Select(t => t.TableId).Distinct().ToList();
-      var tables = await _tableRepository.GetListAsync(t => tableIds.Contains(t.Id));
+      var tables = await _dbTableRepository.GetListAsync(t => tableIds.Contains(t.Id));
 
       var configIds = tableConfigs.Select(t => t.ConfigId).Distinct().ToList();
-      var configs = await _configRepository.GetListAsync(t => configIds.Contains(t.Id));
+      var configs = await _dataSourceRepository.GetListAsync(t => configIds.Contains(t.Id));
 
       foreach (var tableConfig in tableConfigs)
       {

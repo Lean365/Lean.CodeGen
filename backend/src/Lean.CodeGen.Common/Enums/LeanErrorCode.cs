@@ -8,6 +8,12 @@ namespace Lean.CodeGen.Common.Enums;
 public enum LeanErrorCode
 {
   /// <summary>
+  /// 未知错误
+  /// </summary>
+  [Description("未知错误")]
+  UnknownError = -1,
+
+  /// <summary>
   /// 成功
   /// </summary>
   [Description("成功")]
@@ -95,5 +101,11 @@ public enum LeanErrorCode
   /// 操作失败
   /// </summary>
   [Description("操作失败")]
-  OperationFailed = 607
+  OperationFailed = 607,
+
+  /// <summary>
+  /// 并发错误
+  /// </summary>
+  [Description("并发错误")]
+  ConcurrencyError = 608
 }
