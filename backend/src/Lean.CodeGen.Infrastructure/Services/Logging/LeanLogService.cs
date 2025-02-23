@@ -32,7 +32,7 @@ public class LeanLogService : ILeanLogService
   private const string EMAIL = "Lean365@outlook.com";
   private const string WEBSITE = "https://gitee.com/lean365";
   private const string GITHUB = "https://github.com/Lean365/Lean.CodeGen";
-  private const string VERSION = "1.0.0";
+  private const string VERSION = "0.1.1";
 
   public LeanLogService()
   {
