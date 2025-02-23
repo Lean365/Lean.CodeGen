@@ -1,3 +1,5 @@
+using Lean.CodeGen.Common.Enums;
+
 namespace Lean.CodeGen.Application.Dtos.Workflow;
 
 /// <summary>
@@ -13,17 +15,12 @@ public class LeanWorkflowActivityInstanceDto
   /// <summary>
   /// 工作流实例ID
   /// </summary>
-  public long InstanceId { get; set; }
+  public long WorkflowInstanceId { get; set; }
 
   /// <summary>
-  /// 活动ID
+  /// 工作流实例
   /// </summary>
-  public string ActivityId { get; set; } = string.Empty;
-
-  /// <summary>
-  /// 活动名称
-  /// </summary>
-  public string ActivityName { get; set; } = string.Empty;
+  public LeanWorkflowInstanceDto Instance { get; set; } = null!;
 
   /// <summary>
   /// 活动类型
@@ -31,9 +28,14 @@ public class LeanWorkflowActivityInstanceDto
   public string ActivityType { get; set; } = string.Empty;
 
   /// <summary>
+  /// 活动名称
+  /// </summary>
+  public string ActivityName { get; set; } = string.Empty;
+
+  /// <summary>
   /// 活动状态
   /// </summary>
-  public int ActivityStatus { get; set; }
+  public LeanWorkflowActivityStatus ActivityStatus { get; set; }
 
   /// <summary>
   /// 开始时间
@@ -46,14 +48,24 @@ public class LeanWorkflowActivityInstanceDto
   public DateTime? EndTime { get; set; }
 
   /// <summary>
-  /// 输入数据JSON
+  /// 输入参数JSON
   /// </summary>
-  public string? InputData { get; set; }
+  public string? InputParameters { get; set; }
 
   /// <summary>
-  /// 输出数据JSON
+  /// 输出参数JSON
   /// </summary>
-  public string? OutputData { get; set; }
+  public string? OutputParameters { get; set; }
+
+  /// <summary>
+  /// 属性值JSON
+  /// </summary>
+  public string? PropertyValues { get; set; }
+
+  /// <summary>
+  /// 结果值JSON
+  /// </summary>
+  public string? OutcomeValues { get; set; }
 
   /// <summary>
   /// 错误信息JSON
@@ -64,6 +76,21 @@ public class LeanWorkflowActivityInstanceDto
   /// 自定义属性JSON
   /// </summary>
   public string? CustomAttributes { get; set; }
+
+  /// <summary>
+  /// 补偿列表
+  /// </summary>
+  public List<LeanWorkflowCompensationDto> Compensations { get; set; } = new();
+
+  /// <summary>
+  /// 输出列表
+  /// </summary>
+  public List<LeanWorkflowOutputDto> Outputs { get; set; } = new();
+
+  /// <summary>
+  /// 结果列表
+  /// </summary>
+  public List<LeanWorkflowOutcomeDto> Outcomes { get; set; } = new();
 
   /// <summary>
   /// 创建时间

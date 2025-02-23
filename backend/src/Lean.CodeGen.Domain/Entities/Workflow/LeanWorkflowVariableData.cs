@@ -88,9 +88,5 @@ public class LeanWorkflowVariableData : LeanBaseEntity
   [SugarColumn(ColumnName = "version", ColumnDescription = "版本号", IsNullable = false, DefaultValue = "1")]
   public int Version { get; set; } = 1;
 
-  /// <summary>
-  /// 备注
-  /// </summary>
-  [SugarColumn(ColumnName = "remark", ColumnDescription = "备注", Length = 500, IsNullable = true)]
-  public string? Remark { get; set; }
+
 }

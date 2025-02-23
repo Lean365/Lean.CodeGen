@@ -43,17 +43,17 @@ public class LeanWorkflowVariableDto
   /// <summary>
   /// 是否必填
   /// </summary>
-  public bool IsRequired { get; set; }
+  public int IsRequired { get; set; }
 
   /// <summary>
   /// 是否只读
   /// </summary>
-  public bool IsReadonly { get; set; }
+  public int IsReadonly { get; set; }
 
   /// <summary>
   /// 是否启用
   /// </summary>
-  public bool Status { get; set; }
+  public int Status { get; set; }
 
   /// <summary>
   /// 变量属性JSON

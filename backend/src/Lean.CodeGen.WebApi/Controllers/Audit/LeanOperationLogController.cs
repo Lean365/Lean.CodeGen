@@ -10,6 +10,7 @@ namespace Lean.CodeGen.WebApi.Controllers.Audit
   /// </summary>
   [Route("api/operation/logs")]
   [ApiController]
+  [ApiExplorerSettings(GroupName = "audit")]
   public class LeanOperationLogController : LeanBaseController
   {
     private readonly ILeanOperationLogService _operationLogService;

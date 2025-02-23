@@ -39,14 +39,14 @@ public class LeanDataSeeder
       foreach (var seed in seeds)
       {
         await seed.SeedAsync(_dbContext);
-        _logger.Info($"执行种子数据: {seed.GetType().Name}");
+        _logger.Info($"\u001b[33m种子数据 >>\u001b[0m \u001b[36m执行:\u001b[0m {seed.GetType().Name} \u001b[90m|\u001b[0m \u001b[32m顺序: {seed.Order}\u001b[0m");
       }
 
-      _logger.Info("所有种子数据执行完成");
+      _logger.Info($"\u001b[33m种子数据 >>\u001b[0m \u001b[32m执行完成\u001b[0m");
     }
     catch (Exception ex)
     {
-      _logger.Error(ex, "执行种子数据失败");
+      _logger.Error($"\u001b[31m种子数据执行失败 >>\u001b[0m {ex.Message}");
       throw;
     }
   }

@@ -75,11 +75,6 @@ public class LeanWorkflowFormDefinition : LeanBaseEntity
   [SugarColumn(ColumnName = "status", ColumnDescription = "是否启用", IsNullable = false, DefaultValue = "1")]
   public int Status { get; set; } = 1;
 
-  /// <summary>
-  /// 备注
-  /// </summary>
-  [SugarColumn(ColumnName = "remark", ColumnDescription = "备注", Length = 500, IsNullable = true)]
-  public string? Remark { get; set; }
 
   /// <summary>
   /// 排序号

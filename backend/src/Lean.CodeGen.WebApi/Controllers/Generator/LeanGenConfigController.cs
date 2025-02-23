@@ -28,45 +28,50 @@ namespace Lean.CodeGen.WebApi.Controllers.Generator
     /// 获取代码生成配置列表（分页）
     /// </summary>
     [HttpGet]
-    public Task<LeanPageResult<LeanGenConfigDto>> GetPageListAsync([FromQuery] LeanGenConfigQueryDto queryDto)
+    public async Task<LeanApiResult<LeanPageResult<LeanGenConfigDto>>> GetPageListAsync([FromQuery] LeanGenConfigQueryDto queryDto)
     {
-      return _genConfigService.GetPageListAsync(queryDto);
+      var result = await _genConfigService.GetPageListAsync(queryDto);
+      return LeanApiResult<LeanPageResult<LeanGenConfigDto>>.Ok(result);
     }
 
     /// <summary>
     /// 获取代码生成配置详情
     /// </summary>
     [HttpGet("{id}")]
-    public Task<LeanGenConfigDto> GetAsync(long id)
+    public async Task<LeanApiResult<LeanGenConfigDto>> GetAsync(long id)
     {
-      return _genConfigService.GetAsync(id);
+      var result = await _genConfigService.GetAsync(id);
+      return LeanApiResult<LeanGenConfigDto>.Ok(result);
     }
 
     /// <summary>
     /// 创建代码生成配置
     /// </summary>
     [HttpPost]
-    public Task<LeanGenConfigDto> CreateAsync([FromBody] LeanCreateGenConfigDto createDto)
+    public async Task<LeanApiResult<LeanGenConfigDto>> CreateAsync([FromBody] LeanCreateGenConfigDto createDto)
     {
-      return _genConfigService.CreateAsync(createDto);
+      var result = await _genConfigService.CreateAsync(createDto);
+      return LeanApiResult<LeanGenConfigDto>.Ok(result);
     }
 
     /// <summary>
     /// 更新代码生成配置
     /// </summary>
     [HttpPut("{id}")]
-    public Task<LeanGenConfigDto> UpdateAsync(long id, [FromBody] LeanUpdateGenConfigDto updateDto)
+    public async Task<LeanApiResult<LeanGenConfigDto>> UpdateAsync(long id, [FromBody] LeanUpdateGenConfigDto updateDto)
     {
-      return _genConfigService.UpdateAsync(id, updateDto);
+      var result = await _genConfigService.UpdateAsync(id, updateDto);
+      return LeanApiResult<LeanGenConfigDto>.Ok(result);
     }
 
     /// <summary>
     /// 删除代码生成配置
     /// </summary>
     [HttpDelete("{id}")]
-    public Task<bool> DeleteAsync(long id)
+    public async Task<LeanApiResult<bool>> DeleteAsync(long id)
     {
-      return _genConfigService.DeleteAsync(id);
+      var result = await _genConfigService.DeleteAsync(id);
+      return LeanApiResult<bool>.Ok(result);
     }
 
     /// <summary>

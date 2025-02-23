@@ -6,7 +6,7 @@ namespace Lean.CodeGen.Domain.Entities.Admin;
 /// <summary>
 /// 语言实体
 /// </summary>
-[SugarTable("lean_language", "语言表")]
+[SugarTable("lean_admin_language", "语言表")]
 [SugarIndex("uk_lang_code", nameof(LangCode), OrderByType.Asc, true)]
 public class LeanLanguage : LeanBaseEntity
 {

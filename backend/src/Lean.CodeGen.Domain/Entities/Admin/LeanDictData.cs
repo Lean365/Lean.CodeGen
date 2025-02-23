@@ -15,7 +15,7 @@ namespace Lean.CodeGen.Domain.Entities.Admin;
 /// <summary>
 /// 字典数据实体
 /// </summary>
-[SugarTable("lean_dict_data", "字典数据表")]
+[SugarTable("lean_admin_dict_data", "字典数据表")]
 [SugarIndex("idx_type_value", nameof(TypeId), OrderByType.Asc, true)]
 public class LeanDictData : LeanBaseEntity
 {

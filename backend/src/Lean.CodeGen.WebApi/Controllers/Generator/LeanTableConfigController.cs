@@ -12,6 +12,7 @@ namespace Lean.CodeGen.WebApi.Controllers.Generator
   /// </summary>
   [Route("api/generator/table-configs")]
   [ApiController]
+  [ApiExplorerSettings(GroupName = "generator")]
   public class LeanTableConfigController : LeanBaseController
   {
     private readonly ILeanTableConfigService _tableConfigService;
@@ -28,72 +29,80 @@ namespace Lean.CodeGen.WebApi.Controllers.Generator
     /// 获取表配置关联列表（分页）
     /// </summary>
     [HttpGet]
-    public Task<LeanPageResult<LeanTableConfigDto>> GetPageListAsync([FromQuery] LeanTableConfigQueryDto queryDto)
+    public async Task<LeanApiResult<LeanPageResult<LeanTableConfigDto>>> GetPageListAsync([FromQuery] LeanTableConfigQueryDto queryDto)
     {
-      return _tableConfigService.GetPageListAsync(queryDto);
+      var result = await _tableConfigService.GetPageListAsync(queryDto);
+      return LeanApiResult<LeanPageResult<LeanTableConfigDto>>.Ok(result);
     }
 
     /// <summary>
     /// 获取表配置关联详情
     /// </summary>
     [HttpGet("{id}")]
-    public Task<LeanTableConfigDto> GetAsync(long id)
+    public async Task<LeanApiResult<LeanTableConfigDto>> GetAsync(long id)
     {
-      return _tableConfigService.GetAsync(id);
+      var result = await _tableConfigService.GetAsync(id);
+      return LeanApiResult<LeanTableConfigDto>.Ok(result);
     }
 
     /// <summary>
     /// 创建表配置关联
     /// </summary>
     [HttpPost]
-    public Task<LeanTableConfigDto> CreateAsync([FromBody] LeanCreateTableConfigDto createDto)
+    public async Task<LeanApiResult<LeanTableConfigDto>> CreateAsync([FromBody] LeanCreateTableConfigDto createDto)
     {
-      return _tableConfigService.CreateAsync(createDto);
+      var result = await _tableConfigService.CreateAsync(createDto);
+      return LeanApiResult<LeanTableConfigDto>.Ok(result);
     }
 
     /// <summary>
     /// 更新表配置关联
     /// </summary>
     [HttpPut("{id}")]
-    public Task<LeanTableConfigDto> UpdateAsync(long id, [FromBody] LeanUpdateTableConfigDto updateDto)
+    public async Task<LeanApiResult<LeanTableConfigDto>> UpdateAsync(long id, [FromBody] LeanUpdateTableConfigDto updateDto)
     {
-      return _tableConfigService.UpdateAsync(id, updateDto);
+      var result = await _tableConfigService.UpdateAsync(id, updateDto);
+      return LeanApiResult<LeanTableConfigDto>.Ok(result);
     }
 
     /// <summary>
     /// 删除表配置关联
     /// </summary>
     [HttpDelete("{id}")]
-    public Task<bool> DeleteAsync(long id)
+    public async Task<LeanApiResult> DeleteAsync(long id)
     {
-      return _tableConfigService.DeleteAsync(id);
+      var result = await _tableConfigService.DeleteAsync(id);
+      return result ? LeanApiResult.Ok() : LeanApiResult.Error("删除失败");
     }
 
     /// <summary>
     /// 导出表配置关联
     /// </summary>
     [HttpGet("export")]
-    public Task<LeanFileResult> ExportAsync([FromQuery] LeanTableConfigQueryDto queryDto)
+    public async Task<LeanApiResult<LeanFileResult>> ExportAsync([FromQuery] LeanTableConfigQueryDto queryDto)
     {
-      return _tableConfigService.ExportAsync(queryDto);
+      var result = await _tableConfigService.ExportAsync(queryDto);
+      return LeanApiResult<LeanFileResult>.Ok(result);
     }
 
     /// <summary>
     /// 导入表配置关联
     /// </summary>
     [HttpPost("import")]
-    public Task<LeanExcelImportResult<LeanTableConfigImportDto>> ImportAsync([FromForm] LeanFileInfo file)
+    public async Task<LeanApiResult<LeanExcelImportResult<LeanTableConfigImportDto>>> ImportAsync([FromForm] LeanFileInfo file)
     {
-      return _tableConfigService.ImportAsync(file);
+      var result = await _tableConfigService.ImportAsync(file);
+      return LeanApiResult<LeanExcelImportResult<LeanTableConfigImportDto>>.Ok(result);
     }
 
     /// <summary>
     /// 下载导入模板
     /// </summary>
     [HttpGet("template")]
-    public Task<LeanFileResult> DownloadTemplateAsync()
+    public async Task<LeanApiResult<LeanFileResult>> DownloadTemplateAsync()
     {
-      return _tableConfigService.DownloadTemplateAsync();
+      var result = await _tableConfigService.DownloadTemplateAsync();
+      return LeanApiResult<LeanFileResult>.Ok(result);
     }
   }
 }

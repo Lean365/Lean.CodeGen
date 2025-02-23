@@ -1,7 +1,13 @@
 using Lean.CodeGen.Application.Dtos.Admin;
 using Lean.CodeGen.Application.Services.Admin;
 using Lean.CodeGen.Common.Models;
+using Lean.CodeGen.Common.Excel;
 using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 
 namespace Lean.CodeGen.WebApi.Controllers.Admin;
 
@@ -65,7 +71,7 @@ public class LeanConfigController : LeanBaseController
   /// <summary>
   /// 分页查询系统配置
   /// </summary>
-  [HttpGet("list")]
+  [HttpGet("page")]
   public async Task<IActionResult> GetPagedListAsync([FromQuery] LeanQueryConfigDto input)
   {
     var result = await _service.GetPagedListAsync(input);
@@ -79,7 +85,7 @@ public class LeanConfigController : LeanBaseController
   public async Task<IActionResult> ExportAsync([FromQuery] LeanQueryConfigDto input)
   {
     var result = await _service.ExportAsync(input);
-    return FileResult(result, $"系统配置_{DateTime.Now:yyyyMMddHHmmss}.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    return ApiResult(result);
   }
 
   /// <summary>
@@ -125,6 +131,6 @@ public class LeanConfigController : LeanBaseController
   public async Task<IActionResult> GetImportTemplateAsync()
   {
     var result = await _service.GetImportTemplateAsync();
-    return FileResult(result, "系统配置导入模板.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    return ApiResult(result);
   }
 }

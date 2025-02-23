@@ -2,14 +2,16 @@ using Lean.CodeGen.Application.Dtos.Identity;
 using Lean.CodeGen.Application.Services.Identity;
 using Lean.CodeGen.Common.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ApiExplorer;
 
 namespace Lean.CodeGen.WebApi.Controllers.Identity;
 
 /// <summary>
 /// 用户管理
 /// </summary>
+[Route("api/users")]
 [ApiController]
-[Route("api/identity/[controller]")]
+[ApiExplorerSettings(GroupName = "identity")]
 public class LeanUserController : LeanBaseController
 {
   private readonly ILeanUserService _userService;
@@ -132,7 +134,7 @@ public class LeanUserController : LeanBaseController
   public async Task<IActionResult> ExportAsync([FromQuery] LeanExportUserDto input)
   {
     var result = await _userService.ExportAsync(input);
-    return FileResult(result, $"users.{input.FileFormat}");
+    return ApiResult(result);
   }
 
   /// <summary>
@@ -152,34 +154,6 @@ public class LeanUserController : LeanBaseController
     };
 
     var result = await _userService.ExportAsync(exportInput);
-    if (!result.Success || result.Data == null)
-    {
-      return BadRequest(result.Message);
-    }
-    return File(result.Data, "application/octet-stream", $"users.{input.FileFormat}", true);
-  }
-
-  /// <summary>
-  /// 处理API结果
-  /// </summary>
-  private new IActionResult ApiResult<T>(LeanApiResult<T> result)
-  {
-    if (!result.Success)
-    {
-      return BadRequest(result.Message);
-    }
-    return Ok(result.Data);
-  }
-
-  /// <summary>
-  /// 处理API结果（无数据）
-  /// </summary>
-  private new IActionResult ApiResult(LeanApiResult result)
-  {
-    if (!result.Success)
-    {
-      return BadRequest(result.Message);
-    }
-    return Ok();
+    return ApiResult(result);
   }
 }

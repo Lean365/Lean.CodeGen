@@ -79,8 +79,8 @@ public class LeanDictTypeController : LeanBaseController
   /// <summary>
   /// 分页查询字典类型
   /// </summary>
-  [HttpGet("list")]
-  public async Task<IActionResult> GetPageAsync([FromQuery] LeanQueryDictTypeDto input)
+  [HttpGet("page")]
+  public async Task<IActionResult> GetPagedListAsync([FromQuery] LeanQueryDictTypeDto input)
   {
     var result = await _service.GetPageAsync(input);
     return ApiResult(result);
@@ -103,7 +103,7 @@ public class LeanDictTypeController : LeanBaseController
   public async Task<IActionResult> ExportAsync([FromQuery] LeanQueryDictTypeDto input)
   {
     var result = await _service.ExportAsync(input);
-    return FileResult(result, $"字典类型_{DateTime.Now:yyyyMMddHHmmss}.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    return ApiResult(result);
   }
 
   /// <summary>
@@ -149,6 +149,6 @@ public class LeanDictTypeController : LeanBaseController
   public async Task<IActionResult> GetImportTemplateAsync()
   {
     var result = await _service.GetImportTemplateAsync();
-    return FileResult(result, "字典类型导入模板.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    return ApiResult(result);
   }
 }

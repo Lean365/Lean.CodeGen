@@ -104,7 +104,7 @@ public class LeanWorkflowInstance : LeanBaseEntity
   /// 工作流状态
   /// </summary>
   [SugarColumn(ColumnName = "workflow_status", ColumnDescription = "工作流状态", IsNullable = false)]
-  public LeanWorkflowStatus WorkflowStatus { get; set; }
+  public LeanWorkflowInstanceStatus WorkflowStatus { get; set; }
 
   /// <summary>
   /// 是否暂停(0=否,1=是)

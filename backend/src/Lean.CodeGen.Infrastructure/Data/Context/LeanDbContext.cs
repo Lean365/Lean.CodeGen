@@ -62,7 +62,7 @@ public class LeanDbContext
           var match = System.Text.RegularExpressions.Regex.Match(sql, @"CREATE TABLE [\[`""]?([^\[`""\s\(]+)");
           if (match.Success)
           {
-            _logger.Info($"\u001b[32m创建表: {match.Groups[1].Value}\u001b[0m");
+            _logger.Info($"\u001b[32m数据库操作 >>\u001b[0m \u001b[36m创建表:\u001b[0m {match.Groups[1].Value}");
           }
         }
         else if (sqlUpper.StartsWith("ALTER TABLE"))
@@ -70,7 +70,7 @@ public class LeanDbContext
           var match = System.Text.RegularExpressions.Regex.Match(sql, @"ALTER TABLE [\[`""]?([^\[`""\s\(]+)");
           if (match.Success)
           {
-            _logger.Info($"\u001b[33m更新表: {match.Groups[1].Value}\u001b[0m");
+            _logger.Info($"\u001b[32m数据库操作 >>\u001b[0m \u001b[33m更新表:\u001b[0m {match.Groups[1].Value}");
           }
         }
         else if (sqlUpper.StartsWith("INSERT"))
@@ -78,7 +78,7 @@ public class LeanDbContext
           var match = System.Text.RegularExpressions.Regex.Match(sql, @"INSERT INTO [\[`""]?([^\[`""\s\(]+)");
           if (match.Success)
           {
-            _logger.Info($"\u001b[34m插入数据: {match.Groups[1].Value}, 记录数: {parameters?.Length ?? 0}\u001b[0m");
+            _logger.Info($"\u001b[32m数据库操作 >>\u001b[0m \u001b[34m插入数据:\u001b[0m {match.Groups[1].Value} \u001b[90m|\u001b[0m 记录数: {parameters?.Length ?? 0}");
           }
         }
       };
@@ -153,7 +153,7 @@ public class LeanDbContext
 
       foreach (var group in groupedTypes)
       {
-        _logger.Info($"目录 {group.Key} 中的类型数量: {group.Value}");
+        _logger.Info($"\u001b[35m实体扫描 >>\u001b[0m 目录: {group.Key} \u001b[90m|\u001b[0m 实体数量: {group.Value}");
       }
 
       // 获取有效的实体类型
@@ -168,14 +168,14 @@ public class LeanDbContext
             var attr = t.GetCustomAttribute<SugarTable>();
             if (attr != null)
             {
-              _logger.Info($"找到实体: {t.Name}, 表名: {attr.TableName}");
+              _logger.Info($"\u001b[36m实体映射 >>\u001b[0m 实体: {t.Name} \u001b[90m|\u001b[0m 表名: {attr.TableName}");
               return true;
             }
             return false;
           })
           .ToList();
 
-      _logger.Info($"找到有效实体类型总数: {entityTypes.Count}");
+      _logger.Info($"\u001b[35m实体扫描 >>\u001b[0m \u001b[32m有效实体总数: {entityTypes.Count}\u001b[0m");
 
       // 4. 遍历实体类型并创建表
       foreach (var entityType in entityTypes)
@@ -183,11 +183,11 @@ public class LeanDbContext
         try
         {
           _db.CodeFirst.InitTables(entityType);
-          _logger.Info($"初始化表 {entityType.Name} 成功");
+          _logger.Info($"\u001b[32m初始化表成功 >>\u001b[0m {entityType.Name}");
         }
         catch (Exception ex)
         {
-          _logger.Error($"初始化表 {entityType.Name} 失败: {ex.Message}");
+          _logger.Error($"\u001b[31m初始化表失败 >>\u001b[0m {entityType.Name} \u001b[90m|\u001b[0m {ex.Message}");
         }
       }
     }

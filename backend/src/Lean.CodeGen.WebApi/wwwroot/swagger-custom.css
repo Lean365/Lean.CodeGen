@@ -1,0 +1,102 @@
+/* 下拉选择框样式 */
+.swagger-ui .topbar .wrapper {
+  padding: 0 !important;
+}
+
+.swagger-ui .topbar {
+  padding: 8px 0;
+  background-color: #1b1b1b !important;
+}
+
+/* 调整内容区域的边距 */
+.swagger-ui .wrapper {
+  max-width: none;
+  padding: 0;
+  display: flex;
+}
+
+/* 调整操作面板的样式 */
+.swagger-ui .opblock {
+  margin: 8px 16px;
+  border: 1px solid #e8e8e8;
+  box-shadow: none;
+  border-radius: 2px;
+}
+
+.swagger-ui .opblock .opblock-summary {
+  padding: 8px 16px;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+/* 美化选择框 */
+.swagger-ui select {
+  border: 1px solid #d9d9d9 !important;
+  border-radius: 4px !important;
+  background: #fff !important;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.02);
+}
+
+.swagger-ui select:hover {
+  border-color: #40a9ff !important;
+}
+
+.swagger-ui select:focus {
+  border-color: #40a9ff !important;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+/* 调整标题样式 */
+.swagger-ui .info .title {
+  display: none;
+}
+
+/* 左侧导航栏 */
+.swagger-ui .opblock-tag-section {
+  background: #fafafa;
+  border-right: 1px solid #e8e8e8;
+  min-width: 250px;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  padding: 15px 0;
+}
+
+.swagger-ui .opblock-tag {
+  padding: 10px 16px;
+  margin: 0;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s;
+  border-left: 3px solid transparent;
+}
+
+.swagger-ui .opblock-tag:hover {
+  background: #e6f7ff;
+  border-left-color: #1890ff;
+}
+
+.swagger-ui .opblock-tag.is-open {
+  background: #e6f7ff;
+  border-left-color: #1890ff;
+}
+
+/* 隐藏不需要的元素 */
+.swagger-ui .information-container,
+.swagger-ui .scheme-container,
+.swagger-ui .topbar {
+  display: none;
+}
+
+/* 响应式布局 */
+@media (max-width: 768px) {
+  .swagger-ui .wrapper {
+    flex-direction: column;
+  }
+  
+  .swagger-ui .opblock-tag-section {
+    height: auto;
+    min-width: auto;
+    border-right: none;
+    border-bottom: 1px solid #e8e8e8;
+  }
+} 

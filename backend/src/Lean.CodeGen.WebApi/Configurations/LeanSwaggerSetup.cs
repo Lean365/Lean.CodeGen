@@ -2,89 +2,130 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
+using Microsoft.AspNetCore.Mvc;
+using System.Linq;
+using Swashbuckle.AspNetCore.SwaggerGen;
+using Microsoft.AspNetCore.Mvc.Controllers;
+using NLog;
 
 namespace Lean.CodeGen.WebApi.Configurations;
 
 /// <summary>
-/// Swagger配置
+/// Swagger 配置
 /// </summary>
 public static class LeanSwaggerSetup
 {
-  public static void AddLeanSwagger(this IServiceCollection services)
+  private static readonly NLog.ILogger _logger = LogManager.GetCurrentClassLogger();
+
+  /// <summary>
+  /// 添加 Swagger 服务
+  /// </summary>
+  public static IServiceCollection AddLeanSwagger(this IServiceCollection services)
   {
-    services.AddSwaggerGen(c =>
+    services.AddSwaggerGen(options =>
     {
-      c.SwaggerDoc("v1", new OpenApiInfo
+      // 1. 添加文档
+      var docs = new[]
       {
-        Title = "Lean.CodeGen API",
-        Version = "v1",
-        Description = "代码生成服务接口文档",
-        Contact = new OpenApiContact
+        new { Name = "identity", Title = "身份认证", Description = "用户认证、授权等接口" },
+        new { Name = "admin", Title = "系统管理", Description = "系统管理相关接口" },
+        new { Name = "generator", Title = "代码生成", Description = "代码生成相关接口" },
+        new { Name = "workflow", Title = "工作流程", Description = "工作流程相关接口" },
+        new { Name = "audit", Title = "审计日志", Description = "审计、操作日志相关接口" },
+        new { Name = "signalr", Title = "实时通信", Description = "SignalR实时通信相关接口" }
+      };
+
+      foreach (var doc in docs)
+      {
+        options.SwaggerDoc(doc.Name, new OpenApiInfo
         {
-          Name = "Lean",
-          Email = "lean@example.com"
-        }
+          Title = doc.Title,
+          Version = "v1",
+          Description = $"\uD83D\uDCDD {doc.Description}",
+          Contact = new OpenApiContact
+          {
+            Name = "\uD83D\uDCE7 Lean",
+            Email = "Lean365@outlook.com",
+            Url = new Uri("https://gitee.com/lean365/LeanCodeGen")
+          },
+          License = new OpenApiLicense
+          {
+            Name = "\uD83D\uDC68\u200D\uD83D\uDCBB Lean365",
+            Url = new Uri("https://gitee.com/lean365")
+          }
+        });
+      }
+
+      // 2. 配置分组
+      options.DocInclusionPredicate((docName, apiDesc) =>
+      {
+        if (!apiDesc.TryGetMethodInfo(out var methodInfo)) return false;
+
+        var groupName = methodInfo.DeclaringType?
+            .GetCustomAttributes(true)
+            .OfType<ApiExplorerSettingsAttribute>()
+            .Select(attr => attr.GroupName)
+            .FirstOrDefault();
+
+        return docName == groupName;
       });
 
-      // 添加JWT认证配置
-      c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+      // 3. JWT认证配置
+      options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
       {
-        Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+        Description = "JWT Authorization header using the Bearer scheme.",
         Name = "Authorization",
         In = ParameterLocation.Header,
         Type = SecuritySchemeType.ApiKey,
         Scheme = "Bearer"
       });
 
-      c.AddSecurityRequirement(new OpenApiSecurityRequirement
+      options.AddSecurityRequirement(new OpenApiSecurityRequirement
       {
         {
           new OpenApiSecurityScheme
           {
-            Reference = new OpenApiReference
-            {
-              Type = ReferenceType.SecurityScheme,
-              Id = "Bearer"
-            }
+            Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
           },
           Array.Empty<string>()
         }
       });
 
-      // 启用注解
-      c.EnableAnnotations();
-
-      // 添加XML注释
+      // 4. XML注释
       var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-      var xmlFiles = Directory.GetFiles(baseDirectory, "Lean.CodeGen.*.xml");
-      foreach (var xmlFile in xmlFiles)
+      var xmlNames = new[] { "Lean.CodeGen.WebApi.xml", "Lean.CodeGen.Application.xml", "Lean.CodeGen.Domain.xml" };
+      foreach (var xmlName in xmlNames)
       {
-        c.IncludeXmlComments(xmlFile);
+        var xmlPath = Path.Combine(baseDirectory, xmlName);
+        if (File.Exists(xmlPath))
+        {
+          options.IncludeXmlComments(xmlPath, true);
+        }
       }
-
-      // 自定义配置
-      c.OrderActionsBy(apiDesc => $"{apiDesc.ActionDescriptor.RouteValues["controller"]}_{apiDesc.RelativePath}");
-      c.DocInclusionPredicate((docName, apiDesc) => true);
-      c.UseInlineDefinitionsForEnums();
     });
+
+    return services;
   }
 
-  public static void UseLeanSwagger(this IApplicationBuilder app)
+  /// <summary>
+  /// 使用 Swagger
+  /// </summary>
+  public static IApplicationBuilder UseLeanSwagger(this IApplicationBuilder app)
   {
-    app.UseSwagger(c =>
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
     {
-      c.RouteTemplate = "swagger/{documentName}/swagger.json";
-      c.SerializeAsV2 = false;
+      // 配置文档端点
+      options.SwaggerEndpoint("/swagger/identity/swagger.json", "\uD83D\uDCDD 身份认证");
+      options.SwaggerEndpoint("/swagger/admin/swagger.json", "\uD83D\uDCDD 系统管理");
+      options.SwaggerEndpoint("/swagger/generator/swagger.json", "\uD83D\uDCDD 代码生成");
+      options.SwaggerEndpoint("/swagger/workflow/swagger.json", "\uD83D\uDCDD 工作流程");
+      options.SwaggerEndpoint("/swagger/audit/swagger.json", "\uD83D\uDCDD 审计日志");
+      options.SwaggerEndpoint("/swagger/signalr/swagger.json", "\uD83D\uDCDD 实时通信");
+
+      options.RoutePrefix = "swagger";
     });
 
-    app.UseSwaggerUI(c =>
-    {
-      c.SwaggerEndpoint("/swagger/v1/swagger.json", "Lean.CodeGen API V1");
-      c.RoutePrefix = "swagger";
-      c.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.None);
-      c.EnableFilter();
-      c.EnableDeepLinking();
-      c.DisplayRequestDuration();
-    });
+    return app;
   }
 }

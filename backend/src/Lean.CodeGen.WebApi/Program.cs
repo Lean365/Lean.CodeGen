@@ -7,6 +7,9 @@
 // 版本: 1.0
 //===================================================
 
+using Microsoft.Extensions.Logging;
+using System.Net.WebSockets;
+using Microsoft.AspNetCore.Http;
 using Lean.CodeGen.WebApi.Middlewares;
 using Lean.CodeGen.WebApi.Configurations;
 using Lean.CodeGen.WebApi.Filters;
@@ -20,13 +23,20 @@ using Lean.CodeGen.Infrastructure.Services.Caching;
 using Lean.CodeGen.Infrastructure.Extensions;
 using Lean.CodeGen.Infrastructure.Data.Context;
 using Lean.CodeGen.Infrastructure.Data.Initializer;
+using Lean.CodeGen.Infrastructure.Services.Logging;
 using StackExchange.Redis;
 
 // 创建Web应用程序构建器
 var builder = WebApplication.CreateBuilder(args);
 
+// 设置控制台编码为 UTF-8
+Console.OutputEncoding = System.Text.Encoding.UTF8;
+
 // 添加 NLog 日志支持
 builder.AddLeanNLog();
+
+// 添加日志服务
+builder.Services.AddScoped<ILeanLogService, LeanLogService>();
 
 // 配置安全选项
 builder.Services.Configure<LeanSecurityOptions>(
@@ -110,6 +120,8 @@ builder.Services.AddLeanJwt(builder.Configuration);
 // 构建应用程序
 var app = builder.Build();
 
+
+
 // 初始化数据库
 if (builder.Configuration.GetSection("Database:EnableInitData").Get<bool>())
 {
@@ -119,17 +131,17 @@ if (builder.Configuration.GetSection("Database:EnableInitData").Get<bool>())
 }
 
 // 配置中间件
-if (app.Environment.IsDevelopment())
-{
-  app.UseSwagger();
-  app.UseSwaggerUI();
-}
-
-// 启用HTTPS重定向
 app.UseHttpsRedirection();
 
-// 启用路由
+// 启用静态文件
+app.UseStaticFiles();
+
 app.UseRouting();
+
+if (app.Environment.IsDevelopment())
+{
+  app.UseLeanSwagger();
+}
 
 // 启用身份认证
 app.UseAuthentication();
@@ -140,7 +152,13 @@ app.UseAuthorization();
 app.UseMiddleware<LeanExceptionMiddleware>();
 
 // 配置SignalR实时通信Hub
-app.MapHub<LeanSignalrHub>("/hbtSignalrHub");
+app.MapHub<LeanSignalrHub>("/signalr/hubs");
+// 输出欢迎信息
+using var welcomeScope = app.Services.CreateScope();
+var logService = welcomeScope.ServiceProvider.GetRequiredService<ILeanLogService>();
+logService.LogWelcomeInfo();
+// 启用端点映射
+app.MapControllers();
 
 // 示例天气预报接口（可以删除）
 var summaries = new[]

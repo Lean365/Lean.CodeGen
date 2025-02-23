@@ -90,7 +90,7 @@ public class LeanWorkflowInstanceDto
   /// <summary>
   /// 工作流状态
   /// </summary>
-  public LeanWorkflowStatus WorkflowStatus { get; set; }
+  public LeanWorkflowInstanceStatus WorkflowStatus { get; set; }
 
   /// <summary>
   /// 是否暂停

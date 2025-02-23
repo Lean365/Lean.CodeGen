@@ -11,34 +11,24 @@ public class LeanWorkflowCompensationDto
   public long Id { get; set; }
 
   /// <summary>
-  /// 工作流实例ID
-  /// </summary>
-  public long InstanceId { get; set; }
-
-  /// <summary>
   /// 活动实例ID
   /// </summary>
-  public long? ActivityInstanceId { get; set; }
+  public long ActivityInstanceId { get; set; }
 
   /// <summary>
-  /// 补偿活动ID
+  /// 活动实例
   /// </summary>
-  public string CompensationActivityId { get; set; } = string.Empty;
+  public LeanWorkflowActivityInstanceDto ActivityInstance { get; set; } = null!;
 
   /// <summary>
-  /// 补偿活动名称
+  /// 补偿时间
   /// </summary>
-  public string CompensationActivityName { get; set; } = string.Empty;
+  public DateTime CompensationTime { get; set; }
 
   /// <summary>
-  /// 补偿类型
+  /// 补偿原因
   /// </summary>
-  public string CompensationType { get; set; } = string.Empty;
-
-  /// <summary>
-  /// 补偿状态
-  /// </summary>
-  public int CompensationStatus { get; set; }
+  public string? CompensationReason { get; set; }
 
   /// <summary>
   /// 补偿数据JSON
@@ -46,24 +36,9 @@ public class LeanWorkflowCompensationDto
   public string? CompensationData { get; set; }
 
   /// <summary>
-  /// 开始时间
+  /// 补偿结果JSON
   /// </summary>
-  public DateTime? StartTime { get; set; }
-
-  /// <summary>
-  /// 结束时间
-  /// </summary>
-  public DateTime? EndTime { get; set; }
-
-  /// <summary>
-  /// 错误信息JSON
-  /// </summary>
-  public string? ErrorInfo { get; set; }
-
-  /// <summary>
-  /// 自定义属性JSON
-  /// </summary>
-  public string? CustomAttributes { get; set; }
+  public string? CompensationResult { get; set; }
 
   /// <summary>
   /// 创建时间

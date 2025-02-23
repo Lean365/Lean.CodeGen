@@ -15,7 +15,7 @@ namespace Lean.CodeGen.Domain.Entities.Admin;
 /// <summary>
 /// 系统配置实体
 /// </summary>
-[SugarTable("lean_config", "系统配置表")]
+[SugarTable("lean_admin_config", "系统配置表")]
 [SugarIndex("uk_key", nameof(ConfigKey), OrderByType.Asc, true)]
 public class LeanConfig : LeanBaseEntity
 {

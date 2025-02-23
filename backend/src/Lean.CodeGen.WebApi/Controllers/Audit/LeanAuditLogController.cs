@@ -10,6 +10,7 @@ namespace Lean.CodeGen.WebApi.Controllers.Audit
   /// </summary>
   [Route("api/audit/logs")]
   [ApiController]
+  [ApiExplorerSettings(GroupName = "audit")]
   public class LeanAuditLogController : LeanBaseController
   {
     private readonly ILeanAuditLogService _auditLogService;
@@ -26,36 +27,40 @@ namespace Lean.CodeGen.WebApi.Controllers.Audit
     /// 获取审计日志列表（分页）
     /// </summary>
     [HttpGet]
-    public Task<LeanPageResult<LeanAuditLogDto>> GetPageListAsync([FromQuery] LeanAuditLogQueryDto queryDto)
+    public async Task<LeanApiResult<LeanPageResult<LeanAuditLogDto>>> GetPageListAsync([FromQuery] LeanAuditLogQueryDto queryDto)
     {
-      return _auditLogService.GetPageListAsync(queryDto);
+      var result = await _auditLogService.GetPageListAsync(queryDto);
+      return LeanApiResult<LeanPageResult<LeanAuditLogDto>>.Ok(result);
     }
 
     /// <summary>
     /// 获取审计日志详情
     /// </summary>
     [HttpGet("{id}")]
-    public Task<LeanAuditLogDto> GetAsync(long id)
+    public async Task<LeanApiResult<LeanAuditLogDto>> GetAsync(long id)
     {
-      return _auditLogService.GetAsync(id);
+      var result = await _auditLogService.GetAsync(id);
+      return LeanApiResult<LeanAuditLogDto>.Ok(result);
     }
 
     /// <summary>
     /// 导出审计日志
     /// </summary>
     [HttpGet("export")]
-    public Task<LeanFileResult> ExportAsync([FromQuery] LeanAuditLogQueryDto queryDto)
+    public async Task<LeanApiResult<LeanFileResult>> ExportAsync([FromQuery] LeanAuditLogQueryDto queryDto)
     {
-      return _auditLogService.ExportAsync(queryDto);
+      var result = await _auditLogService.ExportAsync(queryDto);
+      return LeanApiResult<LeanFileResult>.Ok(result);
     }
 
     /// <summary>
     /// 清空审计日志
     /// </summary>
     [HttpDelete("clear")]
-    public Task<bool> ClearAsync()
+    public async Task<LeanApiResult<bool>> ClearAsync()
     {
-      return _auditLogService.ClearAsync();
+      var result = await _auditLogService.ClearAsync();
+      return LeanApiResult<bool>.Ok(result);
     }
   }
 }

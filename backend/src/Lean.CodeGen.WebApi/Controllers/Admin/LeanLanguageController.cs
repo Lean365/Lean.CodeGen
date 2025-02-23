@@ -26,80 +26,89 @@ public class LeanLanguageController : LeanBaseController
   /// 创建语言
   /// </summary>
   [HttpPost]
-  public Task<LeanApiResult<long>> CreateAsync([FromBody] LeanCreateLanguageDto input)
+  public async Task<IActionResult> CreateAsync([FromBody] LeanCreateLanguageDto input)
   {
-    return _languageService.CreateAsync(input);
+    var result = await _languageService.CreateAsync(input);
+    return ApiResult(result);
   }
 
   /// <summary>
   /// 更新语言
   /// </summary>
   [HttpPut]
-  public Task<LeanApiResult> UpdateAsync([FromBody] LeanUpdateLanguageDto input)
+  public async Task<IActionResult> UpdateAsync([FromBody] LeanUpdateLanguageDto input)
   {
-    return _languageService.UpdateAsync(input);
+    var result = await _languageService.UpdateAsync(input);
+    return ApiResult(result);
   }
 
   /// <summary>
   /// 删除语言
   /// </summary>
   [HttpDelete("{id}")]
-  public Task<LeanApiResult> DeleteAsync([FromRoute] long id)
+  public async Task<IActionResult> DeleteAsync([FromRoute] long id)
   {
-    return _languageService.DeleteAsync(id);
+    var result = await _languageService.DeleteAsync(id);
+    return ApiResult(result);
   }
 
   /// <summary>
   /// 批量删除语言
   /// </summary>
   [HttpDelete("batch")]
-  public Task<LeanApiResult> BatchDeleteAsync([FromBody] List<long> ids)
+  public async Task<IActionResult> BatchDeleteAsync([FromBody] List<long> ids)
   {
-    return _languageService.BatchDeleteAsync(ids);
+    var result = await _languageService.BatchDeleteAsync(ids);
+    return ApiResult(result);
   }
 
   /// <summary>
   /// 获取语言信息
   /// </summary>
   [HttpGet("{id}")]
-  public Task<LeanApiResult<LeanLanguageDto>> GetAsync([FromRoute] long id)
+  public async Task<IActionResult> GetAsync([FromRoute] long id)
   {
-    return _languageService.GetAsync(id);
+    var result = await _languageService.GetAsync(id);
+    return ApiResult(result);
   }
 
   /// <summary>
   /// 分页查询语言
   /// </summary>
   [HttpGet("page")]
-  public Task<LeanApiResult<LeanPageResult<LeanLanguageDto>>> GetPageAsync([FromQuery] LeanQueryLanguageDto input)
+  public async Task<IActionResult> GetPageAsync([FromQuery] LeanQueryLanguageDto input)
   {
-    return _languageService.GetPageAsync(input);
+    var result = await _languageService.GetPageAsync(input);
+    return ApiResult(result);
   }
 
   /// <summary>
   /// 修改语言状态
   /// </summary>
   [HttpPut("status")]
-  public Task<LeanApiResult> SetStatusAsync([FromBody] LeanChangeLanguageStatusDto input)
+  public async Task<IActionResult> SetStatusAsync([FromBody] LeanChangeLanguageStatusDto input)
   {
-    return _languageService.SetStatusAsync(input);
+    var result = await _languageService.SetStatusAsync(input);
+    return ApiResult(result);
   }
 
   /// <summary>
   /// 获取所有正常状态的语言列表
   /// </summary>
   [HttpGet("list")]
-  public Task<LeanApiResult<List<LeanLanguageDto>>> GetListAsync()
+  public async Task<IActionResult> GetListAsync()
   {
-    return _languageService.GetListAsync();
+    var result = await _languageService.GetListAsync();
+    return ApiResult(result);
   }
 
   /// <summary>
   /// 设置默认语言
   /// </summary>
   [HttpPut("{id}/default")]
-  public Task<LeanApiResult> SetDefaultAsync([FromRoute] long id)
+  public async Task<IActionResult> SetDefaultAsync([FromRoute] long id)
   {
-    return _languageService.SetDefaultAsync(id);
+    var result = await _languageService.SetDefaultAsync(id);
+    return ApiResult(result);
   }
 }

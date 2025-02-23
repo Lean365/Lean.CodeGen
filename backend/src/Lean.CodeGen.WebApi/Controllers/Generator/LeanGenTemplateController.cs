@@ -28,81 +28,90 @@ namespace Lean.CodeGen.WebApi.Controllers.Generator
     /// 获取代码生成模板列表（分页）
     /// </summary>
     [HttpGet]
-    public Task<LeanPageResult<LeanGenTemplateDto>> GetPageListAsync([FromQuery] LeanGenTemplateQueryDto queryDto)
+    public async Task<LeanApiResult<LeanPageResult<LeanGenTemplateDto>>> GetPageListAsync([FromQuery] LeanGenTemplateQueryDto queryDto)
     {
-      return _genTemplateService.GetPageListAsync(queryDto);
+      var result = await _genTemplateService.GetPageListAsync(queryDto);
+      return LeanApiResult<LeanPageResult<LeanGenTemplateDto>>.Ok(result);
     }
 
     /// <summary>
     /// 获取代码生成模板详情
     /// </summary>
     [HttpGet("{id}")]
-    public Task<LeanGenTemplateDto> GetAsync(long id)
+    public async Task<LeanApiResult<LeanGenTemplateDto>> GetAsync(long id)
     {
-      return _genTemplateService.GetAsync(id);
+      var result = await _genTemplateService.GetAsync(id);
+      return LeanApiResult<LeanGenTemplateDto>.Ok(result);
     }
 
     /// <summary>
     /// 创建代码生成模板
     /// </summary>
     [HttpPost]
-    public Task<LeanGenTemplateDto> CreateAsync([FromBody] LeanCreateGenTemplateDto createDto)
+    public async Task<LeanApiResult<LeanGenTemplateDto>> CreateAsync([FromBody] LeanCreateGenTemplateDto createDto)
     {
-      return _genTemplateService.CreateAsync(createDto);
+      var result = await _genTemplateService.CreateAsync(createDto);
+      return LeanApiResult<LeanGenTemplateDto>.Ok(result);
     }
 
     /// <summary>
     /// 更新代码生成模板
     /// </summary>
     [HttpPut("{id}")]
-    public Task<LeanGenTemplateDto> UpdateAsync(long id, [FromBody] LeanUpdateGenTemplateDto updateDto)
+    public async Task<LeanApiResult<LeanGenTemplateDto>> UpdateAsync(long id, [FromBody] LeanUpdateGenTemplateDto updateDto)
     {
-      return _genTemplateService.UpdateAsync(id, updateDto);
+      var result = await _genTemplateService.UpdateAsync(id, updateDto);
+      return LeanApiResult<LeanGenTemplateDto>.Ok(result);
     }
 
     /// <summary>
     /// 删除代码生成模板
     /// </summary>
     [HttpDelete("{id}")]
-    public Task<bool> DeleteAsync(long id)
+    public async Task<LeanApiResult<bool>> DeleteAsync(long id)
     {
-      return _genTemplateService.DeleteAsync(id);
+      var result = await _genTemplateService.DeleteAsync(id);
+      return LeanApiResult<bool>.Ok(result);
     }
 
     /// <summary>
     /// 导出代码生成模板
     /// </summary>
     [HttpGet("export")]
-    public Task<LeanFileResult> ExportAsync([FromQuery] LeanGenTemplateQueryDto queryDto)
+    public async Task<LeanApiResult<LeanFileResult>> ExportAsync([FromQuery] LeanGenTemplateQueryDto queryDto)
     {
-      return _genTemplateService.ExportAsync(queryDto);
+      var result = await _genTemplateService.ExportAsync(queryDto);
+      return LeanApiResult<LeanFileResult>.Ok(result);
     }
 
     /// <summary>
     /// 导入代码生成模板
     /// </summary>
     [HttpPost("import")]
-    public Task<LeanExcelImportResult<LeanGenTemplateImportDto>> ImportAsync([FromForm] LeanFileInfo file)
+    public async Task<LeanApiResult<LeanExcelImportResult<LeanGenTemplateImportDto>>> ImportAsync([FromForm] LeanFileInfo file)
     {
-      return _genTemplateService.ImportAsync(file);
+      var result = await _genTemplateService.ImportAsync(file);
+      return LeanApiResult<LeanExcelImportResult<LeanGenTemplateImportDto>>.Ok(result);
     }
 
     /// <summary>
     /// 下载导入模板
     /// </summary>
     [HttpGet("template")]
-    public Task<LeanFileResult> DownloadTemplateAsync()
+    public async Task<LeanApiResult<LeanFileResult>> DownloadTemplateAsync()
     {
-      return _genTemplateService.DownloadTemplateAsync();
+      var result = await _genTemplateService.DownloadTemplateAsync();
+      return LeanApiResult<LeanFileResult>.Ok(result);
     }
 
     /// <summary>
     /// 复制模板
     /// </summary>
     [HttpPost("{id}/copy")]
-    public Task<LeanGenTemplateDto> CopyAsync(long id)
+    public async Task<LeanApiResult<LeanGenTemplateDto>> CopyAsync(long id)
     {
-      return _genTemplateService.CopyAsync(id);
+      var result = await _genTemplateService.CopyAsync(id);
+      return LeanApiResult<LeanGenTemplateDto>.Ok(result);
     }
   }
 }

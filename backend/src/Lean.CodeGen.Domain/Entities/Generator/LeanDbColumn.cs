@@ -16,7 +16,7 @@ namespace Lean.CodeGen.Domain.Entities.Generator
     /// <summary>
     /// 数据库列信息实体
     /// </summary>
-    [SugarTable("lean_db_column", "数据库列信息")]
+    [SugarTable("lean_gen_db_column", "数据库列信息")]
     public class LeanDbColumn : LeanBaseEntity
     {
         #region 数据库元数据
