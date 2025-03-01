@@ -147,8 +147,8 @@ public class LeanLocalizationService : ILeanLocalizationService
     }
     catch (Exception ex)
     {
-      _logger.Error(ex, "Error getting supported languages");
-      return new List<string> { _options.DefaultLanguage };
+      _logger.Error(ex, $"Error getting supported languages");
+      return new List<string>();
     }
   }
 
@@ -159,25 +159,14 @@ public class LeanLocalizationService : ILeanLocalizationService
   {
     try
     {
-      // 清除语言列表缓存
-      _cache.Remove(LanguageListCacheKey);
-
-      // 清除所有语言的翻译缓存
-      var languages = await _languageRepository.GetListAsync(x => x.Status == LeanStatus.Normal);
-      foreach (var language in languages)
+      var languages = await GetSupportedLanguagesAsync();
+      foreach (var langCode in languages)
       {
-        var cacheKey = $"{CacheKeyPrefix}{language.LangCode}";
+        var cacheKey = $"{CacheKeyPrefix}{langCode}";
         _cache.Remove(cacheKey);
         _cacheTimestamps.TryRemove(cacheKey, out _);
       }
-
-      // 重新加载缓存
-      await GetSupportedLanguagesAsync();
-      foreach (var language in languages)
-      {
-        await GetTranslationsAsync(language.LangCode);
-      }
-
+      _cache.Remove(LanguageListCacheKey);
       _logger.Info("Translation cache refreshed successfully");
     }
     catch (Exception ex)

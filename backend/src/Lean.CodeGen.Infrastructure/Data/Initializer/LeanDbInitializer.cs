@@ -68,6 +68,18 @@ public class LeanDbInitializer
       // 7. 初始化菜单数据
       await new LeanMenuSeed(db).InitializeAsync();
 
+      // 8. 初始化字典类型数据
+      await new LeanDictTypeSeed(db).InitializeAsync();
+
+      // 9. 初始化字典数据
+      await new LeanDictDataSeed(db).InitializeAsync();
+
+      // 10.字典翻译数据
+      await new LeanDictTranslationSeed(db).InitializeAsync();
+
+      // 11. 初始化配置数据
+      await new LeanConfigSeed(db).InitializeAsync();
+
       _logger.Info("种子数据初始化完成");
     }
     catch (Exception ex)

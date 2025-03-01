@@ -86,6 +86,12 @@ public class LeanCreateDictDataDto
     public string? CssClass { get; set; }
 
     /// <summary>
+    /// 列表样式
+    /// </summary>
+    [StringLength(100, ErrorMessage = "样式属性长度不能超过100个字符")]
+    public string? ListClass { get; set; }
+
+    /// <summary>
     /// 排序号
     /// </summary>
     public int OrderNum { get; set; }
@@ -168,6 +174,11 @@ public class LeanDictDataDto : LeanBaseEntity
     public string? CssClass { get; set; }
 
     /// <summary>
+    /// 列表样式
+    /// </summary>
+    public string? ListClass { get; set; }
+
+    /// <summary>
     /// 排序号
     /// </summary>
     public int OrderNum { get; set; }
@@ -239,6 +250,12 @@ public class LeanDictDataExportDto
     /// </summary>
     [LeanExcelColumn("样式属性", DataType = LeanExcelDataType.String)]
     public string? CssClass { get; set; }
+
+    /// <summary>
+    /// 列表样式
+    /// </summary>
+    [LeanExcelColumn("列表样式", DataType = LeanExcelDataType.String)]
+    public string? ListClass { get; set; }
 
     /// <summary>
     /// 排序号
@@ -319,6 +336,12 @@ public class LeanDictDataImportDto
     public string? CssClass { get; set; }
 
     /// <summary>
+    /// 列表样式
+    /// </summary>
+    [LeanExcelColumn("列表样式", DataType = LeanExcelDataType.String)]
+    public string? ListClass { get; set; }
+
+    /// <summary>
     /// 排序号
     /// </summary>
     [LeanExcelColumn("排序号", DataType = LeanExcelDataType.Int)]
@@ -383,6 +406,12 @@ public class LeanDictDataImportTemplateDto
     /// </summary>
     [LeanExcelColumn("样式属性", DataType = LeanExcelDataType.String)]
     public string? CssClass { get; set; }
+
+    /// <summary>
+    /// 列表样式
+    /// </summary>
+    [LeanExcelColumn("列表样式", DataType = LeanExcelDataType.String)]
+    public string? ListClass { get; set; }
 
     /// <summary>
     /// 排序号

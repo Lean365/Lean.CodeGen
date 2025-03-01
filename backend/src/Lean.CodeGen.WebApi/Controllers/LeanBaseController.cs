@@ -41,6 +41,51 @@ public abstract class LeanBaseController : ControllerBase
   }
 
   /// <summary>
+  /// 获取当前用户界面语言
+  /// </summary>
+  protected virtual string GetCurrentUiLanguage()
+  {
+    // 1. 从Cookie获取
+    var langCookie = Request.Cookies["lang"];
+    if (!string.IsNullOrEmpty(langCookie))
+    {
+      return langCookie;
+    }
+
+    // 2. 从Accept-Language头获取
+    var acceptLanguages = Request.GetTypedHeaders().AcceptLanguage;
+    if (acceptLanguages != null && acceptLanguages.Count > 0)
+    {
+      return acceptLanguages.First().Value.ToString();
+    }
+
+    // 3. 从配置文件获取
+    var configLang = Configuration["DefaultLanguage"];
+    if (!string.IsNullOrEmpty(configLang))
+    {
+      return configLang;
+    }
+
+    // 4. 从服务器系统语言获取
+    var currentCulture = CultureInfo.CurrentCulture;
+    return currentCulture.Name;
+  }
+
+  /// <summary>
+  /// 设置当前用户界面语言
+  /// </summary>
+  protected virtual void SetCurrentUiLanguage(string langCode)
+  {
+    var cookieOptions = new CookieOptions
+    {
+      HttpOnly = true,
+      Expires = DateTime.UtcNow.AddDays(30)
+    };
+
+    Response.Cookies.Append("lang", langCode, cookieOptions);
+  }
+
+  /// <summary>
   /// 获取系统语言代码
   /// </summary>
   /// <returns>系统语言代码</returns>
@@ -56,69 +101,6 @@ public abstract class LeanBaseController : ControllerBase
     // 2. 从服务器系统语言获取
     var currentCulture = CultureInfo.CurrentCulture;
     return currentCulture.Name;
-  }
-
-  /// <summary>
-  /// 获取当前用户界面语言代码
-  /// </summary>
-  /// <returns>语言代码</returns>
-  /// <remarks>
-  /// 按以下优先级获取语言代码：
-  /// 1. URL查询参数 "lang"
-  /// 2. Cookie中的 "lang"
-  /// 3. Accept-Language 请求头
-  /// 4. 系统默认语言
-  /// </remarks>
-  protected virtual string GetCurrentUiLanguage()
-  {
-    // 1. 从URL查询参数获取
-    var langFromQuery = Request.Query["lang"].FirstOrDefault();
-    if (!string.IsNullOrEmpty(langFromQuery))
-    {
-      return langFromQuery;
-    }
-
-    // 2. 从Cookie获取
-    var langFromCookie = Request.Cookies["lang"];
-    if (!string.IsNullOrEmpty(langFromCookie))
-    {
-      return langFromCookie;
-    }
-
-    // 3. 从Accept-Language请求头获取
-    var acceptLanguages = Request.GetTypedHeaders().AcceptLanguage;
-    if (acceptLanguages != null && acceptLanguages.Count > 0)
-    {
-      // 获取权重最高的语言
-      var preferredLanguage = acceptLanguages
-          .OrderByDescending(x => x.Quality ?? 1.0)
-          .FirstOrDefault();
-
-      if (preferredLanguage != null && !string.IsNullOrEmpty(preferredLanguage.Value.Value))
-      {
-        return preferredLanguage.Value.Value;
-      }
-    }
-
-    // 4. 返回系统语言
-    return GetSystemLanguage();
-  }
-
-  /// <summary>
-  /// 设置当前用户界面语言
-  /// </summary>
-  /// <param name="langCode">语言代码</param>
-  protected virtual void SetCurrentUiLanguage(string langCode)
-  {
-    var cookieOptions = new CookieOptions
-    {
-      HttpOnly = true,
-      Secure = Request.IsHttps,
-      SameSite = SameSiteMode.Lax,
-      Expires = DateTimeOffset.UtcNow.AddYears(1)
-    };
-
-    Response.Cookies.Append("lang", langCode, cookieOptions);
   }
 
   /// <summary>
@@ -213,31 +195,32 @@ public abstract class LeanBaseController : ControllerBase
   }
 
   /// <summary>
-  /// 返回成功结果（带数据）
+  /// 返回成功结果
   /// </summary>
-  protected IActionResult Success<T>(T data, LeanBusinessType businessType = LeanBusinessType.Other)
+  protected IActionResult Success(object? data = null, LeanBusinessType businessType = LeanBusinessType.Other)
   {
-    var result = LeanApiResult<T>.Ok(data, businessType);
-    return Ok(result);
+    if (data == null)
+    {
+      return Ok(LeanApiResult.Ok(businessType));
+    }
+    return Ok(LeanApiResult<object>.Ok(data, businessType));
   }
 
   /// <summary>
-  /// 返回成功结果（无数据）
+  /// 返回成功结果（泛型版本）
   /// </summary>
-  protected IActionResult Success(LeanBusinessType businessType = LeanBusinessType.Other)
+  protected IActionResult Success<T>(T data, LeanBusinessType businessType = LeanBusinessType.Other)
   {
-    var result = LeanApiResult.Ok(businessType);
-    return Ok(result);
+    return Ok(LeanApiResult<T>.Ok(data, businessType));
   }
 
   /// <summary>
   /// 返回错误结果
   /// </summary>
-  protected async Task<IActionResult> ErrorAsync(string messageKey, LeanErrorCode code = LeanErrorCode.SystemError, LeanBusinessType businessType = LeanBusinessType.Other)
+  protected async Task<IActionResult> ErrorAsync(string messageKey, LeanErrorCode errorCode = LeanErrorCode.UnknownError)
   {
-    var message = await GetUiTranslationAsync(messageKey);
-    var result = LeanApiResult.Error(message, code, businessType);
-    return BadRequest(result);
+    var message = await GetTranslationAsync(messageKey);
+    return BadRequest(LeanApiResult.Error(message, errorCode));
   }
 
   /// <summary>

@@ -4,8 +4,8 @@ using Lean.CodeGen.Common.Options;
 using Lean.CodeGen.Application.Services.Security;
 using Microsoft.Extensions.Options;
 using Lean.CodeGen.Common.Exceptions;
-using Lean.CodeGen.Application.Services.Admin;
 using Lean.CodeGen.Common.Security;
+using NLog;
 
 namespace Lean.CodeGen.Application.Services.Base;
 
@@ -20,7 +20,6 @@ namespace Lean.CodeGen.Application.Services.Base;
 /// 4. 日志记录
 /// 5. 审计跟踪
 /// 6. 性能监控
-/// 7. 本地化支持
 /// </remarks>
 public abstract class LeanBaseService
 {
@@ -49,14 +48,6 @@ public abstract class LeanBaseService
   protected readonly LeanSecurityOptions SecurityOptions;
 
   /// <summary>
-  /// 本地化服务
-  /// </summary>
-  /// <remarks>
-  /// 提供多语言翻译支持
-  /// </remarks>
-  protected readonly ILeanLocalizationService LocalizationService;
-
-  /// <summary>
   /// 服务上下文
   /// </summary>
   protected readonly LeanBaseServiceContext Context;
@@ -71,38 +62,29 @@ public abstract class LeanBaseService
     SqlSafeService = context.SqlSafeService;
     SecurityOptions = context.SecurityOptions;
     Logger = context.Logger;
-    LocalizationService = context.LocalizationService;
   }
 
   /// <summary>
-  /// 获取翻译
+  /// 在事务中执行操作
   /// </summary>
-  /// <param name="key">翻译键</param>
-  /// <param name="langCode">语言代码，默认为中文</param>
-  /// <returns>翻译值</returns>
-  protected async Task<string> GetTranslationAsync(string key, string langCode = "zh-CN")
+  /// <typeparam name="T">返回值类型</typeparam>
+  /// <param name="action">要执行的操作</param>
+  /// <param name="operationName">操作名称</param>
+  /// <returns>操作结果</returns>
+  protected virtual async Task<T> ExecuteInTransactionAsync<T>(Func<Task<T>> action, string operationName)
   {
-    return await LocalizationService.GetTranslationAsync(langCode, key);
-  }
-
-  /// <summary>
-  /// 获取系统翻译
-  /// </summary>
-  /// <param name="key">翻译键</param>
-  /// <param name="parameters">翻译参数</param>
-  /// <returns>翻译值</returns>
-  protected async Task<string> GetSystemTranslationAsync(string key, object? parameters = null)
-  {
-    var translation = await LocalizationService.GetTranslationAsync("zh-CN", key);
-    if (parameters != null)
+    try
     {
-      foreach (var prop in parameters.GetType().GetProperties())
-      {
-        var value = prop.GetValue(parameters)?.ToString() ?? string.Empty;
-        translation = translation.Replace($"{{{prop.Name}}}", value);
-      }
+      Logger.Info($"开始执行 {operationName}");
+      var result = await action();
+      Logger.Info($"{operationName} 执行成功");
+      return result;
     }
-    return translation;
+    catch (Exception ex)
+    {
+      Logger.Error(ex, $"{operationName} 执行失败");
+      throw;
+    }
   }
 
   /// <summary>
@@ -161,42 +143,6 @@ public abstract class LeanBaseService
   {
     if (string.IsNullOrEmpty(input)) return input;
     return SqlSafeService.EscapeSqlString(input);
-  }
-
-  /// <summary>
-  /// 执行带事务的操作
-  /// </summary>
-  /// <typeparam name="T">返回值类型</typeparam>
-  /// <param name="action">要执行的操作</param>
-  /// <param name="operationName">操作名称</param>
-  /// <returns>操作执行结果</returns>
-  /// <remarks>
-  /// 在事务上下文中执行操作，提供：
-  /// 1. 操作开始和结束的日志记录
-  /// 2. 异常捕获和处理
-  /// 3. 业务异常与系统异常的区分处理
-  /// </remarks>
-  protected async Task<T> ExecuteInTransactionAsync<T>(Func<Task<T>> action, string operationName)
-  {
-    try
-    {
-      Logger.Info($"开始执行操作: {operationName}");
-
-      var result = await action();
-
-      Logger.Info($"操作执行成功: {operationName}");
-      return result;
-    }
-    catch (LeanException ex)
-    {
-      Logger.Warn(ex, $"业务异常: {operationName}");
-      throw;
-    }
-    catch (Exception ex)
-    {
-      Logger.Error(ex, $"操作执行失败: {operationName}");
-      throw new LeanException($"执行 {operationName} 时发生错误: {ex.Message}");
-    }
   }
 
   /// <summary>

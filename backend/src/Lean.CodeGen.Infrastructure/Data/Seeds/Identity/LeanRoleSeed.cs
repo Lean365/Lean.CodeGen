@@ -4,6 +4,7 @@ using SqlSugar;
 using System.Threading.Tasks;
 using NLog;
 using ILogger = NLog.ILogger;
+using Lean.CodeGen.Infrastructure.Data.Seeds.Extensions;
 
 namespace Lean.CodeGen.Infrastructure.Data.Seeds.Identity;
 
@@ -57,11 +58,15 @@ public class LeanRoleSeed
       if (exists != null)
       {
         role.Id = exists.Id;
+        // 复制原有审计信息并初始化更新信息
+        role.CopyAuditFields(exists).InitAuditFields(true);
         await _db.Updateable(role).ExecuteCommandAsync();
         _logger.Info($"更新角色: {role.RoleName}");
       }
       else
       {
+        // 初始化审计字段
+        role.InitAuditFields();
         await _db.Insertable(role).ExecuteCommandAsync();
         _logger.Info($"新增角色: {role.RoleName}");
       }

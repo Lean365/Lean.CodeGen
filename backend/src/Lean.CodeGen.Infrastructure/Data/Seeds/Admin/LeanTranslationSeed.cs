@@ -4,6 +4,7 @@ using SqlSugar;
 using System.Threading.Tasks;
 using NLog;
 using ILogger = NLog.ILogger;
+using Lean.CodeGen.Infrastructure.Data.Seeds.Extensions;
 
 namespace Lean.CodeGen.Infrastructure.Data.Seeds.Admin;
 
@@ -146,11 +147,15 @@ public class LeanTranslationSeed
       if (exists != null)
       {
         trans.Id = exists.Id;
+        // 复制原有审计信息并初始化更新信息
+        trans.CopyAuditFields(exists).InitAuditFields(true);
         await _db.Updateable(trans).ExecuteCommandAsync();
         _logger.Info($"更新翻译: {trans.TransKey} = {trans.TransValue}");
       }
       else
       {
+        // 初始化审计字段
+        trans.InitAuditFields();
         await _db.Insertable(trans).ExecuteCommandAsync();
         _logger.Info($"新增翻译: {trans.TransKey} = {trans.TransValue}");
       }

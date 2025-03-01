@@ -4,6 +4,7 @@ using SqlSugar;
 using System.Threading.Tasks;
 using NLog;
 using ILogger = NLog.ILogger;
+using Lean.CodeGen.Infrastructure.Data.Seeds.Extensions;
 
 namespace Lean.CodeGen.Infrastructure.Data.Seeds.Identity;
 
@@ -85,11 +86,15 @@ public class LeanDeptSeed
       if (exists != null)
       {
         dept.Id = exists.Id;
+        // 复制原有审计信息并初始化更新信息
+        dept.CopyAuditFields(exists).InitAuditFields(true);
         await _db.Updateable(dept).ExecuteCommandAsync();
         _logger.Info($"更新部门: {dept.DeptName}");
       }
       else
       {
+        // 初始化审计字段
+        dept.InitAuditFields();
         await _db.Insertable(dept).ExecuteCommandAsync();
         _logger.Info($"新增部门: {dept.DeptName}");
       }

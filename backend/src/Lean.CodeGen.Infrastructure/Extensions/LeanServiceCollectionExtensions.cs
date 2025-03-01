@@ -17,6 +17,8 @@ using Lean.CodeGen.Application.Services.Base;
 using Lean.CodeGen.Infrastructure.Services.Logging;
 using NLog;
 using ILogger = NLog.ILogger;
+using Microsoft.Extensions.Configuration;
+using Lean.CodeGen.Infrastructure.Configuration;
 
 namespace Lean.CodeGen.Infrastructure.Extensions;
 
@@ -34,12 +36,22 @@ public static class LeanServiceCollectionExtensions
     services.AddSingleton<ILogger>(provider => LogManager.GetCurrentClassLogger());
     services.AddScoped<ILeanLogService, LeanLogService>();
 
-    // 添加基础服务上下文
-    services.AddScoped<LeanBaseServiceContext>();
+    // 添加数据库上下文
+    services.AddScoped<LeanDbContext>();
+
+    // 添加仓储服务
+    services.AddScoped(typeof(ILeanRepository<>), typeof(LeanRepository<>));
+    services.AddScoped(typeof(ILeanRepository<,>), typeof(LeanRepository<,>));
 
     // 添加安全服务
     services.AddScoped<ILeanSqlSafeService, LeanSqlSafeService>();
     services.AddScoped<ITokenService, JwtTokenService>();
+
+    // 添加本地化服务
+    services.AddScoped<ILeanLocalizationService, LeanLocalizationService>();
+
+    // 添加基础服务上下文
+    services.AddScoped<LeanBaseServiceContext>();
 
     // 添加身份服务
     services.AddScoped<ILeanUserService, LeanUserService>();
@@ -61,7 +73,6 @@ public static class LeanServiceCollectionExtensions
     services.AddScoped<ILeanDictDataService, LeanDictDataService>();
     services.AddScoped<ILeanLanguageService, LeanLanguageService>();
     services.AddScoped<ILeanTranslationService, LeanTranslationService>();
-    services.AddScoped<ILeanLocalizationService, LeanLocalizationService>();
 
     // 添加代码生成服务
     services.AddScoped<ILeanDataSourceService, LeanDataSourceService>();
@@ -80,13 +91,24 @@ public static class LeanServiceCollectionExtensions
   }
 
   /// <summary>
-  /// 添加仓储服务
+  /// 添加配置服务
   /// </summary>
-  public static IServiceCollection AddRepositories(this IServiceCollection services)
+  /// <param name="services">服务集合</param>
+  /// <param name="configuration">配置</param>
+  /// <returns>服务集合</returns>
+  public static IServiceCollection AddLeanConfiguration(
+    this IServiceCollection services,
+    IConfiguration configuration)
   {
-    // 注册泛型仓储
-    services.AddScoped(typeof(ILeanRepository<>), typeof(LeanRepository<>));
-    services.AddScoped(typeof(ILeanRepository<,>), typeof(LeanRepository<,>));
+    // 添加配置服务
+    services.AddLeanConfig(configuration);
+
+    // 添加配置选项
+    services.Configure<LeanDatabaseOptions>(configuration.GetSection("Database"));
+    services.Configure<LeanCacheOptions>(configuration.GetSection("Cache"));
+    services.Configure<LeanJwtOptions>(configuration.GetSection("JwtSettings"));
+    services.Configure<LeanSecurityOptions>(configuration.GetSection("Security"));
+    services.Configure<LeanLocalizationOptions>(configuration.GetSection("LocalizationSettings"));
 
     return services;
   }

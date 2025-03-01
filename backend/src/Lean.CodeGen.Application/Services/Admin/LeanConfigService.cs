@@ -14,6 +14,12 @@ using Lean.CodeGen.Application.Services.Security;
 using Microsoft.Extensions.Options;
 using Mapster;
 using Lean.CodeGen.Domain.Validators;
+using Lean.CodeGen.Common.Http;
+using NLog;
+using System;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Lean.CodeGen.Application.Services.Admin;
 
@@ -25,18 +31,31 @@ public class LeanConfigService : LeanBaseService, ILeanConfigService
   private readonly ILogger _logger;
   private readonly ILeanRepository<LeanConfig> _repository;
   private readonly LeanUniqueValidator<LeanConfig> _uniqueValidator;
+  private readonly ILeanLocalizationService _localizationService;
+  private readonly ILeanHttpContextAccessor _httpContextAccessor;
 
   /// <summary>
   /// 构造函数
   /// </summary>
   public LeanConfigService(
       ILeanRepository<LeanConfig> repository,
-      LeanBaseServiceContext context)
+      LeanBaseServiceContext context,
+      ILeanLocalizationService localizationService,
+      ILeanHttpContextAccessor httpContextAccessor)
       : base(context)
   {
     _repository = repository;
     _logger = context.Logger;
     _uniqueValidator = new LeanUniqueValidator<LeanConfig>(_repository);
+    _localizationService = localizationService;
+    _httpContextAccessor = httpContextAccessor;
+  }
+
+  private async Task<string> GetCurrentLanguageAsync()
+  {
+    var langCode = _httpContextAccessor.GetCurrentLanguage();
+    var supportedLanguages = await _localizationService.GetSupportedLanguagesAsync();
+    return supportedLanguages.Contains(langCode) ? langCode : "en-US";
   }
 
   /// <summary>
@@ -50,7 +69,8 @@ public class LeanConfigService : LeanBaseService, ILeanConfigService
       var exists = await _repository.AnyAsync(x => x.ConfigKey == input.ConfigKey);
       if (exists)
       {
-        var message = await GetSystemTranslationAsync("config.error.key_exists", new { key = input.ConfigKey });
+        var langCode = await GetCurrentLanguageAsync();
+        var message = await _localizationService.GetTranslationAsync(langCode, "config.error.key_exists");
         return LeanApiResult<long>.Error(message);
       }
 
@@ -65,7 +85,8 @@ public class LeanConfigService : LeanBaseService, ILeanConfigService
     catch (Exception ex)
     {
       _logger.Error(ex, "创建系统配置失败");
-      var message = await GetSystemTranslationAsync("config.error.create_failed");
+      var langCode = await GetCurrentLanguageAsync();
+      var message = await _localizationService.GetTranslationAsync(langCode, "config.error.create_failed");
       return LeanApiResult<long>.Error(message);
     }
   }
@@ -81,14 +102,16 @@ public class LeanConfigService : LeanBaseService, ILeanConfigService
       var entity = await _repository.FirstOrDefaultAsync(x => x.Id == input.Id);
       if (entity == null)
       {
-        var message = await GetSystemTranslationAsync("config.error.not_found", new { id = input.Id });
+        var langCode = await GetCurrentLanguageAsync();
+        var message = await _localizationService.GetTranslationAsync(langCode, "config.error.not_found");
         return LeanApiResult.Error(message);
       }
 
       // 检查是否为系统内置
       if (entity.IsBuiltin == LeanBuiltinStatus.Yes)
       {
-        var message = await GetSystemTranslationAsync("config.error.builtin_modify");
+        var langCode = await GetCurrentLanguageAsync();
+        var message = await _localizationService.GetTranslationAsync(langCode, "config.error.builtin_modify");
         return LeanApiResult.Error(message);
       }
 
@@ -96,7 +119,8 @@ public class LeanConfigService : LeanBaseService, ILeanConfigService
       var exists = await _repository.AnyAsync(x => x.ConfigKey == input.ConfigKey && x.Id != input.Id);
       if (exists)
       {
-        var message = await GetSystemTranslationAsync("config.error.key_exists", new { key = input.ConfigKey });
+        var langCode = await GetCurrentLanguageAsync();
+        var message = await _localizationService.GetTranslationAsync(langCode, "config.error.key_exists");
         return LeanApiResult.Error(message);
       }
 
@@ -109,7 +133,8 @@ public class LeanConfigService : LeanBaseService, ILeanConfigService
     catch (Exception ex)
     {
       _logger.Error(ex, "更新系统配置失败");
-      var message = await GetSystemTranslationAsync("config.error.update_failed");
+      var langCode = await GetCurrentLanguageAsync();
+      var message = await _localizationService.GetTranslationAsync(langCode, "config.error.update_failed");
       return LeanApiResult.Error(message);
     }
   }
@@ -123,7 +148,8 @@ public class LeanConfigService : LeanBaseService, ILeanConfigService
     {
       if (ids == null || !ids.Any())
       {
-        var message = await GetSystemTranslationAsync("config.error.select_delete");
+        var langCode = await GetCurrentLanguageAsync();
+        var message = await _localizationService.GetTranslationAsync(langCode, "config.error.select_delete");
         return LeanApiResult.Error(message);
       }
 
@@ -131,7 +157,8 @@ public class LeanConfigService : LeanBaseService, ILeanConfigService
       var entities = await _repository.GetListAsync(x => ids.Contains(x.Id));
       if (entities.Any(x => x.IsBuiltin == LeanBuiltinStatus.Yes))
       {
-        var message = await GetSystemTranslationAsync("config.error.builtin_delete");
+        var langCode = await GetCurrentLanguageAsync();
+        var message = await _localizationService.GetTranslationAsync(langCode, "config.error.builtin_delete");
         return LeanApiResult.Error(message);
       }
 
@@ -143,7 +170,8 @@ public class LeanConfigService : LeanBaseService, ILeanConfigService
     catch (Exception ex)
     {
       _logger.Error(ex, "删除系统配置失败");
-      var message = await GetSystemTranslationAsync("config.error.delete_failed");
+      var langCode = await GetCurrentLanguageAsync();
+      var message = await _localizationService.GetTranslationAsync(langCode, "config.error.delete_failed");
       return LeanApiResult.Error(message);
     }
   }
@@ -158,7 +186,8 @@ public class LeanConfigService : LeanBaseService, ILeanConfigService
       var entity = await _repository.FirstOrDefaultAsync(x => x.Id == id);
       if (entity == null)
       {
-        var message = await GetSystemTranslationAsync("config.error.not_found", new { id });
+        var langCode = await GetCurrentLanguageAsync();
+        var message = await _localizationService.GetTranslationAsync(langCode, "config.error.not_found");
         return LeanApiResult<LeanConfigDto>.Error(message);
       }
 
@@ -168,7 +197,8 @@ public class LeanConfigService : LeanBaseService, ILeanConfigService
     catch (Exception ex)
     {
       _logger.Error(ex, "获取系统配置详情失败");
-      var message = await GetSystemTranslationAsync("config.error.get_failed");
+      var langCode = await GetCurrentLanguageAsync();
+      var message = await _localizationService.GetTranslationAsync(langCode, "config.error.get_failed");
       return LeanApiResult<LeanConfigDto>.Error(message);
     }
   }
@@ -231,7 +261,8 @@ public class LeanConfigService : LeanBaseService, ILeanConfigService
     catch (Exception ex)
     {
       _logger.Error(ex, "分页查询系统配置失败");
-      var message = await GetSystemTranslationAsync("config.error.query_failed");
+      var langCode = await GetCurrentLanguageAsync();
+      var message = await _localizationService.GetTranslationAsync(langCode, "config.error.query_failed");
       return LeanApiResult<LeanPageResult<LeanConfigDto>>.Error(message);
     }
   }

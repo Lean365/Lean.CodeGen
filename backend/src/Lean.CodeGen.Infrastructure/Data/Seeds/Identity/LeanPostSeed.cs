@@ -4,6 +4,7 @@ using SqlSugar;
 using System.Threading.Tasks;
 using NLog;
 using ILogger = NLog.ILogger;
+using Lean.CodeGen.Infrastructure.Data.Seeds.Extensions;
 
 namespace Lean.CodeGen.Infrastructure.Data.Seeds.Identity;
 
@@ -61,11 +62,15 @@ public class LeanPostSeed
       if (exists != null)
       {
         post.Id = exists.Id;
+        // 复制原有审计信息并初始化更新信息
+        post.CopyAuditFields(exists).InitAuditFields(true);
         await _db.Updateable(post).ExecuteCommandAsync();
         _logger.Info($"更新岗位: {post.PostName}");
       }
       else
       {
+        // 初始化审计字段
+        post.InitAuditFields();
         await _db.Insertable(post).ExecuteCommandAsync();
         _logger.Info($"新增岗位: {post.PostName}");
       }

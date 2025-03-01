@@ -23,6 +23,9 @@ using Lean.CodeGen.Infrastructure.Extensions;
 using Lean.CodeGen.Infrastructure.Data.Context;
 using Lean.CodeGen.Infrastructure.Data.Initializer;
 using Lean.CodeGen.Infrastructure.Services.Logging;
+using Lean.CodeGen.WebApi.Http;
+using Lean.CodeGen.Common.Http;
+using Lean.CodeGen.Application.Services.Admin;
 using StackExchange.Redis;
 using Lean.CodeGen.Application.Services.Base;
 using Lean.CodeGen.Domain.Interfaces.Repositories;
@@ -57,10 +60,7 @@ builder.Services.Configure<LeanDatabaseOptions>(
 // 添加数据库上下文
 builder.Services.AddScoped<LeanDbContext>();
 
-// 添加仓储服务
-builder.Services.AddRepositories();
-
-// 添加应用服务
+// 添加应用服务（包含仓储注册）
 builder.Services.AddApplicationServices();
 
 // 添加数据库初始化器
@@ -121,6 +121,11 @@ builder.Services.AddLeanSwagger();
 
 // 添加JWT身份认证服务
 builder.Services.AddLeanJwt(builder.Configuration);
+
+// 添加本地化服务
+builder.Services.AddScoped<ILeanLocalizationService, LeanLocalizationService>();
+builder.Services.AddScoped<ILeanConfigService, LeanConfigService>();
+builder.Services.AddScoped<ILeanHttpContextAccessor, LeanHttpContextAccessor>();
 
 // 构建应用程序
 var app = builder.Build();

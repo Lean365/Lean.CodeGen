@@ -16,7 +16,7 @@ namespace Lean.CodeGen.Domain.Entities.Admin;
 /// 字典数据实体
 /// </summary>
 [SugarTable("lean_admin_dict_data", "字典数据表")]
-[SugarIndex("idx_type_value", nameof(TypeId), OrderByType.Asc, true)]
+[SugarIndex("idx_type_value", nameof(TypeId), OrderByType.Asc, nameof(DictLabel), OrderByType.Asc)]
 public class LeanDictData : LeanBaseEntity
 {
     /// <summary>
@@ -81,6 +81,15 @@ public class LeanDictData : LeanBaseEntity
     /// </remarks>
     [SugarColumn(ColumnName = "css_class", ColumnDescription = "样式属性", Length = 100, IsNullable = true, ColumnDataType = "nvarchar")]
     public string? CssClass { get; set; }
+
+    /// <summary>
+    /// 列表样式
+    /// </summary>
+    /// <remarks>
+    /// 用于前端列表显示的样式，如：primary、success、warning、danger等
+    /// </remarks>
+    [SugarColumn(ColumnName = "list_class", ColumnDescription = "列表样式", Length = 100, IsNullable = true, ColumnDataType = "nvarchar")]
+    public string? ListClass { get; set; }
 
     /// <summary>
     /// 排序号

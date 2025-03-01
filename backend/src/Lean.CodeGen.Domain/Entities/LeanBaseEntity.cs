@@ -30,7 +30,7 @@ public abstract class LeanBaseEntity
   /// 记录实体所属的租户ID，用于多租户隔离
   /// </remarks>
   [SugarColumn(ColumnName = "tenant_id", ColumnDescription = "租户ID", IsNullable = true, ColumnDataType = "bigint")]
-  public long? TenantId { get; set; }
+  public long? TenantId { get; set; } = 0;
 
   #region 创建信息
 
