@@ -4,19 +4,26 @@ using Lean.CodeGen.Domain.Entities.Workflow;
 using Lean.CodeGen.Domain.Interfaces.Repositories;
 using System.Linq.Expressions;
 using Mapster;
+using Microsoft.Extensions.Logging;
+using Lean.CodeGen.Application.Services.Base;
 
 namespace Lean.CodeGen.Application.Services.Workflow;
 
 /// <summary>
 /// 工作流关联服务
 /// </summary>
-public class LeanWorkflowCorrelationService : ILeanWorkflowCorrelationService
+public class LeanWorkflowCorrelationService : LeanBaseService, ILeanWorkflowCorrelationService
 {
   private readonly ILeanRepository<LeanWorkflowCorrelation> _repository;
+  private readonly ILogger<LeanWorkflowCorrelationService> _logger;
 
-  public LeanWorkflowCorrelationService(ILeanRepository<LeanWorkflowCorrelation> repository)
+  public LeanWorkflowCorrelationService(
+      ILeanRepository<LeanWorkflowCorrelation> repository,
+      LeanBaseServiceContext context)
+      : base(context)
   {
     _repository = repository;
+    _logger = (ILogger<LeanWorkflowCorrelationService>)context.Logger;
   }
 
   /// <inheritdoc/>

@@ -3,7 +3,9 @@ using Lean.CodeGen.Application.Dtos.Generator;
 using Lean.CodeGen.Application.Services.Generator;
 using Lean.CodeGen.Common.Models;
 using Lean.CodeGen.Common.Excel;
+using Lean.CodeGen.Common.Enums;
 using Lean.CodeGen.WebApi.Controllers;
+using System.IO;
 
 namespace Lean.CodeGen.WebApi.Controllers.Generator
 {
@@ -29,100 +31,104 @@ namespace Lean.CodeGen.WebApi.Controllers.Generator
     /// 获取数据库表列表（分页）
     /// </summary>
     [HttpGet]
-    public async Task<LeanApiResult<LeanPageResult<LeanDbTableDto>>> GetPageListAsync([FromQuery] LeanDbTableQueryDto queryDto)
+    public async Task<IActionResult> GetPageListAsync([FromQuery] LeanDbTableQueryDto queryDto)
     {
       var result = await _dbTableService.GetPageListAsync(queryDto);
-      return LeanApiResult<LeanPageResult<LeanDbTableDto>>.Ok(result);
+      return Success(result, LeanBusinessType.Query);
     }
 
     /// <summary>
     /// 获取数据库表详情
     /// </summary>
     [HttpGet("{id}")]
-    public async Task<LeanApiResult<LeanDbTableDto>> GetAsync(long id)
+    public async Task<IActionResult> GetAsync(long id)
     {
       var result = await _dbTableService.GetAsync(id);
-      return LeanApiResult<LeanDbTableDto>.Ok(result);
+      return Success(result, LeanBusinessType.Query);
     }
 
     /// <summary>
     /// 创建数据库表
     /// </summary>
     [HttpPost]
-    public async Task<LeanApiResult<LeanDbTableDto>> CreateAsync([FromBody] LeanCreateDbTableDto createDto)
+    public async Task<IActionResult> CreateAsync([FromBody] LeanCreateDbTableDto createDto)
     {
       var result = await _dbTableService.CreateAsync(createDto);
-      return LeanApiResult<LeanDbTableDto>.Ok(result);
+      return Success(result, LeanBusinessType.Create);
     }
 
     /// <summary>
     /// 更新数据库表
     /// </summary>
     [HttpPut("{id}")]
-    public async Task<LeanApiResult<LeanDbTableDto>> UpdateAsync(long id, [FromBody] LeanUpdateDbTableDto updateDto)
+    public async Task<IActionResult> UpdateAsync(long id, [FromBody] LeanUpdateDbTableDto updateDto)
     {
       var result = await _dbTableService.UpdateAsync(id, updateDto);
-      return LeanApiResult<LeanDbTableDto>.Ok(result);
+      return Success(result, LeanBusinessType.Update);
     }
 
     /// <summary>
     /// 删除数据库表
     /// </summary>
     [HttpDelete("{id}")]
-    public async Task<LeanApiResult> DeleteAsync(long id)
+    public async Task<IActionResult> DeleteAsync(long id)
     {
       var result = await _dbTableService.DeleteAsync(id);
-      return result ? LeanApiResult.Ok() : LeanApiResult.Error("删除失败");
+      return result ? Success(LeanBusinessType.Delete) : Error("删除失败");
     }
 
     /// <summary>
     /// 导出数据库表
     /// </summary>
     [HttpGet("export")]
-    public async Task<LeanApiResult<LeanFileResult>> ExportAsync([FromQuery] LeanDbTableQueryDto queryDto)
+    public async Task<IActionResult> ExportAsync([FromQuery] LeanDbTableQueryDto queryDto)
     {
       var result = await _dbTableService.ExportAsync(queryDto);
-      return LeanApiResult<LeanFileResult>.Ok(result);
+      var stream = new MemoryStream();
+      result.Stream.CopyTo(stream);
+      return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "db-tables.xlsx");
     }
 
     /// <summary>
     /// 导入数据库表
     /// </summary>
     [HttpPost("import")]
-    public async Task<LeanApiResult<LeanExcelImportResult<LeanDbTableImportDto>>> ImportAsync([FromForm] LeanFileInfo file)
+    public async Task<IActionResult> ImportAsync([FromForm] LeanFileInfo file)
     {
       var result = await _dbTableService.ImportAsync(file);
-      return LeanApiResult<LeanExcelImportResult<LeanDbTableImportDto>>.Ok(result);
+      return Success(result, LeanBusinessType.Import);
     }
 
     /// <summary>
     /// 下载导入模板
     /// </summary>
     [HttpGet("template")]
-    public async Task<LeanApiResult<LeanFileResult>> DownloadTemplateAsync()
+    public async Task<IActionResult> DownloadTemplateAsync()
     {
       var result = await _dbTableService.DownloadTemplateAsync();
-      return LeanApiResult<LeanFileResult>.Ok(result);
+      var stream = new MemoryStream();
+      result.Stream.CopyTo(stream);
+      return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "db-table-template.xlsx");
     }
 
     /// <summary>
     /// 从数据源导入表
     /// </summary>
     [HttpPost("import-from-datasource/{dataSourceId}")]
-    public async Task<LeanApiResult<List<LeanDbTableDto>>> ImportFromDataSourceAsync(long dataSourceId)
+    public async Task<IActionResult> ImportFromDataSourceAsync(long dataSourceId)
     {
       var result = await _dbTableService.ImportFromDataSourceAsync(dataSourceId);
-      return LeanApiResult<List<LeanDbTableDto>>.Ok(result);
+      return Success(result, LeanBusinessType.Import);
     }
 
     /// <summary>
     /// 同步表结构
     /// </summary>
     [HttpPost("{id}/sync")]
-    public async Task<LeanApiResult> SyncStructureAsync(long id)
+    public async Task<IActionResult> SyncStructureAsync(long id)
     {
       var result = await _dbTableService.SyncStructureAsync(id);
-      return result ? LeanApiResult.Ok() : LeanApiResult.Error("同步失败");
+      return result ? Success(LeanBusinessType.Other) : Error("同步失败");
     }
   }
 }

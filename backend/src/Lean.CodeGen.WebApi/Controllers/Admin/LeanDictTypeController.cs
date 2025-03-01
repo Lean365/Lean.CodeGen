@@ -6,13 +6,14 @@ using System.IO;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Lean.CodeGen.Common.Enums;
 
 namespace Lean.CodeGen.WebApi.Controllers.Admin;
 
 /// <summary>
 /// 字典类型控制器
 /// </summary>
-[Route("api/admin/[controller]")]
+[Route("api/admin/dict-type")]
 [ApiController]
 public class LeanDictTypeController : LeanBaseController
 {
@@ -33,7 +34,7 @@ public class LeanDictTypeController : LeanBaseController
   public async Task<IActionResult> CreateAsync([FromBody] LeanCreateDictTypeDto input)
   {
     var result = await _service.CreateAsync(input);
-    return ApiResult(result);
+    return Success(result, LeanBusinessType.Create);
   }
 
   /// <summary>
@@ -43,7 +44,7 @@ public class LeanDictTypeController : LeanBaseController
   public async Task<IActionResult> UpdateAsync([FromBody] LeanUpdateDictTypeDto input)
   {
     var result = await _service.UpdateAsync(input);
-    return ApiResult(result);
+    return Success(result, LeanBusinessType.Update);
   }
 
   /// <summary>
@@ -52,38 +53,28 @@ public class LeanDictTypeController : LeanBaseController
   [HttpDelete("{id}")]
   public async Task<IActionResult> DeleteAsync(long id)
   {
-    var result = await _service.DeleteAsync(id);
-    return ApiResult(result);
+    await _service.DeleteAsync(id);
+    return Success(LeanBusinessType.Delete);
   }
 
   /// <summary>
-  /// 批量删除字典类型
-  /// </summary>
-  [HttpDelete]
-  public async Task<IActionResult> BatchDeleteAsync([FromBody] List<long> ids)
-  {
-    var result = await _service.BatchDeleteAsync(ids);
-    return ApiResult(result);
-  }
-
-  /// <summary>
-  /// 获取字典类型信息
+  /// 获取字典类型详情
   /// </summary>
   [HttpGet("{id}")]
   public async Task<IActionResult> GetAsync(long id)
   {
     var result = await _service.GetAsync(id);
-    return ApiResult(result);
+    return Success(result, LeanBusinessType.Query);
   }
 
   /// <summary>
   /// 分页查询字典类型
   /// </summary>
-  [HttpGet("page")]
-  public async Task<IActionResult> GetPagedListAsync([FromQuery] LeanQueryDictTypeDto input)
+  [HttpGet]
+  public async Task<IActionResult> GetPageAsync([FromQuery] LeanQueryDictTypeDto input)
   {
     var result = await _service.GetPageAsync(input);
-    return ApiResult(result);
+    return Success(result, LeanBusinessType.Query);
   }
 
   /// <summary>
@@ -93,7 +84,7 @@ public class LeanDictTypeController : LeanBaseController
   public async Task<IActionResult> SetStatusAsync([FromBody] LeanChangeDictTypeStatusDto input)
   {
     var result = await _service.SetStatusAsync(input);
-    return ApiResult(result);
+    return Success(result, LeanBusinessType.Update);
   }
 
   /// <summary>
@@ -102,8 +93,8 @@ public class LeanDictTypeController : LeanBaseController
   [HttpGet("export")]
   public async Task<IActionResult> ExportAsync([FromQuery] LeanQueryDictTypeDto input)
   {
-    var result = await _service.ExportAsync(input);
-    return ApiResult(result);
+    var bytes = await _service.ExportAsync(input);
+    return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "dict-types.xlsx");
   }
 
   /// <summary>
@@ -112,43 +103,22 @@ public class LeanDictTypeController : LeanBaseController
   [HttpPost("import")]
   public async Task<IActionResult> ImportAsync([FromForm] IFormFile file)
   {
-    if (file == null || file.Length == 0)
-    {
-      return ApiResult(LeanApiResult.Error("请选择要导入的文件"));
-    }
-
-    var fileInfo = new LeanFileInfo
-    {
-      FileName = file.FileName,
-      FilePath = Path.GetTempFileName()
-    };
-
-    try
-    {
-      using (var stream = new FileStream(fileInfo.FilePath, FileMode.Create))
-      {
-        await file.CopyToAsync(stream);
-      }
-
-      var result = await _service.ImportAsync(fileInfo);
-      return ApiResult(result);
-    }
-    finally
-    {
-      if (System.IO.File.Exists(fileInfo.FilePath))
-      {
-        System.IO.File.Delete(fileInfo.FilePath);
-      }
-    }
+    using var ms = new MemoryStream();
+    await file.CopyToAsync(ms);
+    var fileInfo = new LeanFileInfo { FilePath = System.IO.Path.GetTempFileName() };
+    await System.IO.File.WriteAllBytesAsync(fileInfo.FilePath, ms.ToArray());
+    var result = await _service.ImportAsync(fileInfo);
+    System.IO.File.Delete(fileInfo.FilePath);
+    return Success(result, LeanBusinessType.Import);
   }
 
   /// <summary>
-  /// 下载导入模板
+  /// 获取导入模板
   /// </summary>
-  [HttpGet("import/template")]
+  [HttpGet("template")]
   public async Task<IActionResult> GetImportTemplateAsync()
   {
-    var result = await _service.GetImportTemplateAsync();
-    return ApiResult(result);
+    var bytes = await _service.GetImportTemplateAsync();
+    return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "dict-type-template.xlsx");
   }
 }

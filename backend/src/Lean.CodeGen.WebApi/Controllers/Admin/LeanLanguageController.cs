@@ -2,7 +2,8 @@ using Lean.CodeGen.Application.Dtos.Admin;
 using Lean.CodeGen.Application.Services.Admin;
 using Lean.CodeGen.Common.Models;
 using Microsoft.AspNetCore.Mvc;
-
+using System.IO;
+using Lean.CodeGen.Common.Enums;
 namespace Lean.CodeGen.WebApi.Controllers.Admin;
 
 /// <summary>
@@ -29,7 +30,7 @@ public class LeanLanguageController : LeanBaseController
   public async Task<IActionResult> CreateAsync([FromBody] LeanCreateLanguageDto input)
   {
     var result = await _languageService.CreateAsync(input);
-    return ApiResult(result);
+    return Success(result, LeanBusinessType.Create);
   }
 
   /// <summary>
@@ -39,7 +40,7 @@ public class LeanLanguageController : LeanBaseController
   public async Task<IActionResult> UpdateAsync([FromBody] LeanUpdateLanguageDto input)
   {
     var result = await _languageService.UpdateAsync(input);
-    return ApiResult(result);
+    return Success(result, LeanBusinessType.Update);
   }
 
   /// <summary>
@@ -49,7 +50,7 @@ public class LeanLanguageController : LeanBaseController
   public async Task<IActionResult> DeleteAsync([FromRoute] long id)
   {
     var result = await _languageService.DeleteAsync(id);
-    return ApiResult(result);
+    return Success(result, LeanBusinessType.Delete);
   }
 
   /// <summary>
@@ -59,7 +60,7 @@ public class LeanLanguageController : LeanBaseController
   public async Task<IActionResult> BatchDeleteAsync([FromBody] List<long> ids)
   {
     var result = await _languageService.BatchDeleteAsync(ids);
-    return ApiResult(result);
+    return Success(result, LeanBusinessType.Delete);
   }
 
   /// <summary>
@@ -69,7 +70,7 @@ public class LeanLanguageController : LeanBaseController
   public async Task<IActionResult> GetAsync([FromRoute] long id)
   {
     var result = await _languageService.GetAsync(id);
-    return ApiResult(result);
+    return Success(result, LeanBusinessType.Query);
   }
 
   /// <summary>
@@ -79,7 +80,7 @@ public class LeanLanguageController : LeanBaseController
   public async Task<IActionResult> GetPageAsync([FromQuery] LeanQueryLanguageDto input)
   {
     var result = await _languageService.GetPageAsync(input);
-    return ApiResult(result);
+    return Success(result, LeanBusinessType.Query);
   }
 
   /// <summary>
@@ -89,7 +90,7 @@ public class LeanLanguageController : LeanBaseController
   public async Task<IActionResult> SetStatusAsync([FromBody] LeanChangeLanguageStatusDto input)
   {
     var result = await _languageService.SetStatusAsync(input);
-    return ApiResult(result);
+    return Success(result, LeanBusinessType.Update);
   }
 
   /// <summary>
@@ -99,7 +100,7 @@ public class LeanLanguageController : LeanBaseController
   public async Task<IActionResult> GetListAsync()
   {
     var result = await _languageService.GetListAsync();
-    return ApiResult(result);
+    return Success(result, LeanBusinessType.Query);
   }
 
   /// <summary>
@@ -109,6 +110,41 @@ public class LeanLanguageController : LeanBaseController
   public async Task<IActionResult> SetDefaultAsync([FromRoute] long id)
   {
     var result = await _languageService.SetDefaultAsync(id);
-    return ApiResult(result);
+    return Success(result, LeanBusinessType.Update);
+  }
+
+  /// <summary>
+  /// 导出语言
+  /// </summary>
+  [HttpGet("export")]
+  public async Task<IActionResult> ExportAsync([FromQuery] LeanQueryLanguageDto input)
+  {
+    var bytes = await _languageService.ExportAsync(input);
+    return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "languages.xlsx");
+  }
+
+  /// <summary>
+  /// 导入语言
+  /// </summary>
+  [HttpPost("import")]
+  public async Task<IActionResult> ImportAsync([FromForm] IFormFile file)
+  {
+    using var ms = new MemoryStream();
+    await file.CopyToAsync(ms);
+    var fileInfo = new LeanFileInfo { FilePath = Path.GetTempFileName() };
+    await System.IO.File.WriteAllBytesAsync(fileInfo.FilePath, ms.ToArray());
+    var result = await _languageService.ImportAsync(fileInfo);
+    System.IO.File.Delete(fileInfo.FilePath);
+    return Success(result, LeanBusinessType.Import);
+  }
+
+  /// <summary>
+  /// 获取导入模板
+  /// </summary>
+  [HttpGet("template")]
+  public async Task<IActionResult> GetImportTemplateAsync()
+  {
+    var bytes = await _languageService.GetImportTemplateAsync();
+    return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "language-template.xlsx");
   }
 }

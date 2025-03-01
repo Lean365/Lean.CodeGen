@@ -3,6 +3,7 @@ using Lean.CodeGen.Application.Services.Workflow;
 using Lean.CodeGen.Common.Models;
 using Lean.CodeGen.WebApi.Controllers;
 using Microsoft.AspNetCore.Mvc;
+using Lean.CodeGen.Common.Enums;
 
 namespace Lean.CodeGen.WebApi.Controllers.Workflow;
 
@@ -11,6 +12,7 @@ namespace Lean.CodeGen.WebApi.Controllers.Workflow;
 /// </summary>
 [ApiController]
 [Route("api/workflow/correlations")]
+[ApiExplorerSettings(GroupName = "workflow")]
 public class LeanWorkflowCorrelationController : LeanBaseController
 {
   private readonly ILeanWorkflowCorrelationService _service;
@@ -30,9 +32,10 @@ public class LeanWorkflowCorrelationController : LeanBaseController
   /// <param name="id">关联ID</param>
   /// <returns>工作流关联</returns>
   [HttpGet("{id}")]
-  public Task<LeanWorkflowCorrelationDto?> GetAsync(long id)
+  public async Task<IActionResult> GetAsync(long id)
   {
-    return _service.GetAsync(id);
+    var result = await _service.GetAsync(id);
+    return Success(result, LeanBusinessType.Query);
   }
 
   /// <summary>
@@ -41,9 +44,10 @@ public class LeanWorkflowCorrelationController : LeanBaseController
   /// <param name="correlationId">关联键</param>
   /// <returns>工作流关联</returns>
   [HttpGet("correlation-id/{correlationId}")]
-  public Task<LeanWorkflowCorrelationDto?> GetByCorrelationIdAsync(string correlationId)
+  public async Task<IActionResult> GetByCorrelationIdAsync(string correlationId)
   {
-    return _service.GetByCorrelationIdAsync(correlationId);
+    var result = await _service.GetByCorrelationIdAsync(correlationId);
+    return Success(result, LeanBusinessType.Query);
   }
 
   /// <summary>
@@ -52,9 +56,10 @@ public class LeanWorkflowCorrelationController : LeanBaseController
   /// <param name="dto">工作流关联</param>
   /// <returns>关联ID</returns>
   [HttpPost]
-  public Task<long> CreateAsync(LeanWorkflowCorrelationDto dto)
+  public async Task<IActionResult> CreateAsync(LeanWorkflowCorrelationDto dto)
   {
-    return _service.CreateAsync(dto);
+    var result = await _service.CreateAsync(dto);
+    return Success(result, LeanBusinessType.Create);
   }
 
   /// <summary>
@@ -64,13 +69,14 @@ public class LeanWorkflowCorrelationController : LeanBaseController
   /// <param name="dto">工作流关联</param>
   /// <returns>是否成功</returns>
   [HttpPut("{id}")]
-  public async Task<bool> UpdateAsync(long id, LeanWorkflowCorrelationDto dto)
+  public async Task<IActionResult> UpdateAsync(long id, LeanWorkflowCorrelationDto dto)
   {
     if (id != dto.Id)
     {
-      return false;
+      return Error("ID不匹配");
     }
-    return await _service.UpdateAsync(dto);
+    var result = await _service.UpdateAsync(dto);
+    return Success(result, LeanBusinessType.Update);
   }
 
   /// <summary>
@@ -79,9 +85,10 @@ public class LeanWorkflowCorrelationController : LeanBaseController
   /// <param name="id">关联ID</param>
   /// <returns>是否成功</returns>
   [HttpDelete("{id}")]
-  public Task<bool> DeleteAsync(long id)
+  public async Task<IActionResult> DeleteAsync(long id)
   {
-    return _service.DeleteAsync(id);
+    var result = await _service.DeleteAsync(id);
+    return Success(result, LeanBusinessType.Delete);
   }
 
   /// <summary>
@@ -97,7 +104,7 @@ public class LeanWorkflowCorrelationController : LeanBaseController
   /// <param name="endTime">结束时间</param>
   /// <returns>分页结果</returns>
   [HttpGet]
-  public Task<LeanPageResult<LeanWorkflowCorrelationDto>> GetPagedListAsync(
+  public async Task<IActionResult> GetPagedListAsync(
       [FromQuery] int pageIndex = 1,
       [FromQuery] int pageSize = 10,
       [FromQuery] long? instanceId = null,
@@ -107,6 +114,7 @@ public class LeanWorkflowCorrelationController : LeanBaseController
       [FromQuery] DateTime? startTime = null,
       [FromQuery] DateTime? endTime = null)
   {
-    return _service.GetPagedListAsync(pageIndex, pageSize, instanceId, correlationId, correlationType, status, startTime, endTime);
+    var result = await _service.GetPagedListAsync(pageIndex, pageSize, instanceId, correlationId, correlationType, status, startTime, endTime);
+    return Success(result, LeanBusinessType.Query);
   }
 }

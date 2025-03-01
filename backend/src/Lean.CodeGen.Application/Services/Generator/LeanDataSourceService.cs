@@ -34,13 +34,11 @@ namespace Lean.CodeGen.Application.Services.Generator
     /// </summary>
     public LeanDataSourceService(
         ILeanRepository<LeanDataSource> repository,
-        ILeanSqlSafeService sqlSafeService,
-        IOptions<LeanSecurityOptions> securityOptions,
-        ILogger<LeanDataSourceService> logger)
-        : base(sqlSafeService, securityOptions, logger)
+        LeanBaseServiceContext context)
+        : base(context)
     {
-      _logger = logger;
       _repository = repository;
+      _logger = (ILogger<LeanDataSourceService>)context.Logger;
       _uniqueValidator = new LeanUniqueValidator<LeanDataSource>(_repository);
     }
 

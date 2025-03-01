@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Lean.CodeGen.Application.Dtos.Audit;
 using Lean.CodeGen.Application.Services.Audit;
 using Lean.CodeGen.Common.Models;
+using Lean.CodeGen.Common.Enums;
 
 namespace Lean.CodeGen.WebApi.Controllers.Audit
 {
@@ -10,6 +11,7 @@ namespace Lean.CodeGen.WebApi.Controllers.Audit
   /// </summary>
   [Route("api/login/logs")]
   [ApiController]
+  [ApiExplorerSettings(GroupName = "audit")]
   public class LeanLoginLogController : LeanBaseController
   {
     private readonly ILeanLoginLogService _loginLogService;
@@ -26,36 +28,40 @@ namespace Lean.CodeGen.WebApi.Controllers.Audit
     /// 获取登录日志列表（分页）
     /// </summary>
     [HttpGet]
-    public Task<LeanPageResult<LeanLoginLogDto>> GetPageListAsync([FromQuery] LeanLoginLogQueryDto queryDto)
+    public async Task<IActionResult> GetPageListAsync([FromQuery] LeanLoginLogQueryDto queryDto)
     {
-      return _loginLogService.GetPageListAsync(queryDto);
+      var result = await _loginLogService.GetPageListAsync(queryDto);
+      return Success(result, LeanBusinessType.Query);
     }
 
     /// <summary>
     /// 获取登录日志详情
     /// </summary>
     [HttpGet("{id}")]
-    public Task<LeanLoginLogDto> GetAsync(long id)
+    public async Task<IActionResult> GetAsync(long id)
     {
-      return _loginLogService.GetAsync(id);
+      var result = await _loginLogService.GetAsync(id);
+      return Success(result, LeanBusinessType.Query);
     }
 
     /// <summary>
     /// 导出登录日志
     /// </summary>
     [HttpGet("export")]
-    public Task<LeanFileResult> ExportAsync([FromQuery] LeanLoginLogQueryDto queryDto)
+    public async Task<IActionResult> ExportAsync([FromQuery] LeanLoginLogQueryDto queryDto)
     {
-      return _loginLogService.ExportAsync(queryDto);
+      var result = await _loginLogService.ExportAsync(queryDto);
+      return File(result.Stream, result.ContentType, result.FileName);
     }
 
     /// <summary>
     /// 清空登录日志
     /// </summary>
     [HttpDelete("clear")]
-    public Task<bool> ClearAsync()
+    public async Task<IActionResult> ClearAsync()
     {
-      return _loginLogService.ClearAsync();
+      var result = await _loginLogService.ClearAsync();
+      return Success(result, LeanBusinessType.Delete);
     }
   }
 }

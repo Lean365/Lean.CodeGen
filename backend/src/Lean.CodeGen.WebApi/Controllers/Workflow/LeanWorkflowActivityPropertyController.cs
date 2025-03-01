@@ -3,6 +3,7 @@ using Lean.CodeGen.Application.Services.Workflow;
 using Lean.CodeGen.Common.Models;
 using Lean.CodeGen.WebApi.Controllers;
 using Microsoft.AspNetCore.Mvc;
+using Lean.CodeGen.Common.Enums;
 
 namespace Lean.CodeGen.WebApi.Controllers.Workflow;
 
@@ -11,6 +12,7 @@ namespace Lean.CodeGen.WebApi.Controllers.Workflow;
 /// </summary>
 [ApiController]
 [Route("api/workflow/activity-properties")]
+[ApiExplorerSettings(GroupName = "workflow")]
 public class LeanWorkflowActivityPropertyController : LeanBaseController
 {
   private readonly ILeanWorkflowActivityPropertyService _service;
@@ -30,9 +32,10 @@ public class LeanWorkflowActivityPropertyController : LeanBaseController
   /// <param name="id">属性ID</param>
   /// <returns>活动属性</returns>
   [HttpGet("{id}")]
-  public Task<LeanWorkflowActivityPropertyDto?> GetAsync(long id)
+  public async Task<IActionResult> GetAsync(long id)
   {
-    return _service.GetAsync(id);
+    var result = await _service.GetAsync(id);
+    return Success(result, LeanBusinessType.Query);
   }
 
   /// <summary>
@@ -42,9 +45,10 @@ public class LeanWorkflowActivityPropertyController : LeanBaseController
   /// <param name="propertyName">属性名称</param>
   /// <returns>活动属性</returns>
   [HttpGet("activity/{activityId}/property/{propertyName}")]
-  public Task<LeanWorkflowActivityPropertyDto?> GetByNameAsync(long activityId, string propertyName)
+  public async Task<IActionResult> GetByNameAsync(long activityId, string propertyName)
   {
-    return _service.GetByNameAsync(activityId, propertyName);
+    var result = await _service.GetByNameAsync(activityId, propertyName);
+    return Success(result, LeanBusinessType.Query);
   }
 
   /// <summary>
@@ -53,9 +57,10 @@ public class LeanWorkflowActivityPropertyController : LeanBaseController
   /// <param name="dto">活动属性</param>
   /// <returns>属性ID</returns>
   [HttpPost]
-  public Task<long> CreateAsync(LeanWorkflowActivityPropertyDto dto)
+  public async Task<IActionResult> CreateAsync(LeanWorkflowActivityPropertyDto dto)
   {
-    return _service.CreateAsync(dto);
+    var result = await _service.CreateAsync(dto);
+    return Success(result, LeanBusinessType.Create);
   }
 
   /// <summary>

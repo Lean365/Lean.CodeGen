@@ -6,80 +6,80 @@ namespace Lean.CodeGen.Application.Services.Identity;
 /// <summary>
 /// 菜单服务接口
 /// </summary>
+/// <remarks>
+/// 提供菜单管理相关的业务功能，包括：
+/// 1. 菜单的增删改查
+/// 2. 菜单状态管理
+/// 3. 菜单树形结构管理
+/// 4. 菜单权限管理
+/// </remarks>
 public interface ILeanMenuService
 {
   /// <summary>
   /// 创建菜单
   /// </summary>
-  Task<LeanApiResult<long>> CreateAsync(LeanCreateMenuDto input);
+  /// <param name="input">菜单创建参数</param>
+  /// <returns>创建成功的菜单信息</returns>
+  Task<LeanMenuDto> CreateAsync(LeanCreateMenuDto input);
 
   /// <summary>
   /// 更新菜单
   /// </summary>
-  Task<LeanApiResult> UpdateAsync(LeanUpdateMenuDto input);
+  /// <param name="input">菜单更新参数</param>
+  /// <returns>更新后的菜单信息</returns>
+  Task<LeanMenuDto> UpdateAsync(LeanUpdateMenuDto input);
 
   /// <summary>
   /// 删除菜单
   /// </summary>
-  Task<LeanApiResult> DeleteAsync(long id);
-
-  /// <summary>
-  /// 批量删除菜单
-  /// </summary>
-  Task<LeanApiResult> BatchDeleteAsync(List<long> ids);
+  /// <param name="input">菜单删除参数</param>
+  Task DeleteAsync(LeanDeleteMenuDto input);
 
   /// <summary>
   /// 获取菜单信息
   /// </summary>
-  Task<LeanApiResult<LeanMenuDto>> GetAsync(long id);
+  /// <param name="id">菜单ID</param>
+  /// <returns>菜单详细信息</returns>
+  Task<LeanMenuDto> GetAsync(long id);
 
   /// <summary>
-  /// 分页查询菜单
+  /// 查询菜单列表
   /// </summary>
-  Task<LeanApiResult<LeanPageResult<LeanMenuDto>>> GetPageAsync(LeanQueryMenuDto input);
-
-  /// <summary>
-  /// 修改菜单状态
-  /// </summary>
-  Task<LeanApiResult> SetStatusAsync(LeanChangeMenuStatusDto input);
+  /// <param name="input">查询参数</param>
+  /// <returns>菜单列表</returns>
+  Task<List<LeanMenuDto>> QueryAsync(LeanQueryMenuDto input);
 
   /// <summary>
   /// 获取菜单树形结构
   /// </summary>
-  Task<LeanApiResult<List<LeanMenuTreeDto>>> GetTreeAsync();
+  /// <param name="input">查询参数</param>
+  /// <returns>菜单树形结构</returns>
+  Task<List<LeanMenuTreeDto>> GetTreeAsync(LeanQueryMenuDto input);
 
   /// <summary>
-  /// 获取用户菜单树
+  /// 修改菜单状态
   /// </summary>
-  Task<LeanApiResult<List<LeanMenuTreeDto>>> GetUserMenuTreeAsync(long userId);
-
-  /// <summary>
-  /// 获取用户权限列表
-  /// </summary>
-  Task<LeanApiResult<List<string>>> GetUserPermissionsAsync(long userId);
+  /// <param name="input">状态修改参数</param>
+  Task ChangeStatusAsync(LeanChangeMenuStatusDto input);
 
   /// <summary>
   /// 获取角色菜单树
   /// </summary>
-  Task<LeanApiResult<List<LeanMenuTreeDto>>> GetRoleMenuTreeAsync(long roleId);
+  /// <param name="roleId">角色ID</param>
+  /// <returns>角色菜单树</returns>
+  Task<List<LeanMenuTreeDto>> GetRoleMenuTreeAsync(long roleId);
 
   /// <summary>
-  /// 获取菜单的操作权限列表
+  /// 获取用户菜单树
   /// </summary>
-  Task<LeanApiResult<List<LeanMenuOperationDto>>> GetMenuOperationsAsync(long menuId);
+  /// <param name="userId">用户ID</param>
+  /// <returns>用户菜单树</returns>
+  Task<List<LeanMenuTreeDto>> GetUserMenuTreeAsync(long userId);
 
   /// <summary>
-  /// 设置菜单的操作权限
+  /// 获取用户权限列表
   /// </summary>
-  Task<LeanApiResult> SetMenuOperationsAsync(LeanSetMenuOperationDto input);
-
-  /// <summary>
-  /// 获取用户在指定菜单的操作权限
-  /// </summary>
-  Task<LeanApiResult<List<string>>> GetUserMenuOperationsAsync(long userId, long menuId);
-
-  /// <summary>
-  /// 验证用户是否有指定菜单的操作权限
-  /// </summary>
-  Task<LeanApiResult<bool>> ValidateUserMenuOperationAsync(long userId, long menuId, string operation);
+  /// <param name="userId">用户ID</param>
+  /// <returns>用户权限列表</returns>
+  Task<List<string>> GetUserPermissionsAsync(long userId);
 }

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Lean.CodeGen.Application.Dtos.Audit;
 using Lean.CodeGen.Application.Services.Audit;
 using Lean.CodeGen.Common.Models;
+using Lean.CodeGen.Common.Enums;
 
 namespace Lean.CodeGen.WebApi.Controllers.Audit
 {
@@ -27,40 +28,40 @@ namespace Lean.CodeGen.WebApi.Controllers.Audit
     /// 获取审计日志列表（分页）
     /// </summary>
     [HttpGet]
-    public async Task<LeanApiResult<LeanPageResult<LeanAuditLogDto>>> GetPageListAsync([FromQuery] LeanAuditLogQueryDto queryDto)
+    public async Task<IActionResult> GetPageListAsync([FromQuery] LeanAuditLogQueryDto queryDto)
     {
       var result = await _auditLogService.GetPageListAsync(queryDto);
-      return LeanApiResult<LeanPageResult<LeanAuditLogDto>>.Ok(result);
+      return Success(result, LeanBusinessType.Query);
     }
 
     /// <summary>
     /// 获取审计日志详情
     /// </summary>
     [HttpGet("{id}")]
-    public async Task<LeanApiResult<LeanAuditLogDto>> GetAsync(long id)
+    public async Task<IActionResult> GetAsync(long id)
     {
       var result = await _auditLogService.GetAsync(id);
-      return LeanApiResult<LeanAuditLogDto>.Ok(result);
+      return Success(result, LeanBusinessType.Query);
     }
 
     /// <summary>
     /// 导出审计日志
     /// </summary>
     [HttpGet("export")]
-    public async Task<LeanApiResult<LeanFileResult>> ExportAsync([FromQuery] LeanAuditLogQueryDto queryDto)
+    public async Task<IActionResult> ExportAsync([FromQuery] LeanAuditLogQueryDto queryDto)
     {
       var result = await _auditLogService.ExportAsync(queryDto);
-      return LeanApiResult<LeanFileResult>.Ok(result);
+      return File(result.Stream, result.ContentType, result.FileName);
     }
 
     /// <summary>
     /// 清空审计日志
     /// </summary>
     [HttpDelete("clear")]
-    public async Task<LeanApiResult<bool>> ClearAsync()
+    public async Task<IActionResult> ClearAsync()
     {
       var result = await _auditLogService.ClearAsync();
-      return LeanApiResult<bool>.Ok(result);
+      return Success(result, LeanBusinessType.Delete);
     }
   }
 }

@@ -5,19 +5,26 @@ using Lean.CodeGen.Domain.Entities.Workflow;
 using Lean.CodeGen.Domain.Interfaces.Repositories;
 using System.Linq.Expressions;
 using Mapster;
+using Microsoft.Extensions.Logging;
+using Lean.CodeGen.Application.Services.Base;
 
 namespace Lean.CodeGen.Application.Services.Workflow;
 
 /// <summary>
 /// 工作流活动实例服务
 /// </summary>
-public class LeanWorkflowActivityInstanceService : ILeanWorkflowActivityInstanceService
+public class LeanWorkflowActivityInstanceService : LeanBaseService, ILeanWorkflowActivityInstanceService
 {
   private readonly ILeanRepository<LeanWorkflowActivityInstance> _repository;
+  private readonly ILogger<LeanWorkflowActivityInstanceService> _logger;
 
-  public LeanWorkflowActivityInstanceService(ILeanRepository<LeanWorkflowActivityInstance> repository)
+  public LeanWorkflowActivityInstanceService(
+      ILeanRepository<LeanWorkflowActivityInstance> repository,
+      LeanBaseServiceContext context)
+      : base(context)
   {
     _repository = repository;
+    _logger = (ILogger<LeanWorkflowActivityInstanceService>)context.Logger;
   }
 
   /// <inheritdoc/>

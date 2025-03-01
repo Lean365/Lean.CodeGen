@@ -3,7 +3,8 @@ using Lean.CodeGen.Application.Dtos.Generator;
 using Lean.CodeGen.Application.Services.Generator;
 using Lean.CodeGen.Common.Models;
 using Lean.CodeGen.Common.Excel;
-using Lean.CodeGen.WebApi.Controllers;
+using Lean.CodeGen.Common.Enums;
+using System.IO;
 
 namespace Lean.CodeGen.WebApi.Controllers.Generator
 {
@@ -29,80 +30,84 @@ namespace Lean.CodeGen.WebApi.Controllers.Generator
     /// 获取表配置关联列表（分页）
     /// </summary>
     [HttpGet]
-    public async Task<LeanApiResult<LeanPageResult<LeanTableConfigDto>>> GetPageListAsync([FromQuery] LeanTableConfigQueryDto queryDto)
+    public async Task<IActionResult> GetPageListAsync([FromQuery] LeanTableConfigQueryDto queryDto)
     {
       var result = await _tableConfigService.GetPageListAsync(queryDto);
-      return LeanApiResult<LeanPageResult<LeanTableConfigDto>>.Ok(result);
+      return Success(result, LeanBusinessType.Query);
     }
 
     /// <summary>
     /// 获取表配置关联详情
     /// </summary>
     [HttpGet("{id}")]
-    public async Task<LeanApiResult<LeanTableConfigDto>> GetAsync(long id)
+    public async Task<IActionResult> GetAsync(long id)
     {
       var result = await _tableConfigService.GetAsync(id);
-      return LeanApiResult<LeanTableConfigDto>.Ok(result);
+      return Success(result, LeanBusinessType.Query);
     }
 
     /// <summary>
     /// 创建表配置关联
     /// </summary>
     [HttpPost]
-    public async Task<LeanApiResult<LeanTableConfigDto>> CreateAsync([FromBody] LeanCreateTableConfigDto createDto)
+    public async Task<IActionResult> CreateAsync([FromBody] LeanCreateTableConfigDto createDto)
     {
       var result = await _tableConfigService.CreateAsync(createDto);
-      return LeanApiResult<LeanTableConfigDto>.Ok(result);
+      return Success(result, LeanBusinessType.Create);
     }
 
     /// <summary>
     /// 更新表配置关联
     /// </summary>
     [HttpPut("{id}")]
-    public async Task<LeanApiResult<LeanTableConfigDto>> UpdateAsync(long id, [FromBody] LeanUpdateTableConfigDto updateDto)
+    public async Task<IActionResult> UpdateAsync(long id, [FromBody] LeanUpdateTableConfigDto updateDto)
     {
       var result = await _tableConfigService.UpdateAsync(id, updateDto);
-      return LeanApiResult<LeanTableConfigDto>.Ok(result);
+      return Success(result, LeanBusinessType.Update);
     }
 
     /// <summary>
     /// 删除表配置关联
     /// </summary>
     [HttpDelete("{id}")]
-    public async Task<LeanApiResult> DeleteAsync(long id)
+    public async Task<IActionResult> DeleteAsync(long id)
     {
       var result = await _tableConfigService.DeleteAsync(id);
-      return result ? LeanApiResult.Ok() : LeanApiResult.Error("删除失败");
+      return result ? Success(LeanBusinessType.Delete) : Error("删除失败");
     }
 
     /// <summary>
     /// 导出表配置关联
     /// </summary>
     [HttpGet("export")]
-    public async Task<LeanApiResult<LeanFileResult>> ExportAsync([FromQuery] LeanTableConfigQueryDto queryDto)
+    public async Task<IActionResult> ExportAsync([FromQuery] LeanTableConfigQueryDto queryDto)
     {
       var result = await _tableConfigService.ExportAsync(queryDto);
-      return LeanApiResult<LeanFileResult>.Ok(result);
+      var stream = new MemoryStream();
+      result.Stream.CopyTo(stream);
+      return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "table-configs.xlsx");
     }
 
     /// <summary>
     /// 导入表配置关联
     /// </summary>
     [HttpPost("import")]
-    public async Task<LeanApiResult<LeanExcelImportResult<LeanTableConfigImportDto>>> ImportAsync([FromForm] LeanFileInfo file)
+    public async Task<IActionResult> ImportAsync([FromForm] LeanFileInfo file)
     {
       var result = await _tableConfigService.ImportAsync(file);
-      return LeanApiResult<LeanExcelImportResult<LeanTableConfigImportDto>>.Ok(result);
+      return Success(result, LeanBusinessType.Import);
     }
 
     /// <summary>
     /// 下载导入模板
     /// </summary>
     [HttpGet("template")]
-    public async Task<LeanApiResult<LeanFileResult>> DownloadTemplateAsync()
+    public async Task<IActionResult> DownloadTemplateAsync()
     {
       var result = await _tableConfigService.DownloadTemplateAsync();
-      return LeanApiResult<LeanFileResult>.Ok(result);
+      var stream = new MemoryStream();
+      result.Stream.CopyTo(stream);
+      return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "table-config-template.xlsx");
     }
   }
 }

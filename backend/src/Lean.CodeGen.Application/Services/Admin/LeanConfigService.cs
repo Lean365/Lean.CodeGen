@@ -31,15 +31,13 @@ public class LeanConfigService : LeanBaseService, ILeanConfigService
   /// 构造函数
   /// </summary>
   public LeanConfigService(
-    ILogger<LeanConfigService> logger,
-    ILeanRepository<LeanConfig> repository,
-    ILeanSqlSafeService sqlSafeService,
-    IOptions<LeanSecurityOptions> securityOptions)
-    : base(sqlSafeService, securityOptions, logger)
+      ILeanRepository<LeanConfig> repository,
+      LeanBaseServiceContext context)
+      : base(context)
   {
-    _logger = logger;
     _repository = repository;
-    _uniqueValidator = new LeanUniqueValidator<LeanConfig>(repository);
+    _logger = (ILogger<LeanConfigService>)context.Logger;
+    _uniqueValidator = new LeanUniqueValidator<LeanConfig>(_repository);
   }
 
   /// <summary>
@@ -225,131 +223,111 @@ public class LeanConfigService : LeanBaseService, ILeanConfigService
   /// <summary>
   /// 导出系统配置
   /// </summary>
-  public async Task<LeanApiResult<byte[]>> ExportAsync(LeanQueryConfigDto input)
+  public async Task<byte[]> ExportAsync(LeanQueryConfigDto input)
   {
-    try
-    {
-      Expression<Func<LeanConfig, bool>> predicate = x => true;
-
-      if (!string.IsNullOrEmpty(input.ConfigName))
-      {
-        var configName = CleanInput(input.ConfigName);
-        predicate = LeanExpressionExtensions.And(predicate, x => x.ConfigName.Contains(configName));
-      }
-
-      if (!string.IsNullOrEmpty(input.ConfigKey))
-      {
-        var configKey = CleanInput(input.ConfigKey);
-        predicate = LeanExpressionExtensions.And(predicate, x => x.ConfigKey.Contains(configKey));
-      }
-
-      if (input.ConfigType.HasValue)
-      {
-        predicate = LeanExpressionExtensions.And(predicate, x => x.ConfigType == input.ConfigType.Value);
-      }
-
-      if (!string.IsNullOrEmpty(input.ConfigGroup))
-      {
-        var configGroup = CleanInput(input.ConfigGroup);
-        predicate = LeanExpressionExtensions.And(predicate, x => x.ConfigGroup == configGroup);
-      }
-
-      if (input.StartTime.HasValue)
-      {
-        predicate = LeanExpressionExtensions.And(predicate, x => x.CreateTime >= input.StartTime.Value);
-      }
-
-      if (input.EndTime.HasValue)
-      {
-        predicate = LeanExpressionExtensions.And(predicate, x => x.CreateTime <= input.EndTime.Value);
-      }
-
-      var items = await _repository.GetListAsync(predicate);
-      var dtos = items.Select(t => t.Adapt<LeanConfigExportDto>()).ToList();
-
-      var bytes = LeanExcelHelper.Export(dtos);
-      return LeanApiResult<byte[]>.Ok(bytes);
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult<byte[]>.Error($"导出系统配置失败: {ex.Message}");
-    }
+    var predicate = BuildQueryPredicate(input);
+    var items = await _repository.GetListAsync(predicate);
+    var dtos = items.Select(t => t.Adapt<LeanConfigExportDto>()).ToList();
+    return LeanExcelHelper.Export(dtos);
   }
 
   /// <summary>
   /// 导入系统配置
   /// </summary>
-  public async Task<LeanApiResult<LeanExcelImportResult<LeanConfigImportDto>>> ImportAsync(LeanFileInfo file)
+  public async Task<LeanExcelImportResult<LeanConfigImportDto>> ImportAsync(byte[] file)
   {
+    var result = new LeanExcelImportResult<LeanConfigImportDto>();
+
     try
     {
-      var result = new LeanExcelImportResult<LeanConfigImportDto>();
+      // 读取Excel文件
+      var importDtos = LeanExcelHelper.Import<LeanConfigImportDto>(file);
 
-      // 导入Excel
-      var importResult = LeanExcelHelper.Import<LeanConfigImportDto>(File.ReadAllBytes(file.FilePath));
-      result.Data.AddRange(importResult.Data);
-      result.Errors.AddRange(importResult.Errors);
-
-      if (result.IsSuccess)
+      // 验证导入数据
+      foreach (var dto in importDtos.Data)
       {
-        foreach (var item in result.Data)
+        // 验证配置键是否已存在
+        var existingConfig = await _repository.FirstOrDefaultAsync(x => x.ConfigKey == dto.ConfigKey);
+        if (existingConfig != null)
         {
-          try
+          result.Errors.Add(new LeanExcelImportError
           {
-            // 检查配置键是否已存在
-            var exists = await _repository.AnyAsync(x => x.ConfigKey == item.ConfigKey);
-            if (exists)
-            {
-              result.Errors.Add(new LeanExcelImportError
-              {
-                RowIndex = importResult.Data.IndexOf(item) + 2,
-                ErrorMessage = $"配置键 {item.ConfigKey} 已存在"
-              });
-              continue;
-            }
-
-            // 创建实体
-            var entity = item.Adapt<LeanConfig>();
-            entity.IsBuiltin = LeanBuiltinStatus.No;
-            await _repository.CreateAsync(entity);
-          }
-          catch (Exception ex)
-          {
-            result.Errors.Add(new LeanExcelImportError
-            {
-              RowIndex = importResult.Data.IndexOf(item) + 2,
-              ErrorMessage = ex.Message
-            });
-          }
+            RowIndex = importDtos.Data.IndexOf(dto) + 2,
+            ErrorMessage = $"配置键 {dto.ConfigKey} 已存在"
+          });
+          continue;
         }
+
+        // 创建新的配置
+        var config = dto.Adapt<LeanConfig>();
+        await _repository.CreateAsync(config);
+        result.Data.Add(dto);
       }
 
-      return LeanApiResult<LeanExcelImportResult<LeanConfigImportDto>>.Ok(result);
+      return result;
     }
     catch (Exception ex)
     {
-      return LeanApiResult<LeanExcelImportResult<LeanConfigImportDto>>.Error($"导入系统配置失败: {ex.Message}");
+      _logger.LogError(ex, "导入系统配置失败");
+      result.ErrorMessage = $"导入失败：{ex.Message}";
+      return result;
     }
   }
 
   /// <summary>
-  /// 下载导入模板
+  /// 获取导入模板
   /// </summary>
-  public Task<LeanApiResult<byte[]>> GetImportTemplateAsync()
+  public Task<byte[]> GetImportTemplateAsync()
   {
-    try
+    var template = new List<LeanConfigImportTemplateDto>
     {
-      var template = new List<LeanConfigImportTemplateDto>
-      {
-        new LeanConfigImportTemplateDto()
-      };
+      new LeanConfigImportTemplateDto()
+    };
 
-      var bytes = LeanExcelHelper.Export(template);
-      return Task.FromResult(LeanApiResult<byte[]>.Ok(bytes));
-    }
-    catch (Exception ex)
+    var bytes = LeanExcelHelper.Export(template);
+    return Task.FromResult(bytes);
+  }
+
+  /// <summary>
+  /// 构建查询条件
+  /// </summary>
+  private Expression<Func<LeanConfig, bool>> BuildQueryPredicate(LeanQueryConfigDto input)
+  {
+    Expression<Func<LeanConfig, bool>> predicate = x => true;
+
+    if (!string.IsNullOrEmpty(input.ConfigName))
     {
-      return Task.FromResult(LeanApiResult<byte[]>.Error($"获取导入模板失败: {ex.Message}"));
+      var configName = CleanInput(input.ConfigName);
+      predicate = LeanExpressionExtensions.And(predicate, x => x.ConfigName.Contains(configName));
     }
+
+    if (!string.IsNullOrEmpty(input.ConfigKey))
+    {
+      var configKey = CleanInput(input.ConfigKey);
+      predicate = LeanExpressionExtensions.And(predicate, x => x.ConfigKey.Contains(configKey));
+    }
+
+    if (input.ConfigType.HasValue)
+    {
+      predicate = LeanExpressionExtensions.And(predicate, x => x.ConfigType == input.ConfigType.Value);
+    }
+
+    if (!string.IsNullOrEmpty(input.ConfigGroup))
+    {
+      var configGroup = CleanInput(input.ConfigGroup);
+      predicate = LeanExpressionExtensions.And(predicate, x => x.ConfigGroup == configGroup);
+    }
+
+    if (input.StartTime.HasValue)
+    {
+      predicate = LeanExpressionExtensions.And(predicate, x => x.CreateTime >= input.StartTime.Value);
+    }
+
+    if (input.EndTime.HasValue)
+    {
+      predicate = LeanExpressionExtensions.And(predicate, x => x.CreateTime <= input.EndTime.Value);
+    }
+
+    return predicate;
   }
 }

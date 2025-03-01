@@ -1,4 +1,8 @@
+using System;
+using System.Linq;
+using System.Collections.Generic;
 using System.Linq.Expressions;
+using System.Threading.Tasks;
 using Lean.CodeGen.Application.Dtos.Admin;
 using Lean.CodeGen.Common.Models;
 using Lean.CodeGen.Domain.Entities.Admin;
@@ -9,6 +13,7 @@ using Lean.CodeGen.Common.Options;
 using Lean.CodeGen.Application.Services.Base;
 using Lean.CodeGen.Application.Services.Security;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging;
 using Lean.CodeGen.Common.Enums;
 using Lean.CodeGen.Common.Extensions;
 using Lean.CodeGen.Common.Excel;
@@ -30,17 +35,15 @@ public class LeanTranslationService : LeanBaseService, ILeanTranslationService
   /// 构造函数
   /// </summary>
   public LeanTranslationService(
-      ILeanRepository<LeanTranslation> translationRepository,
+      ILeanRepository<LeanTranslation> repository,
       ILeanRepository<LeanLanguage> languageRepository,
-      ILeanSqlSafeService sqlSafeService,
-      IOptions<LeanSecurityOptions> securityOptions,
-      ILogger<LeanTranslationService> logger)
-      : base(sqlSafeService, securityOptions, logger)
+      LeanBaseServiceContext context)
+      : base(context)
   {
-    _repository = translationRepository;
+    _repository = repository;
     _languageRepository = languageRepository;
+    _logger = (ILogger<LeanTranslationService>)context.Logger;
     _uniqueValidator = new LeanUniqueValidator<LeanTranslation>(_repository);
-    _logger = logger;
   }
 
   /// <summary>
@@ -218,29 +221,7 @@ public class LeanTranslationService : LeanBaseService, ILeanTranslationService
     try
     {
       // 构建查询条件
-      Expression<Func<LeanTranslation, bool>> predicate = x => true;
-
-      if (input.LangId.HasValue)
-      {
-        predicate = LeanExpressionExtensions.And(predicate, x => x.LangId == input.LangId);
-      }
-
-      if (!string.IsNullOrEmpty(input.TransKey))
-      {
-        var transKey = CleanInput(input.TransKey);
-        predicate = LeanExpressionExtensions.And(predicate, x => x.TransKey.Contains(transKey));
-      }
-
-      if (!string.IsNullOrEmpty(input.TransValue))
-      {
-        var transValue = CleanInput(input.TransValue);
-        predicate = LeanExpressionExtensions.And(predicate, x => x.TransValue.Contains(transValue));
-      }
-
-      if (input.Status.HasValue)
-      {
-        predicate = LeanExpressionExtensions.And(predicate, x => x.Status == input.Status.Value);
-      }
+      Expression<Func<LeanTranslation, bool>> predicate = BuildQueryPredicate(input);
 
       // 获取分页数据
       var (total, items) = await _repository.GetPageListAsync(predicate, input.PageSize, input.PageIndex);
@@ -295,236 +276,353 @@ public class LeanTranslationService : LeanBaseService, ILeanTranslationService
   /// <summary>
   /// 导出翻译
   /// </summary>
-  public async Task<LeanApiResult<List<LeanTranslationExportDto>>> ExportAsync(LeanQueryTranslationDto input)
+  public async Task<byte[]> ExportAsync(LeanQueryTranslationDto input)
   {
-    try
+    var list = await _repository.GetListAsync(BuildQueryPredicate(input));
+    var exportDtos = list.Select(t => t.Adapt<LeanTranslationExportDto>()).ToList();
+    return LeanExcelHelper.Export(exportDtos);
+  }
+
+  /// <summary>
+  /// 导出转置翻译
+  /// </summary>
+  public async Task<byte[]> ExportTransposeAsync(LeanQueryTranslationDto input)
+  {
+    var translations = await _repository.GetListAsync(BuildQueryPredicate(input));
+    var languages = await _languageRepository.GetListAsync(x => x.Status == LeanStatus.Normal);
+
+    var transKeys = translations.Select(x => x.TransKey).Distinct().ToList();
+    var exportDtos = transKeys.Select(key =>
     {
-      // 构建查询条件
-      Expression<Func<LeanTranslation, bool>> predicate = x => true;
-
-      if (input.LangId.HasValue)
+      var dto = new LeanTranslationExportDto { TransKey = key };
+      foreach (var lang in languages)
       {
-        predicate = LeanExpressionExtensions.And(predicate, x => x.LangId == input.LangId);
+        var trans = translations.FirstOrDefault(t => t.TransKey == key && t.LangId == lang.Id);
+        dto.GetType().GetProperty(lang.LangCode)?.SetValue(dto, trans?.TransValue);
       }
+      return dto;
+    }).ToList();
 
-      if (!string.IsNullOrEmpty(input.TransKey))
-      {
-        var transKey = CleanInput(input.TransKey);
-        predicate = LeanExpressionExtensions.And(predicate, x => x.TransKey.Contains(transKey));
-      }
-
-      if (!string.IsNullOrEmpty(input.TransValue))
-      {
-        var transValue = CleanInput(input.TransValue);
-        predicate = LeanExpressionExtensions.And(predicate, x => x.TransValue.Contains(transValue));
-      }
-
-      if (input.Status.HasValue)
-      {
-        predicate = LeanExpressionExtensions.And(predicate, x => x.Status == input.Status.Value);
-      }
-
-      // 获取数据
-      var items = await _repository.GetListAsync(predicate);
-      var list = items.Select(t => t.Adapt<LeanTranslationExportDto>()).ToList();
-
-      // 返回结果
-      return LeanApiResult<List<LeanTranslationExportDto>>.Ok(list, LeanBusinessType.Export);
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult<List<LeanTranslationExportDto>>.Error($"导出翻译失败：{ex.Message}", LeanErrorCode.SystemError, LeanBusinessType.Export);
-    }
+    return LeanExcelHelper.Export(exportDtos);
   }
 
   /// <summary>
   /// 导入翻译
   /// </summary>
-  public async Task<LeanApiResult> ImportAsync(long langId, Dictionary<string, string> translations)
+  public async Task<LeanExcelImportResult<LeanTranslationImportDto>> ImportAsync(LeanFileInfo file)
   {
-    try
+    var bytes = await System.IO.File.ReadAllBytesAsync(file.FilePath);
+    return LeanExcelHelper.Import<LeanTranslationImportDto>(bytes);
+  }
+
+  /// <summary>
+  /// 导入转置翻译
+  /// </summary>
+  public async Task<LeanExcelImportResult<LeanTranslationImportDto>> ImportTransposeAsync(LeanFileInfo file)
+  {
+    var bytes = await System.IO.File.ReadAllBytesAsync(file.FilePath);
+    var importResult = await Task.FromResult(LeanExcelHelper.Import<LeanTranslationImportDto>(bytes));
+    if (importResult.Data == null || !importResult.Data.Any()) return importResult;
+
+    var languages = await _languageRepository.GetListAsync(x => x.Status == LeanStatus.Normal);
+    foreach (var importDto in importResult.Data)
     {
-      // 检查语言是否存在
-      var language = await _languageRepository.GetByIdAsync(langId);
-      if (language == null)
+      foreach (var lang in languages)
       {
-        return LeanApiResult.Error("语言不存在", LeanErrorCode.DataNotFoundError, LeanBusinessType.Import);
-      }
+        var transValue = importDto.GetType().GetProperty(lang.LangCode)?.GetValue(importDto)?.ToString();
+        if (string.IsNullOrEmpty(transValue)) continue;
 
-      // 获取现有的翻译
-      var existingTranslations = await _repository.GetListAsync(x => x.LangId == langId);
-      var existingKeys = existingTranslations.ToDictionary(x => x.TransKey, x => x);
+        var translation = await _repository.FirstOrDefaultAsync(x =>
+          x.TransKey == importDto.TransKey && x.LangId == lang.Id);
 
-      // 更新或创建翻译
-      foreach (var translation in translations)
-      {
-        if (existingKeys.TryGetValue(translation.Key, out var existingTranslation))
+        if (translation == null)
         {
-          // 更新现有翻译
-          existingTranslation.TransValue = translation.Value;
-          await _repository.UpdateAsync(existingTranslation);
+          translation = new LeanTranslation
+          {
+            TransKey = importDto.TransKey,
+            LangId = lang.Id,
+            TransValue = transValue,
+            Status = LeanStatus.Normal
+          };
+          await _repository.CreateAsync(translation);
         }
         else
         {
-          // 创建新翻译
-          var newTranslation = new LeanTranslation
-          {
-            LangId = langId,
-            TransKey = translation.Key,
-            TransValue = translation.Value,
-            Status = LeanStatus.Normal,
-            IsBuiltin = LeanBuiltinStatus.No
-          };
-          await _repository.CreateAsync(newTranslation);
+          translation.TransValue = transValue;
+          await _repository.UpdateAsync(translation);
         }
       }
+    }
 
-      return LeanApiResult.Ok(LeanBusinessType.Import);
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult.Error($"导入翻译失败：{ex.Message}", LeanErrorCode.SystemError, LeanBusinessType.Import);
-    }
+    return importResult;
   }
 
   /// <summary>
   /// 获取导入模板
   /// </summary>
-  public Task<LeanApiResult<List<LeanTranslationImportTemplateDto>>> GetImportTemplateAsync()
+  public Task<byte[]> GetImportTemplateAsync()
   {
-    try
-    {
-      var template = new List<LeanTranslationImportTemplateDto>
-      {
-        new LeanTranslationImportTemplateDto()
-      };
-
-      var bytes = LeanExcelHelper.Export(template);
-      return Task.FromResult(LeanApiResult<List<LeanTranslationImportTemplateDto>>.Ok(template, LeanBusinessType.Export));
-    }
-    catch (Exception ex)
-    {
-      return Task.FromResult(LeanApiResult<List<LeanTranslationImportTemplateDto>>.Error($"获取导入模板失败：{ex.Message}", LeanErrorCode.SystemError, LeanBusinessType.Export));
-    }
+    var template = new List<LeanTranslationImportDto> { new LeanTranslationImportDto() };
+    return Task.FromResult(LeanExcelHelper.Export(template));
   }
 
   /// <summary>
-  /// 导入翻译（从Excel文件）
+  /// 获取转置导入模板
   /// </summary>
-  public async Task<LeanApiResult<LeanExcelImportResult<LeanTranslationImportDto>>> ImportFromExcelAsync(LeanFileInfo file)
+  public Task<byte[]> GetTransposeImportTemplateAsync()
   {
-    try
+    var template = new List<LeanTranslationImportDto>
     {
-      var result = new LeanExcelImportResult<LeanTranslationImportDto>();
+      new LeanTranslationImportDto { TransKey = "example.key" }
+    };
+    var bytes = LeanExcelHelper.Export(template);
+    return Task.FromResult(bytes);
+  }
 
-      // 读取Excel文件
-      var importResult = LeanExcelHelper.Import<LeanTranslationImportDto>(File.ReadAllBytes(file.FilePath));
-      if (!importResult.Data.Any())
-      {
-        return LeanApiResult<LeanExcelImportResult<LeanTranslationImportDto>>.Error("导入数据为空", LeanErrorCode.InvalidParameter, LeanBusinessType.Import);
-      }
-
-      // 验证数据
-      foreach (var dto in importResult.Data)
-      {
-        try
-        {
-          // 检查语言是否存在
-          var language = await _languageRepository.GetByIdAsync(dto.LangId);
-          if (language == null)
-          {
-            importResult.Errors.Add(new LeanExcelImportError
-            {
-              RowIndex = importResult.Data.IndexOf(dto) + 2,
-              ErrorMessage = $"语言ID {dto.LangId} 不存在"
-            });
-            continue;
-          }
-
-          // 检查翻译键是否已存在
-          var exists = await _repository.AnyAsync(x => x.LangId == dto.LangId && x.TransKey == dto.TransKey);
-          if (exists)
-          {
-            importResult.Errors.Add(new LeanExcelImportError
-            {
-              RowIndex = importResult.Data.IndexOf(dto) + 2,
-              ErrorMessage = "翻译键已存在"
-            });
-            continue;
-          }
-
-          // 创建实体
-          var entity = dto.Adapt<LeanTranslation>();
-          entity.Status = LeanStatus.Normal;
-          entity.IsBuiltin = LeanBuiltinStatus.No;
-
-          // 保存到数据库
-          await _repository.CreateAsync(entity);
-          result.Data.Add(dto);
-        }
-        catch (Exception ex)
-        {
-          importResult.Errors.Add(new LeanExcelImportError
-          {
-            RowIndex = importResult.Data.IndexOf(dto) + 2,
-            ErrorMessage = ex.Message
-          });
-        }
-      }
-
-      return LeanApiResult<LeanExcelImportResult<LeanTranslationImportDto>>.Ok(result, LeanBusinessType.Import);
-    }
-    catch (Exception ex)
+  /// <summary>
+  /// 从字典导入翻译
+  /// </summary>
+  public async Task<LeanApiResult> ImportFromDictionaryAsync(long langId, Dictionary<string, string> translations)
+  {
+    // 检查语言是否存在
+    var language = await _languageRepository.GetByIdAsync(langId);
+    if (language == null)
     {
-      return LeanApiResult<LeanExcelImportResult<LeanTranslationImportDto>>.Error($"导入翻译失败：{ex.Message}", LeanErrorCode.SystemError, LeanBusinessType.Import);
+      return LeanApiResult.Error("语言不存在");
     }
+
+    foreach (var translation in translations)
+    {
+      var entity = await _repository.FirstOrDefaultAsync(x => x.LangId == langId && x.TransKey == translation.Key);
+      if (entity != null)
+      {
+        entity.TransValue = translation.Value;
+        await _repository.UpdateAsync(entity);
+      }
+      else
+      {
+        entity = new LeanTranslation
+        {
+          LangId = langId,
+          TransKey = translation.Key,
+          TransValue = translation.Value,
+          Status = LeanStatus.Normal,
+          IsBuiltin = LeanBuiltinStatus.No
+        };
+        await _repository.CreateAsync(entity);
+      }
+    }
+
+    return LeanApiResult.Ok();
   }
 
   /// <summary>
   /// 获取指定语言的所有翻译
   /// </summary>
-  public async Task<LeanApiResult<Dictionary<string, string>>> GetTranslationsByLangAsync(string langCode)
+  public async Task<Dictionary<string, string>> GetTranslationsByLangAsync(string langCode)
   {
-    try
+    var language = await _languageRepository.FirstOrDefaultAsync(x => x.LangCode == langCode);
+    if (language == null)
     {
-      // 获取语言
-      var language = await _languageRepository.FirstOrDefaultAsync(x => x.LangCode == langCode);
-      if (language == null)
-      {
-        return LeanApiResult<Dictionary<string, string>>.Error("语言不存在", LeanErrorCode.DataNotFoundError, LeanBusinessType.Query);
-      }
-
-      // 获取翻译
-      var translations = await _repository.GetListAsync(x => x.LangId == language.Id && x.Status == LeanStatus.Normal);
-      var result = translations.ToDictionary(x => x.TransKey, x => x.TransValue);
-
-      return LeanApiResult<Dictionary<string, string>>.Ok(result, LeanBusinessType.Query);
+      return new Dictionary<string, string>();
     }
-    catch (Exception ex)
-    {
-      return LeanApiResult<Dictionary<string, string>>.Error($"获取翻译失败：{ex.Message}", LeanErrorCode.SystemError, LeanBusinessType.Query);
-    }
+
+    var translations = await _repository.GetListAsync(x => x.LangId == language.Id && x.Status == LeanStatus.Normal);
+    return translations.ToDictionary(x => x.TransKey, x => x.TransValue);
   }
 
   /// <summary>
   /// 获取所有模块列表
   /// </summary>
-  public async Task<LeanApiResult<List<string>>> GetModuleListAsync()
+  public async Task<List<string>> GetModuleListAsync()
+  {
+    var translations = await _repository.GetListAsync(x => true);
+    return translations.Select(x => x.ModuleName ?? string.Empty)
+                      .Where(x => !string.IsNullOrEmpty(x))
+                      .Distinct()
+                      .ToList();
+  }
+
+  /// <summary>
+  /// 获取转置的翻译列表（分页）
+  /// </summary>
+  public async Task<LeanApiResult<LeanPageResult<LeanTranslationExportDto>>> GetTransposePageAsync(LeanQueryTranslationDto input)
   {
     try
     {
-      var translations = await _repository.GetListAsync(x => x.Status == LeanStatus.Normal);
-      var modules = translations.Where(x => !string.IsNullOrEmpty(x.ModuleName))
-                              .Select(x => x.ModuleName!)
-                              .Distinct()
-                              .OrderBy(x => x)
-                              .ToList();
+      // 1. 获取所有翻译数据
+      var translations = await _repository.GetListAsync(BuildQueryPredicate(input));
+      // 2. 获取所有启用的语言
+      var languages = await _languageRepository.GetListAsync(x => x.Status == LeanStatus.Normal);
 
-      return LeanApiResult<List<string>>.Ok(modules, LeanBusinessType.Query);
+      // 3. 按翻译键分组进行转置
+      var transKeys = translations.Select(x => x.TransKey).Distinct().ToList();
+      var allItems = transKeys.Select(key =>
+      {
+        var dto = new LeanTranslationExportDto { TransKey = key };
+        foreach (var lang in languages)
+        {
+          var trans = translations.FirstOrDefault(t => t.TransKey == key && t.LangId == lang.Id);
+          dto.GetType().GetProperty(lang.LangCode)?.SetValue(dto, trans?.TransValue);
+        }
+        return dto;
+      }).ToList();
+
+      // 4. 计算分页数据
+      var total = allItems.Count;
+      var items = allItems.Skip((input.PageIndex - 1) * input.PageSize).Take(input.PageSize).ToList();
+
+      // 5. 返回分页结果
+      return LeanApiResult<LeanPageResult<LeanTranslationExportDto>>.Ok(new LeanPageResult<LeanTranslationExportDto>
+      {
+        Total = total,
+        Items = items
+      }, LeanBusinessType.Query);
     }
     catch (Exception ex)
     {
-      return LeanApiResult<List<string>>.Error($"获取模块列表失败：{ex.Message}", LeanErrorCode.SystemError, LeanBusinessType.Query);
+      return LeanApiResult<LeanPageResult<LeanTranslationExportDto>>.Error(
+        $"获取转置翻译列表失败：{ex.Message}",
+        LeanErrorCode.SystemError,
+        LeanBusinessType.Query);
     }
+  }
+
+  /// <summary>
+  /// 创建转置的翻译
+  /// </summary>
+  public async Task<LeanApiResult> CreateTransposeAsync(LeanCreateTranslationTransposeDto input)
+  {
+    try
+    {
+      // 获取所有语言
+      var languages = await _languageRepository.GetListAsync(x => x.Status == LeanStatus.Normal);
+
+      // 检查翻译键是否已存在
+      var exists = await _repository.AnyAsync(x => x.TransKey == input.TransKey);
+      if (exists)
+      {
+        return LeanApiResult.Error("翻译键已存在", LeanErrorCode.DuplicateError, LeanBusinessType.Create);
+      }
+
+      // 创建每种语言的翻译
+      foreach (var lang in languages)
+      {
+        if (!input.Translations.TryGetValue(lang.LangCode, out var transValue))
+          continue;
+
+        var translation = new LeanTranslation
+        {
+          TransKey = input.TransKey,
+          ModuleName = input.ModuleName,
+          LangId = lang.Id,
+          TransValue = transValue,
+          Status = LeanStatus.Normal,
+          IsBuiltin = LeanBuiltinStatus.No
+        };
+
+        await _repository.CreateAsync(translation);
+      }
+
+      return LeanApiResult.Ok(LeanBusinessType.Create);
+    }
+    catch (Exception ex)
+    {
+      return LeanApiResult.Error(
+        $"创建转置翻译失败：{ex.Message}",
+        LeanErrorCode.SystemError,
+        LeanBusinessType.Create);
+    }
+  }
+
+  /// <summary>
+  /// 更新转置的翻译
+  /// </summary>
+  public async Task<LeanApiResult> UpdateTransposeAsync(LeanUpdateTranslationTransposeDto input)
+  {
+    try
+    {
+      // 获取所有语言
+      var languages = await _languageRepository.GetListAsync(x => x.Status == LeanStatus.Normal);
+
+      // 获取现有翻译
+      var existingTranslations = await _repository.GetListAsync(x => x.TransKey == input.TransKey);
+      if (!existingTranslations.Any())
+      {
+        return LeanApiResult.Error("翻译不存在", LeanErrorCode.DataNotFoundError, LeanBusinessType.Update);
+      }
+
+      // 检查是否为内置翻译
+      if (existingTranslations.Any(x => x.IsBuiltin == LeanBuiltinStatus.Yes))
+      {
+        return LeanApiResult.Error("内置翻译不允许修改", LeanErrorCode.OperationForbidden, LeanBusinessType.Update);
+      }
+
+      // 更新每种语言的翻译
+      foreach (var lang in languages)
+      {
+        if (!input.Translations.TryGetValue(lang.LangCode, out var transValue))
+          continue;
+
+        var translation = existingTranslations.FirstOrDefault(x => x.LangId == lang.Id);
+        if (translation == null)
+        {
+          translation = new LeanTranslation
+          {
+            TransKey = input.TransKey,
+            ModuleName = input.ModuleName,
+            LangId = lang.Id,
+            TransValue = transValue,
+            Status = LeanStatus.Normal,
+            IsBuiltin = LeanBuiltinStatus.No
+          };
+          await _repository.CreateAsync(translation);
+        }
+        else
+        {
+          translation.TransValue = transValue;
+          translation.ModuleName = input.ModuleName;
+          await _repository.UpdateAsync(translation);
+        }
+      }
+
+      return LeanApiResult.Ok(LeanBusinessType.Update);
+    }
+    catch (Exception ex)
+    {
+      return LeanApiResult.Error(
+        $"更新转置翻译失败：{ex.Message}",
+        LeanErrorCode.SystemError,
+        LeanBusinessType.Update);
+    }
+  }
+
+  private Expression<Func<LeanTranslation, bool>> BuildQueryPredicate(LeanQueryTranslationDto input)
+  {
+    Expression<Func<LeanTranslation, bool>> predicate = x => true;
+
+    if (input.LangId.HasValue)
+    {
+      predicate = x => x.LangId == input.LangId;
+    }
+
+    if (!string.IsNullOrEmpty(input.TransKey))
+    {
+      var transKey = CleanInput(input.TransKey);
+      predicate = predicate.And(x => x.TransKey.Contains(transKey));
+    }
+
+    if (!string.IsNullOrEmpty(input.TransValue))
+    {
+      var transValue = CleanInput(input.TransValue);
+      predicate = predicate.And(x => x.TransValue.Contains(transValue));
+    }
+
+    if (input.Status.HasValue)
+    {
+      predicate = predicate.And(x => x.Status == input.Status.Value);
+    }
+
+    return predicate;
   }
 }

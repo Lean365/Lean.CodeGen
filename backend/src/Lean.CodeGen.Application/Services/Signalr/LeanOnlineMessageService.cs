@@ -35,19 +35,13 @@ public class LeanOnlineMessageService : LeanBaseService, ILeanOnlineMessageServi
   /// <summary>
   /// 构造函数
   /// </summary>
-  /// <param name="repository">在线消息仓储</param>
-  /// <param name="sqlSafeService">SQL注入防护服务</param>
-  /// <param name="securityOptions">安全选项</param>
-  /// <param name="logger">日志记录器</param>
   public LeanOnlineMessageService(
       ILeanRepository<LeanOnlineMessage> repository,
-      ILeanSqlSafeService sqlSafeService,
-      IOptions<LeanSecurityOptions> securityOptions,
-      ILogger<LeanOnlineMessageService> logger)
-      : base(sqlSafeService, securityOptions, logger)
+      LeanBaseServiceContext context)
+      : base(context)
   {
     _repository = repository;
-    _logger = logger;
+    _logger = (ILogger<LeanOnlineMessageService>)context.Logger;
   }
 
   /// <summary>

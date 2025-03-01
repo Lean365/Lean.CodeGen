@@ -3,6 +3,7 @@ using Lean.CodeGen.Application.Services.Workflow;
 using Lean.CodeGen.Common.Models;
 using Lean.CodeGen.WebApi.Controllers;
 using Microsoft.AspNetCore.Mvc;
+using Lean.CodeGen.Common.Enums;
 
 namespace Lean.CodeGen.WebApi.Controllers.Workflow;
 
@@ -11,6 +12,7 @@ namespace Lean.CodeGen.WebApi.Controllers.Workflow;
 /// </summary>
 [ApiController]
 [Route("api/workflow/definitions")]
+[ApiExplorerSettings(GroupName = "workflow")]
 public class LeanWorkflowDefinitionController : LeanBaseController
 {
   private readonly ILeanWorkflowDefinitionService _service;
@@ -32,7 +34,7 @@ public class LeanWorkflowDefinitionController : LeanBaseController
   public async Task<IActionResult> GetListAsync()
   {
     var result = await _service.GetListAsync();
-    return Success(result);
+    return Success(result, LeanBusinessType.Query);
   }
 
   /// <summary>
@@ -44,7 +46,7 @@ public class LeanWorkflowDefinitionController : LeanBaseController
   public async Task<IActionResult> GetAsync(long id)
   {
     var result = await _service.GetAsync(id);
-    return Success(result);
+    return Success(result, LeanBusinessType.Query);
   }
 
   /// <summary>
@@ -56,7 +58,7 @@ public class LeanWorkflowDefinitionController : LeanBaseController
   public async Task<IActionResult> GetByCodeAsync(string code)
   {
     var result = await _service.GetByCodeAsync(code);
-    return Success(result);
+    return Success(result, LeanBusinessType.Query);
   }
 
   /// <summary>
@@ -68,7 +70,7 @@ public class LeanWorkflowDefinitionController : LeanBaseController
   public async Task<IActionResult> CreateAsync(LeanWorkflowDefinitionDto dto)
   {
     var result = await _service.CreateAsync(dto);
-    return Success(result);
+    return Success(result, LeanBusinessType.Create);
   }
 
   /// <summary>
@@ -85,7 +87,7 @@ public class LeanWorkflowDefinitionController : LeanBaseController
       return Error("ID不匹配");
     }
     var result = await _service.UpdateAsync(dto);
-    return Success(result);
+    return Success(result, LeanBusinessType.Update);
   }
 
   /// <summary>
@@ -97,7 +99,7 @@ public class LeanWorkflowDefinitionController : LeanBaseController
   public async Task<IActionResult> DeleteAsync(long id)
   {
     var result = await _service.DeleteAsync(id);
-    return Success(result);
+    return Success(result, LeanBusinessType.Delete);
   }
 
   /// <summary>
@@ -109,7 +111,7 @@ public class LeanWorkflowDefinitionController : LeanBaseController
   public async Task<IActionResult> PublishAsync(long id)
   {
     var result = await _service.PublishAsync(id);
-    return Success(result);
+    return Success(result, LeanBusinessType.Update);
   }
 
   /// <summary>
@@ -121,7 +123,7 @@ public class LeanWorkflowDefinitionController : LeanBaseController
   public async Task<IActionResult> DisableAsync(long id)
   {
     var result = await _service.DisableAsync(id);
-    return Success(result);
+    return Success(result, LeanBusinessType.Update);
   }
 
   /// <summary>
@@ -142,6 +144,6 @@ public class LeanWorkflowDefinitionController : LeanBaseController
       [FromQuery] int? status = null)
   {
     var result = await _service.GetPagedListAsync(pageIndex, pageSize, workflowName, workflowCode, status);
-    return Success(result);
+    return Success(result, LeanBusinessType.Query);
   }
 }

@@ -62,40 +62,81 @@ public interface ILeanTranslationService
   /// 导出翻译
   /// </summary>
   /// <param name="input">查询参数</param>
-  /// <returns>导出结果</returns>
-  Task<LeanApiResult<List<LeanTranslationExportDto>>> ExportAsync(LeanQueryTranslationDto input);
+  /// <returns>导出的Excel文件字节数组</returns>
+  Task<byte[]> ExportAsync(LeanQueryTranslationDto input);
 
   /// <summary>
   /// 导入翻译
   /// </summary>
-  /// <param name="langId">语言ID</param>
-  /// <param name="translations">翻译数据</param>
+  /// <param name="file">导入文件信息</param>
   /// <returns>导入结果</returns>
-  Task<LeanApiResult> ImportAsync(long langId, Dictionary<string, string> translations);
-
-  /// <summary>
-  /// 导入翻译（从Excel文件）
-  /// </summary>
-  /// <param name="file">导入文件</param>
-  /// <returns>导入结果</returns>
-  Task<LeanApiResult<LeanExcelImportResult<LeanTranslationImportDto>>> ImportFromExcelAsync(LeanFileInfo file);
+  Task<LeanExcelImportResult<LeanTranslationImportDto>> ImportAsync(LeanFileInfo file);
 
   /// <summary>
   /// 获取导入模板
   /// </summary>
-  /// <returns>导入模板</returns>
-  Task<LeanApiResult<List<LeanTranslationImportTemplateDto>>> GetImportTemplateAsync();
+  /// <returns>导入模板Excel文件字节数组</returns>
+  Task<byte[]> GetImportTemplateAsync();
+
+  /// <summary>
+  /// 导入翻译（从字典）
+  /// </summary>
+  /// <param name="langId">语言ID</param>
+  /// <param name="translations">翻译字典</param>
+  /// <returns>导入结果</returns>
+  Task<LeanApiResult> ImportFromDictionaryAsync(long langId, Dictionary<string, string> translations);
 
   /// <summary>
   /// 获取指定语言的所有翻译
   /// </summary>
   /// <param name="langCode">语言代码</param>
   /// <returns>翻译字典</returns>
-  Task<LeanApiResult<Dictionary<string, string>>> GetTranslationsByLangAsync(string langCode);
+  Task<Dictionary<string, string>> GetTranslationsByLangAsync(string langCode);
 
   /// <summary>
   /// 获取所有模块列表
   /// </summary>
   /// <returns>模块列表</returns>
-  Task<LeanApiResult<List<string>>> GetModuleListAsync();
+  Task<List<string>> GetModuleListAsync();
+
+  /// <summary>
+  /// 导出转置的翻译数据
+  /// </summary>
+  /// <param name="input">查询参数</param>
+  /// <returns>导出的Excel文件字节数组</returns>
+  Task<byte[]> ExportTransposeAsync(LeanQueryTranslationDto input);
+
+  /// <summary>
+  /// 导入转置的翻译数据
+  /// </summary>
+  /// <param name="file">导入文件信息</param>
+  /// <returns>导入结果</returns>
+  Task<LeanExcelImportResult<LeanTranslationImportDto>> ImportTransposeAsync(LeanFileInfo file);
+
+  /// <summary>
+  /// 获取转置导入模板
+  /// </summary>
+  /// <returns>导入模板Excel文件字节数组</returns>
+  Task<byte[]> GetTransposeImportTemplateAsync();
+
+  /// <summary>
+  /// 获取转置的翻译列表（分页）
+  /// </summary>
+  /// <param name="input">查询参数</param>
+  /// <returns>转置的翻译分页列表</returns>
+  Task<LeanApiResult<LeanPageResult<LeanTranslationExportDto>>> GetTransposePageAsync(LeanQueryTranslationDto input);
+
+  /// <summary>
+  /// 创建转置的翻译
+  /// </summary>
+  /// <param name="input">创建参数</param>
+  /// <returns>创建结果</returns>
+  Task<LeanApiResult> CreateTransposeAsync(LeanCreateTranslationTransposeDto input);
+
+  /// <summary>
+  /// 更新转置的翻译
+  /// </summary>
+  /// <param name="input">更新参数</param>
+  /// <returns>更新结果</returns>
+  Task<LeanApiResult> UpdateTransposeAsync(LeanUpdateTranslationTransposeDto input);
 }

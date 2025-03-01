@@ -8,7 +8,6 @@
 //===================================================
 
 using Lean.CodeGen.Common.Enums;
-using Lean.CodeGen.Domain.Entities;
 using SqlSugar;
 
 namespace Lean.CodeGen.Domain.Entities.Identity;
@@ -74,40 +73,4 @@ public class LeanPost : LeanBaseEntity
   /// </remarks>
   [SugarColumn(ColumnName = "is_builtin", ColumnDescription = "是否内置", IsNullable = false, DefaultValue = "0", ColumnDataType = "int")]
   public LeanBuiltinStatus IsBuiltin { get; set; }
-
-  /// <summary>
-  /// 用户岗位关联
-  /// </summary>
-  /// <remarks>
-  /// 岗位与用户的多对多关系
-  /// </remarks>
-  [Navigate(NavigateType.OneToMany, nameof(LeanUserPost.PostId))]
-  public virtual List<LeanUserPost> UserPosts { get; set; } = new();
-
-  /// <summary>
-  /// 岗位继承关系（作为继承者）
-  /// </summary>
-  /// <remarks>
-  /// 当前岗位继承的其他岗位
-  /// </remarks>
-  [Navigate(NavigateType.OneToMany, nameof(LeanPostInheritance.PostId))]
-  public virtual List<LeanPostInheritance> InheritedPosts { get; set; } = new();
-
-  /// <summary>
-  /// 岗位继承关系（作为被继承者）
-  /// </summary>
-  /// <remarks>
-  /// 继承当前岗位的其他岗位
-  /// </remarks>
-  [Navigate(NavigateType.OneToMany, nameof(LeanPostInheritance.InheritedPostId))]
-  public virtual List<LeanPostInheritance> InheritingPosts { get; set; } = new();
-
-  /// <summary>
-  /// 岗位权限
-  /// </summary>
-  /// <remarks>
-  /// 岗位的权限列表
-  /// </remarks>
-  [Navigate(NavigateType.OneToMany, nameof(LeanPostPermission.PostId))]
-  public virtual List<LeanPostPermission> Permissions { get; set; } = new();
 }

@@ -1,661 +1,378 @@
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using System.Linq;
 using System.Linq.Expressions;
+using Mapster;
 using Lean.CodeGen.Application.Dtos.Identity;
+using Lean.CodeGen.Application.Services.Base;
+using Lean.CodeGen.Common.Enums;
+using Lean.CodeGen.Common.Exceptions;
 using Lean.CodeGen.Common.Models;
 using Lean.CodeGen.Domain.Entities.Identity;
 using Lean.CodeGen.Domain.Interfaces.Repositories;
 using Lean.CodeGen.Domain.Validators;
-using Mapster;
-using Lean.CodeGen.Common.Options;
-using Lean.CodeGen.Application.Services.Base;
-using Lean.CodeGen.Application.Services.Security;
-using Microsoft.Extensions.Options;
-using Lean.CodeGen.Common.Enums;
 using Lean.CodeGen.Common.Extensions;
-using Microsoft.Extensions.Logging;
 
 namespace Lean.CodeGen.Application.Services.Identity;
 
 /// <summary>
 /// 角色服务实现
 /// </summary>
+/// <remarks>
+/// 提供角色管理相关的业务功能，包括：
+/// 1. 角色的增删改查
+/// 2. 角色状态管理
+/// 3. 角色菜单管理
+/// 4. 角色数据权限管理
+/// </remarks>
 public class LeanRoleService : LeanBaseService, ILeanRoleService
 {
   private readonly ILeanRepository<LeanRole> _roleRepository;
   private readonly ILeanRepository<LeanRoleMenu> _roleMenuRepository;
-  private readonly ILeanRepository<LeanRoleApi> _roleApiRepository;
-  private readonly ILeanRepository<LeanRoleMutex> _roleMutexRepository;
-  private readonly ILeanRepository<LeanRolePrerequisite> _rolePrerequisiteRepository;
+  private readonly ILeanRepository<LeanRoleDept> _roleDeptRepository;
   private readonly LeanUniqueValidator<LeanRole> _uniqueValidator;
-  private readonly ILogger<LeanRoleService> _logger;
 
+  /// <summary>
+  /// 构造函数
+  /// </summary>
+  /// <param name="roleRepository">角色仓储接口</param>
+  /// <param name="roleMenuRepository">角色菜单关联仓储接口</param>
+  /// <param name="roleDeptRepository">角色部门关联仓储接口</param>
+  /// <param name="context">基础服务上下文</param>
   public LeanRoleService(
       ILeanRepository<LeanRole> roleRepository,
       ILeanRepository<LeanRoleMenu> roleMenuRepository,
-      ILeanRepository<LeanRoleApi> roleApiRepository,
-      ILeanRepository<LeanRoleMutex> roleMutexRepository,
-      ILeanRepository<LeanRolePrerequisite> rolePrerequisiteRepository,
-      ILeanSqlSafeService sqlSafeService,
-      IOptions<LeanSecurityOptions> securityOptions,
-      ILogger<LeanRoleService> logger)
-      : base(sqlSafeService, securityOptions, logger)
+      ILeanRepository<LeanRoleDept> roleDeptRepository,
+      LeanBaseServiceContext context)
+      : base(context)
   {
     _roleRepository = roleRepository;
     _roleMenuRepository = roleMenuRepository;
-    _roleApiRepository = roleApiRepository;
-    _roleMutexRepository = roleMutexRepository;
-    _rolePrerequisiteRepository = rolePrerequisiteRepository;
-    _uniqueValidator = new LeanUniqueValidator<LeanRole>(roleRepository);
-    _logger = logger;
+    _roleDeptRepository = roleDeptRepository;
+    _uniqueValidator = new LeanUniqueValidator<LeanRole>(_roleRepository);
   }
 
   /// <summary>
   /// 创建角色
   /// </summary>
-  public async Task<LeanApiResult<long>> CreateAsync(LeanCreateRoleDto input)
+  /// <param name="input">角色创建参数</param>
+  /// <returns>创建成功的角色信息</returns>
+  public async Task<LeanRoleDto> CreateAsync(LeanCreateRoleDto input)
   {
-    try
+    return await ExecuteInTransactionAsync(async () =>
     {
-      if (!await ValidateRoleInputAsync(input.RoleName, input.RoleCode))
+      // 验证角色名称唯一性
+      await _uniqueValidator.ValidateAsync(x => x.RoleName, input.RoleName);
+
+      // 验证角色编码唯一性
+      if (!string.IsNullOrEmpty(input.RoleCode))
       {
-        return LeanApiResult<long>.Error("输入参数验证失败");
+        await _uniqueValidator.ValidateAsync(x => x.RoleCode, input.RoleCode);
       }
 
+      // 创建角色实体
       var role = input.Adapt<LeanRole>();
-      role.CreateTime = DateTime.Now;
-
       await _roleRepository.CreateAsync(role);
 
-      return LeanApiResult<long>.Ok(role.Id);
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult<long>.Error($"创建角色失败: {ex.Message}");
-    }
+      LogAudit("CreateRole", $"创建角色: {role.RoleName}");
+      return await GetAsync(role.Id);
+    }, "创建角色");
   }
 
   /// <summary>
   /// 更新角色
   /// </summary>
-  public async Task<LeanApiResult> UpdateAsync(LeanUpdateRoleDto input)
+  /// <param name="input">角色更新参数</param>
+  /// <returns>更新后的角色信息</returns>
+  public async Task<LeanRoleDto> UpdateAsync(LeanUpdateRoleDto input)
   {
-    try
+    return await ExecuteInTransactionAsync(async () =>
     {
-      var role = await GetRoleByIdAsync(input.Id);
+      var role = await _roleRepository.GetByIdAsync(input.Id);
       if (role == null)
       {
-        return LeanApiResult.Error($"角色 {input.Id} 不存在");
+        throw new LeanException("角色不存在");
       }
 
-      if (!await ValidateRoleInputAsync(input.RoleName, input.RoleCode, input.Id))
+      if (role.IsBuiltin == LeanBuiltinStatus.Yes)
       {
-        return LeanApiResult.Error("输入参数验证失败");
+        throw new LeanException("内置角色不能修改");
       }
 
-      input.Adapt(role);
-      role.UpdateTime = DateTime.Now;
+      // 验证角色名称唯一性
+      await _uniqueValidator.ValidateAsync(x => x.RoleName, input.RoleName, input.Id);
 
+      // 验证角色编码唯一性
+      if (!string.IsNullOrEmpty(input.RoleCode))
+      {
+        await _uniqueValidator.ValidateAsync(x => x.RoleCode, input.RoleCode, input.Id);
+      }
+
+      // 更新角色信息
+      input.Adapt(role);
       await _roleRepository.UpdateAsync(role);
 
-      return LeanApiResult.Ok();
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult.Error($"更新角色失败: {ex.Message}");
-    }
+      LogAudit("UpdateRole", $"更新角色: {role.RoleName}");
+      return await GetAsync(role.Id);
+    }, "更新角色");
   }
 
   /// <summary>
   /// 删除角色
   /// </summary>
-  public async Task<LeanApiResult> DeleteAsync(long id)
+  /// <param name="input">角色删除参数</param>
+  public async Task DeleteAsync(LeanDeleteRoleDto input)
   {
-    try
+    await ExecuteInTransactionAsync(async () =>
     {
-      var role = await GetRoleByIdAsync(id);
+      var role = await _roleRepository.GetByIdAsync(input.Id);
       if (role == null)
       {
-        return LeanApiResult.Error($"角色 {id} 不存在");
+        throw new LeanException("角色不存在");
       }
 
       if (role.IsBuiltin == LeanBuiltinStatus.Yes)
       {
-        return LeanApiResult.Error($"角色 {role.RoleName} 是内置角色，不能删除");
+        throw new LeanException("内置角色不能删除");
       }
 
-      await DeleteRoleRelationsAsync(id);
-      await _roleRepository.DeleteAsync(r => r.Id == id);
+      // 删除角色菜单关联
+      await _roleMenuRepository.DeleteAsync(x => x.RoleId == input.Id);
 
-      return LeanApiResult.Ok();
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult.Error($"删除角色失败: {ex.Message}");
-    }
-  }
+      // 删除角色部门关联
+      await _roleDeptRepository.DeleteAsync(x => x.RoleId == input.Id);
 
-  /// <summary>
-  /// 批量删除角色
-  /// </summary>
-  public async Task<LeanApiResult> BatchDeleteAsync(List<long> ids)
-  {
-    try
-    {
-      foreach (var id in ids)
-      {
-        var result = await DeleteAsync(id);
-        if (!result.Success)
-        {
-          return result;
-        }
-      }
+      // 删除角色
+      await _roleRepository.DeleteAsync(role);
 
-      return LeanApiResult.Ok();
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult.Error($"批量删除角色失败: {ex.Message}");
-    }
+      LogAudit("DeleteRole", $"删除角色: {role.RoleName}");
+    }, "删除角色");
   }
 
   /// <summary>
   /// 获取角色信息
   /// </summary>
-  public async Task<LeanApiResult<LeanRoleDto>> GetAsync(long id)
+  /// <param name="id">角色ID</param>
+  /// <returns>角色详细信息</returns>
+  public async Task<LeanRoleDto> GetAsync(long id)
   {
-    try
+    var role = await _roleRepository.GetByIdAsync(id);
+    if (role == null)
     {
-      var role = await GetRoleByIdAsync(id);
-      if (role == null)
-      {
-        return LeanApiResult<LeanRoleDto>.Error($"角色 {id} 不存在");
-      }
-
-      var result = role.Adapt<LeanRoleDto>();
-
-      return LeanApiResult<LeanRoleDto>.Ok(result);
+      throw new LeanException("角色不存在");
     }
-    catch (Exception ex)
-    {
-      return LeanApiResult<LeanRoleDto>.Error($"获取角色信息失败: {ex.Message}");
-    }
+
+    var result = role.Adapt<LeanRoleDto>();
+
+    // 获取角色菜单
+    var roleMenus = await _roleMenuRepository.GetListAsync(x => x.RoleId == id);
+    result.MenuIds = roleMenus.Select(x => x.MenuId).ToList();
+
+    // 获取角色部门
+    var roleDepts = await _roleDeptRepository.GetListAsync(x => x.RoleId == id);
+    result.DataScopeDeptIds = roleDepts.Select(x => x.DeptId).ToList();
+
+    return result;
   }
 
   /// <summary>
   /// 分页查询角色
   /// </summary>
-  public async Task<LeanApiResult<LeanPageResult<LeanRoleDto>>> GetPageAsync(LeanQueryRoleDto input)
+  /// <param name="input">查询参数</param>
+  /// <returns>分页查询结果</returns>
+  public async Task<LeanPageResult<LeanRoleDto>> QueryAsync(LeanQueryRoleDto input)
   {
-    try
+    using (LogPerformance("查询角色列表"))
     {
-      var predicate = BuildRoleQueryPredicate(input);
-      var (total, items) = await _roleRepository.GetPageListAsync(predicate, input.PageSize, input.PageIndex);
+      // 构建查询条件
+      Expression<Func<LeanRole, bool>> predicate = x => true;
 
-      var result = new LeanPageResult<LeanRoleDto>
+      if (!string.IsNullOrEmpty(input.RoleName))
       {
-        Total = total,
-        Items = items.Select(r => r.Adapt<LeanRoleDto>()).ToList()
-      };
+        var roleName = CleanInput(input.RoleName);
+        predicate = predicate.And(x => x.RoleName.Contains(roleName));
+      }
 
-      return LeanApiResult<LeanPageResult<LeanRoleDto>>.Ok(result);
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult<LeanPageResult<LeanRoleDto>>.Error($"查询角色失败: {ex.Message}");
+      if (!string.IsNullOrEmpty(input.RoleCode))
+      {
+        var roleCode = CleanInput(input.RoleCode);
+        predicate = predicate.And(x => x.RoleCode.Contains(roleCode));
+      }
+
+      if (input.RoleStatus.HasValue)
+      {
+        predicate = predicate.And(x => x.RoleStatus == input.RoleStatus);
+      }
+
+      if (input.StartTime.HasValue)
+      {
+        predicate = predicate.And(x => x.CreateTime >= input.StartTime);
+      }
+
+      if (input.EndTime.HasValue)
+      {
+        predicate = predicate.And(x => x.CreateTime <= input.EndTime);
+      }
+
+      // 执行分页查询
+      var result = await _roleRepository.GetPageListAsync(
+          predicate,
+          input.PageSize,
+          input.PageIndex,
+          x => x.CreateTime,
+          false);
+
+      var list = result.Items.Adapt<List<LeanRoleDto>>();
+      return new LeanPageResult<LeanRoleDto>
+      {
+        Total = result.Total,
+        Items = list,
+        PageIndex = input.PageIndex,
+        PageSize = input.PageSize
+      };
     }
   }
 
   /// <summary>
   /// 修改角色状态
   /// </summary>
-  public async Task<LeanApiResult> SetStatusAsync(LeanChangeRoleStatusDto input)
+  /// <param name="input">状态修改参数</param>
+  public async Task ChangeStatusAsync(LeanChangeRoleStatusDto input)
   {
-    try
+    await ExecuteInTransactionAsync(async () =>
     {
-      var role = await GetRoleByIdAsync(input.Id);
+      var role = await _roleRepository.GetByIdAsync(input.Id);
       if (role == null)
       {
-        return LeanApiResult.Error($"角色 {input.Id} 不存在");
+        throw new LeanException("角色不存在");
+      }
+
+      if (role.IsBuiltin == LeanBuiltinStatus.Yes)
+      {
+        throw new LeanException("内置角色不能修改状态");
       }
 
       role.RoleStatus = input.RoleStatus;
-      role.UpdateTime = DateTime.Now;
-
       await _roleRepository.UpdateAsync(role);
 
-      return LeanApiResult.Ok();
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult.Error($"修改角色状态失败: {ex.Message}");
-    }
+      LogAudit("ChangeRoleStatus", $"修改角色状态: {role.RoleName}, 状态: {input.RoleStatus}");
+    }, "修改角色状态");
   }
 
   /// <summary>
-  /// 获取角色的菜单权限
+  /// 分配角色菜单
   /// </summary>
-  public async Task<LeanApiResult<List<long>>> GetRoleMenusAsync(long roleId)
+  /// <param name="input">菜单分配参数</param>
+  public async Task AssignMenusAsync(LeanAssignRoleMenuDto input)
   {
-    try
+    await ExecuteInTransactionAsync(async () =>
     {
-      var role = await GetRoleByIdAsync(roleId);
+      var role = await _roleRepository.GetByIdAsync(input.Id);
       if (role == null)
       {
-        return LeanApiResult<List<long>>.Error($"角色 {roleId} 不存在");
+        throw new LeanException("角色不存在");
       }
 
-      var roleMenus = await _roleMenuRepository.GetListAsync(rm => rm.RoleId == roleId);
-      var menuIds = roleMenus.Select(rm => rm.MenuId).ToList();
-
-      return LeanApiResult<List<long>>.Ok(menuIds);
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult<List<long>>.Error($"获取角色菜单权限失败: {ex.Message}");
-    }
-  }
-
-  /// <summary>
-  /// 获取角色的API权限
-  /// </summary>
-  public async Task<LeanApiResult<List<long>>> GetRoleApisAsync(long roleId)
-  {
-    try
-    {
-      var role = await GetRoleByIdAsync(roleId);
-      if (role == null)
+      if (role.IsBuiltin == LeanBuiltinStatus.Yes)
       {
-        return LeanApiResult<List<long>>.Error($"角色 {roleId} 不存在");
+        throw new LeanException("内置角色不能修改菜单");
       }
 
-      var roleApis = await _roleApiRepository.GetListAsync(ra => ra.RoleId == roleId);
-      var apiIds = roleApis.Select(ra => ra.ApiId).ToList();
+      // 删除原有菜单
+      await _roleMenuRepository.DeleteAsync(x => x.RoleId == input.Id);
 
-      return LeanApiResult<List<long>>.Ok(apiIds);
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult<List<long>>.Error($"获取角色API权限失败: {ex.Message}");
-    }
-  }
-
-  /// <summary>
-  /// 分配角色菜单权限
-  /// </summary>
-  public async Task<LeanApiResult> AssignMenusAsync(LeanAssignRoleMenuDto input)
-  {
-    try
-    {
-      var role = await GetRoleByIdAsync(input.RoleId);
-      if (role == null)
+      // 添加新菜单
+      if (input.MenuIds != null && input.MenuIds.Any())
       {
-        return LeanApiResult.Error($"角色 {input.RoleId} 不存在");
+        foreach (var menuId in input.MenuIds)
+        {
+          await _roleMenuRepository.CreateAsync(new LeanRoleMenu
+          {
+            RoleId = input.Id,
+            MenuId = menuId
+          });
+        }
       }
 
-      await UpdateRoleMenusAsync(input.RoleId, input.MenuIds);
-
-      return LeanApiResult.Ok();
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult.Error($"分配角色菜单权限失败: {ex.Message}");
-    }
-  }
-
-  /// <summary>
-  /// 分配角色API权限
-  /// </summary>
-  public async Task<LeanApiResult> AssignApisAsync(LeanAssignRoleApiDto input)
-  {
-    try
-    {
-      var role = await GetRoleByIdAsync(input.RoleId);
-      if (role == null)
-      {
-        return LeanApiResult.Error($"角色 {input.RoleId} 不存在");
-      }
-
-      await UpdateRoleApisAsync(input.RoleId, input.ApiIds);
-
-      return LeanApiResult.Ok();
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult.Error($"分配角色API权限失败: {ex.Message}");
-    }
-  }
-
-  /// <summary>
-  /// 获取角色的数据权限
-  /// </summary>
-  public async Task<LeanApiResult<List<long>>> GetRoleDataScopeAsync(long roleId)
-  {
-    try
-    {
-      var role = await GetRoleByIdAsync(roleId);
-      if (role == null)
-      {
-        return LeanApiResult<List<long>>.Error($"角色 {roleId} 不存在");
-      }
-
-      // TODO: 从角色-部门关联表中获取数据权限范围
-      var deptIds = new List<long>();
-
-      return LeanApiResult<List<long>>.Ok(deptIds);
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult<List<long>>.Error($"获取角色数据权限失败: {ex.Message}");
-    }
+      LogAudit("AssignRoleMenus", $"分配角色菜单: {role.RoleName}");
+    }, "分配角色菜单");
   }
 
   /// <summary>
   /// 分配角色数据权限
   /// </summary>
-  public async Task<LeanApiResult> AssignDataScopeAsync(LeanAssignRoleDataScopeDto input)
+  /// <param name="input">数据权限分配参数</param>
+  public async Task AssignDataScopeAsync(LeanAssignRoleDataScopeDto input)
   {
-    try
+    await ExecuteInTransactionAsync(async () =>
     {
-      var role = await GetRoleByIdAsync(input.RoleId);
+      var role = await _roleRepository.GetByIdAsync(input.Id);
       if (role == null)
       {
-        return LeanApiResult.Error($"角色 {input.RoleId} 不存在");
+        throw new LeanException("角色不存在");
       }
 
-      role.DataScope = input.DataScope;
-      role.UpdateTime = DateTime.Now;
+      if (role.IsBuiltin == LeanBuiltinStatus.Yes)
+      {
+        throw new LeanException("内置角色不能修改数据权限");
+      }
 
+      // 更新数据权限类型
+      role.DataScope = input.DataScope;
       await _roleRepository.UpdateAsync(role);
 
-      // TODO: 更新角色-部门关联表
+      // 删除原有数据权限
+      await _roleDeptRepository.DeleteAsync(x => x.RoleId == input.Id);
 
-      return LeanApiResult.Ok();
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult.Error($"分配角色数据权限失败: {ex.Message}");
-    }
-  }
-
-  /// <summary>
-  /// 获取角色的互斥角色列表
-  /// </summary>
-  public async Task<LeanApiResult<List<long>>> GetRoleMutexesAsync(long roleId)
-  {
-    try
-    {
-      var role = await GetRoleByIdAsync(roleId);
-      if (role == null)
+      // 添加新数据权限
+      if (input.DeptIds != null && input.DeptIds.Any())
       {
-        return LeanApiResult<List<long>>.Error($"角色 {roleId} 不存在");
-      }
-
-      var roleMutexes = await _roleMutexRepository.GetListAsync(rm => rm.RoleId == roleId);
-      var mutexRoleIds = roleMutexes.Select(rm => rm.MutexRoleId).ToList();
-
-      return LeanApiResult<List<long>>.Ok(mutexRoleIds);
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult<List<long>>.Error($"获取角色互斥关系失败: {ex.Message}");
-    }
-  }
-
-  /// <summary>
-  /// 设置角色互斥关系
-  /// </summary>
-  public async Task<LeanApiResult> SetRoleMutexesAsync(LeanSetRoleMutexDto input)
-  {
-    try
-    {
-      var role = await GetRoleByIdAsync(input.RoleId);
-      if (role == null)
-      {
-        return LeanApiResult.Error($"角色 {input.RoleId} 不存在");
-      }
-
-      await _roleMutexRepository.DeleteAsync(rm => rm.RoleId == input.RoleId);
-      if (input.MutexRoleIds?.Any() == true)
-      {
-        var roleMutexes = input.MutexRoleIds.Select(mutexRoleId => new LeanRoleMutex
+        foreach (var deptId in input.DeptIds)
         {
-          RoleId = input.RoleId,
-          MutexRoleId = mutexRoleId,
-          CreateTime = DateTime.Now
-        }).ToList();
-        await _roleMutexRepository.CreateRangeAsync(roleMutexes);
+          await _roleDeptRepository.CreateAsync(new LeanRoleDept
+          {
+            RoleId = input.Id,
+            DeptId = deptId
+          });
+        }
       }
 
-      return LeanApiResult.Ok();
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult.Error($"设置角色互斥关系失败: {ex.Message}");
-    }
+      LogAudit("AssignRoleDataScope", $"分配角色数据权限: {role.RoleName}");
+    }, "分配角色数据权限");
   }
 
   /// <summary>
-  /// 获取角色的前置角色列表
+  /// 获取角色菜单
   /// </summary>
-  public async Task<LeanApiResult<List<long>>> GetRolePrerequisitesAsync(long roleId)
+  /// <param name="id">角色ID</param>
+  /// <returns>角色菜单ID列表</returns>
+  public async Task<List<long>> GetMenusAsync(long id)
   {
-    try
-    {
-      var role = await GetRoleByIdAsync(roleId);
-      if (role == null)
-      {
-        return LeanApiResult<List<long>>.Error($"角色 {roleId} 不存在");
-      }
-
-      var prerequisites = await _rolePrerequisiteRepository.GetListAsync(rp => rp.RoleId == roleId);
-      var prerequisiteRoleIds = prerequisites.Select(rp => rp.PrerequisiteRoleId).ToList();
-
-      return LeanApiResult<List<long>>.Ok(prerequisiteRoleIds);
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult<List<long>>.Error($"获取角色前置条件失败: {ex.Message}");
-    }
+    var roleMenus = await _roleMenuRepository.GetListAsync(x => x.RoleId == id);
+    return roleMenus.Select(x => x.MenuId).ToList();
   }
 
   /// <summary>
-  /// 设置角色前置条件
+  /// 获取角色数据权限
   /// </summary>
-  public async Task<LeanApiResult> SetRolePrerequisitesAsync(LeanSetRolePrerequisiteDto input)
+  /// <param name="id">角色ID</param>
+  /// <returns>角色数据权限信息</returns>
+  public async Task<LeanRoleDataScopeDto> GetDataScopeAsync(long id)
   {
-    try
+    var role = await _roleRepository.GetByIdAsync(id);
+    if (role == null)
     {
-      var role = await GetRoleByIdAsync(input.RoleId);
-      if (role == null)
-      {
-        return LeanApiResult.Error($"角色 {input.RoleId} 不存在");
-      }
-
-      await _rolePrerequisiteRepository.DeleteAsync(rp => rp.RoleId == input.RoleId);
-      if (input.PrerequisiteRoleIds?.Any() == true)
-      {
-        var prerequisites = input.PrerequisiteRoleIds.Select(prerequisiteRoleId => new LeanRolePrerequisite
-        {
-          RoleId = input.RoleId,
-          PrerequisiteRoleId = prerequisiteRoleId,
-          CreateTime = DateTime.Now
-        }).ToList();
-        await _rolePrerequisiteRepository.CreateRangeAsync(prerequisites);
-      }
-
-      return LeanApiResult.Ok();
+      throw new LeanException("角色不存在");
     }
-    catch (Exception ex)
+
+    var roleDepts = await _roleDeptRepository.GetListAsync(x => x.RoleId == id);
+
+    return new LeanRoleDataScopeDto
     {
-      return LeanApiResult.Error($"设置角色前置条件失败: {ex.Message}");
-    }
+      Id = role.Id,
+      DataScope = role.DataScope,
+      DeptIds = roleDepts.Select(x => x.DeptId).ToList()
+    };
   }
-
-  /// <summary>
-  /// 验证用户是否可以分配指定角色
-  /// </summary>
-  public async Task<LeanApiResult<bool>> ValidateUserRoleAssignmentAsync(long userId, long roleId)
-  {
-    try
-    {
-      var role = await GetRoleByIdAsync(roleId);
-      if (role == null)
-      {
-        return LeanApiResult<bool>.Error($"角色 {roleId} 不存在");
-      }
-
-      // 检查角色状态
-      if (role.RoleStatus != LeanRoleStatus.Normal)
-      {
-        return LeanApiResult<bool>.Ok(false);
-      }
-
-      // 获取用户当前的角色列表
-      var userRoles = await _roleRepository.GetListAsync(r => r.UserRoles.Any(ur => ur.UserId == userId));
-      var userRoleIds = userRoles.Select(r => r.Id).ToList();
-
-      // 检查互斥角色
-      var mutexRoles = await _roleMutexRepository.GetListAsync(rm => rm.RoleId == roleId);
-      if (mutexRoles.Any(rm => userRoleIds.Contains(rm.MutexRoleId)))
-      {
-        return LeanApiResult<bool>.Ok(false);
-      }
-
-      // 检查前置角色
-      var prerequisites = await _rolePrerequisiteRepository.GetListAsync(rp => rp.RoleId == roleId);
-      if (prerequisites.Any() && !prerequisites.All(rp => userRoleIds.Contains(rp.PrerequisiteRoleId)))
-      {
-        return LeanApiResult<bool>.Ok(false);
-      }
-
-      return LeanApiResult<bool>.Ok(true);
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult<bool>.Error($"验证用户角色分配失败: {ex.Message}");
-    }
-  }
-
-  #region 私有方法
-
-  /// <summary>
-  /// 获取角色
-  /// </summary>
-  private async Task<LeanRole?> GetRoleByIdAsync(long id)
-  {
-    return await _roleRepository.GetByIdAsync(id);
-  }
-
-  /// <summary>
-  /// 验证角色输入
-  /// </summary>
-  private async Task<bool> ValidateRoleInputAsync(string roleName, string roleCode, long? id = null)
-  {
-    if (string.IsNullOrEmpty(roleName) || string.IsNullOrEmpty(roleCode))
-    {
-      return false;
-    }
-
-    if (!ValidateInput(new[] { roleName, roleCode }))
-    {
-      return false;
-    }
-
-    try
-    {
-      await _uniqueValidator.ValidateAsync(
-          (r => r.RoleName, roleName, id, $"角色名称 {roleName} 已存在"),
-          (r => r.RoleCode, roleCode, id, $"角色编码 {roleCode} 已存在")
-      );
-      return true;
-    }
-    catch
-    {
-      return false;
-    }
-  }
-
-  /// <summary>
-  /// 更新角色菜单关系
-  /// </summary>
-  private async Task UpdateRoleMenusAsync(long roleId, List<long> menuIds)
-  {
-    await _roleMenuRepository.DeleteAsync(rm => rm.RoleId == roleId);
-    if (menuIds?.Any() == true)
-    {
-      var roleMenus = menuIds.Select(menuId => new LeanRoleMenu
-      {
-        RoleId = roleId,
-        MenuId = menuId,
-        CreateTime = DateTime.Now
-      }).ToList();
-      await _roleMenuRepository.CreateRangeAsync(roleMenus);
-    }
-  }
-
-  /// <summary>
-  /// 更新角色API关系
-  /// </summary>
-  private async Task UpdateRoleApisAsync(long roleId, List<long> apiIds)
-  {
-    await _roleApiRepository.DeleteAsync(ra => ra.RoleId == roleId);
-    if (apiIds?.Any() == true)
-    {
-      var roleApis = apiIds.Select(apiId => new LeanRoleApi
-      {
-        RoleId = roleId,
-        ApiId = apiId,
-        CreateTime = DateTime.Now
-      }).ToList();
-      await _roleApiRepository.CreateRangeAsync(roleApis);
-    }
-  }
-
-  /// <summary>
-  /// 删除角色关联信息
-  /// </summary>
-  private async Task DeleteRoleRelationsAsync(long roleId)
-  {
-    await _roleMenuRepository.DeleteAsync(rm => rm.RoleId == roleId);
-    await _roleApiRepository.DeleteAsync(ra => ra.RoleId == roleId);
-    // TODO: 删除角色-部门关联
-  }
-
-  /// <summary>
-  /// 构建角色查询条件
-  /// </summary>
-  private Expression<Func<LeanRole, bool>> BuildRoleQueryPredicate(LeanQueryRoleDto input)
-  {
-    Expression<Func<LeanRole, bool>> predicate = r => true;
-
-    if (!string.IsNullOrEmpty(input.RoleName))
-    {
-      var roleName = CleanInput(input.RoleName);
-      predicate = LeanExpressionExtensions.And(predicate, r => r.RoleName.Contains(roleName));
-    }
-
-    if (!string.IsNullOrEmpty(input.RoleCode))
-    {
-      var roleCode = CleanInput(input.RoleCode);
-      predicate = LeanExpressionExtensions.And(predicate, r => r.RoleCode.Contains(roleCode));
-    }
-
-    if (input.RoleStatus.HasValue)
-    {
-      predicate = LeanExpressionExtensions.And(predicate, r => r.RoleStatus == input.RoleStatus.Value);
-    }
-
-    if (input.StartTime.HasValue)
-    {
-      predicate = LeanExpressionExtensions.And(predicate, r => r.CreateTime >= input.StartTime.Value);
-    }
-
-    if (input.EndTime.HasValue)
-    {
-      predicate = LeanExpressionExtensions.And(predicate, r => r.CreateTime <= input.EndTime.Value);
-    }
-
-    return predicate;
-  }
-
-  #endregion
 }

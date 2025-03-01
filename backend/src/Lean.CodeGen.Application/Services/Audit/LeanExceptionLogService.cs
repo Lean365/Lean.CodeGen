@@ -40,13 +40,11 @@ namespace Lean.CodeGen.Application.Services.Audit
     /// </summary>
     public LeanExceptionLogService(
         ILeanRepository<LeanExceptionLog> exceptionLogRepository,
-        ILeanSqlSafeService sqlSafeService,
-        IOptions<LeanSecurityOptions> securityOptions,
-        ILogger<LeanExceptionLogService> logger)
-        : base(sqlSafeService, securityOptions, logger)
+        LeanBaseServiceContext context)
+        : base(context)
     {
       _exceptionLogRepository = exceptionLogRepository;
-      _logger = logger;
+      _logger = (ILogger<LeanExceptionLogService>)context.Logger;
     }
 
     /// <summary>

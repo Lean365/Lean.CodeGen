@@ -31,13 +31,11 @@ public class LeanSqlDiffLogService : LeanBaseService, ILeanSqlDiffLogService
   /// </summary>
   public LeanSqlDiffLogService(
       ILeanRepository<LeanSqlDiffLog> sqlDiffLogRepository,
-      ILeanSqlSafeService sqlSafeService,
-      IOptions<LeanSecurityOptions> securityOptions,
-      ILogger<LeanSqlDiffLogService> logger)
-      : base(sqlSafeService, securityOptions, logger)
+      LeanBaseServiceContext context)
+      : base(context)
   {
     _sqlDiffLogRepository = sqlDiffLogRepository;
-    _logger = logger;
+    _logger = (ILogger<LeanSqlDiffLogService>)context.Logger;
   }
 
   /// <summary>
@@ -129,5 +127,14 @@ public class LeanSqlDiffLogService : LeanBaseService, ILeanSqlDiffLogService
     }
 
     return predicate;
+  }
+
+  /// <summary>
+  /// 根据审计日志ID获取SQL差异日志列表
+  /// </summary>
+  public async Task<List<LeanSqlDiffLogDto>> GetListByAuditLogIdAsync(long auditLogId)
+  {
+    var logs = await _sqlDiffLogRepository.GetListAsync(t => t.AuditLogId == auditLogId);
+    return logs.Select(t => t.Adapt<LeanSqlDiffLogDto>()).ToList();
   }
 }

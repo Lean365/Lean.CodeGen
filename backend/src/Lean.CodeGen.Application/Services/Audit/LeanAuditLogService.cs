@@ -33,7 +33,6 @@ namespace Lean.CodeGen.Application.Services.Audit
   public class LeanAuditLogService : LeanBaseService, ILeanAuditLogService
   {
     private readonly ILeanRepository<LeanAuditLog> _auditLogRepository;
-    private readonly ILeanRepository<LeanSqlDiffLog> _sqlDiffLogRepository;
     private readonly ILogger<LeanAuditLogService> _logger;
 
     /// <summary>
@@ -41,15 +40,11 @@ namespace Lean.CodeGen.Application.Services.Audit
     /// </summary>
     public LeanAuditLogService(
         ILeanRepository<LeanAuditLog> auditLogRepository,
-        ILeanRepository<LeanSqlDiffLog> sqlDiffLogRepository,
-        ILeanSqlSafeService sqlSafeService,
-        IOptions<LeanSecurityOptions> securityOptions,
-        ILogger<LeanAuditLogService> logger)
-        : base(sqlSafeService, securityOptions, logger)
+        LeanBaseServiceContext context)
+        : base(context)
     {
       _auditLogRepository = auditLogRepository;
-      _sqlDiffLogRepository = sqlDiffLogRepository;
-      _logger = logger;
+      _logger = (ILogger<LeanAuditLogService>)context.Logger;
     }
 
     /// <summary>
@@ -60,16 +55,6 @@ namespace Lean.CodeGen.Application.Services.Audit
       var predicate = BuildQueryPredicate(queryDto);
       var (total, items) = await _auditLogRepository.GetPageListAsync(predicate, queryDto.PageSize, queryDto.PageIndex);
       var list = items.Select(t => t.Adapt<LeanAuditLogDto>()).ToList();
-
-      // 填充数据差异
-      foreach (var item in list)
-      {
-        var sqlDiffLogs = await _sqlDiffLogRepository.GetListAsync(t => t.AuditLogId == item.Id);
-        if (sqlDiffLogs.Any())
-        {
-          item.DataDiffs = sqlDiffLogs.Select(t => t.Adapt<LeanSqlDiffLogDto>()).ToList();
-        }
-      }
 
       return new LeanPageResult<LeanAuditLogDto>
       {
@@ -89,16 +74,7 @@ namespace Lean.CodeGen.Application.Services.Audit
         throw new Exception($"审计日志 {id} 不存在");
       }
 
-      var result = log.Adapt<LeanAuditLogDto>();
-
-      // 填充数据差异
-      var sqlDiffLogs = await _sqlDiffLogRepository.GetListAsync(t => t.AuditLogId == log.Id);
-      if (sqlDiffLogs.Any())
-      {
-        result.DataDiffs = sqlDiffLogs.Select(t => t.Adapt<LeanSqlDiffLogDto>()).ToList();
-      }
-
-      return result;
+      return log.Adapt<LeanAuditLogDto>();
     }
 
     /// <summary>
@@ -124,10 +100,6 @@ namespace Lean.CodeGen.Application.Services.Audit
     /// </summary>
     public async Task<bool> ClearAsync()
     {
-      // 先删除SQL差异日志
-      await _sqlDiffLogRepository.DeleteAsync(t => true);
-
-      // 再删除审计日志
       return await _auditLogRepository.DeleteAsync(t => true);
     }
 

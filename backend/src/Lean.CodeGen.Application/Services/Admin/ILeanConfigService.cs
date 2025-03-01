@@ -37,15 +37,15 @@ public interface ILeanConfigService
   /// <summary>
   /// 导出系统配置
   /// </summary>
-  Task<LeanApiResult<byte[]>> ExportAsync(LeanQueryConfigDto input);
+  Task<byte[]> ExportAsync(LeanQueryConfigDto input);
 
   /// <summary>
   /// 导入系统配置
   /// </summary>
-  Task<LeanApiResult<LeanExcelImportResult<LeanConfigImportDto>>> ImportAsync(LeanFileInfo file);
+  Task<LeanExcelImportResult<LeanConfigImportDto>> ImportAsync(byte[] file);
 
   /// <summary>
-  /// 下载导入模板
+  /// 获取导入模板
   /// </summary>
-  Task<LeanApiResult<byte[]>> GetImportTemplateAsync();
+  Task<byte[]> GetImportTemplateAsync();
 }

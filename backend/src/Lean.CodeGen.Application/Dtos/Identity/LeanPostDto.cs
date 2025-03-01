@@ -1,8 +1,46 @@
+using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Lean.CodeGen.Common.Enums;
 using Lean.CodeGen.Common.Models;
 
 namespace Lean.CodeGen.Application.Dtos.Identity;
+
+/// <summary>
+/// 岗位基础信息
+/// </summary>
+public class LeanPostDto : LeanBaseDto
+{
+  /// <summary>
+  /// 岗位名称
+  /// </summary>
+  public string PostName { get; set; } = string.Empty;
+
+  /// <summary>
+  /// 岗位编码
+  /// </summary>
+  public string PostCode { get; set; } = string.Empty;
+
+  /// <summary>
+  /// 岗位描述
+  /// </summary>
+  public string? PostDescription { get; set; }
+
+  /// <summary>
+  /// 排序号
+  /// </summary>
+  public int OrderNum { get; set; }
+
+  /// <summary>
+  /// 岗位状态
+  /// </summary>
+  public LeanPostStatus PostStatus { get; set; }
+
+  /// <summary>
+  /// 是否内置
+  /// </summary>
+  public LeanBuiltinStatus IsBuiltin { get; set; }
+}
 
 /// <summary>
 /// 岗位查询参数
@@ -25,12 +63,17 @@ public class LeanQueryPostDto : LeanPage
   public LeanPostStatus? PostStatus { get; set; }
 
   /// <summary>
-  /// 开始时间
+  /// 是否内置
+  /// </summary>
+  public LeanBuiltinStatus? IsBuiltin { get; set; }
+
+  /// <summary>
+  /// 创建时间范围-开始
   /// </summary>
   public DateTime? StartTime { get; set; }
 
   /// <summary>
-  /// 结束时间
+  /// 创建时间范围-结束
   /// </summary>
   public DateTime? EndTime { get; set; }
 }
@@ -45,14 +88,14 @@ public class LeanCreatePostDto
   /// </summary>
   [Required(ErrorMessage = "岗位名称不能为空")]
   [StringLength(50, MinimumLength = 2, ErrorMessage = "岗位名称长度必须在2-50个字符之间")]
-  public string PostName { get; set; } = default!;
+  public string PostName { get; set; } = string.Empty;
 
   /// <summary>
   /// 岗位编码
   /// </summary>
   [Required(ErrorMessage = "岗位编码不能为空")]
   [StringLength(50, MinimumLength = 2, ErrorMessage = "岗位编码长度必须在2-50个字符之间")]
-  public string PostCode { get; set; } = default!;
+  public string PostCode { get; set; } = string.Empty;
 
   /// <summary>
   /// 岗位描述
@@ -64,43 +107,40 @@ public class LeanCreatePostDto
   /// 排序号
   /// </summary>
   public int OrderNum { get; set; }
+
+  /// <summary>
+  /// 岗位状态
+  /// </summary>
+  public LeanPostStatus PostStatus { get; set; } = LeanPostStatus.Normal;
+
+  /// <summary>
+  /// 是否内置
+  /// </summary>
+  public LeanBuiltinStatus IsBuiltin { get; set; } = LeanBuiltinStatus.No;
 }
 
 /// <summary>
 /// 岗位更新参数
 /// </summary>
-public class LeanUpdatePostDto : LeanCreatePostDto
+public class LeanUpdatePostDto
 {
   /// <summary>
   /// 岗位ID
   /// </summary>
   [Required(ErrorMessage = "岗位ID不能为空")]
   public long Id { get; set; }
-}
-
-/// <summary>
-/// 岗位详情
-/// </summary>
-public class LeanPostDetailDto
-{
-  /// <summary>
-  /// 岗位ID
-  /// </summary>
-  public long Id { get; set; }
 
   /// <summary>
   /// 岗位名称
   /// </summary>
-  public string PostName { get; set; } = default!;
-
-  /// <summary>
-  /// 岗位编码
-  /// </summary>
-  public string PostCode { get; set; } = default!;
+  [Required(ErrorMessage = "岗位名称不能为空")]
+  [StringLength(50, MinimumLength = 2, ErrorMessage = "岗位名称长度必须在2-50个字符之间")]
+  public string PostName { get; set; } = string.Empty;
 
   /// <summary>
   /// 岗位描述
   /// </summary>
+  [StringLength(500, ErrorMessage = "岗位描述长度不能超过500个字符")]
   public string? PostDescription { get; set; }
 
   /// <summary>
@@ -109,34 +149,21 @@ public class LeanPostDetailDto
   public int OrderNum { get; set; }
 
   /// <summary>
-  /// 状态
+  /// 岗位状态
   /// </summary>
   public LeanPostStatus PostStatus { get; set; }
+}
 
+/// <summary>
+/// 岗位删除参数
+/// </summary>
+public class LeanDeletePostDto
+{
   /// <summary>
-  /// 是否内置
+  /// 岗位ID
   /// </summary>
-  public LeanBuiltinStatus IsBuiltin { get; set; }
-
-  /// <summary>
-  /// 创建时间
-  /// </summary>
-  public DateTime CreateTime { get; set; }
-
-  /// <summary>
-  /// 创建者
-  /// </summary>
-  public string? CreateUserName { get; set; }
-
-  /// <summary>
-  /// 更新时间
-  /// </summary>
-  public DateTime? UpdateTime { get; set; }
-
-  /// <summary>
-  /// 更新者
-  /// </summary>
-  public string? UpdateUserName { get; set; }
+  [Required(ErrorMessage = "岗位ID不能为空")]
+  public long Id { get; set; }
 }
 
 /// <summary>
@@ -158,42 +185,6 @@ public class LeanChangePostStatusDto
 }
 
 /// <summary>
-/// 岗位 DTO
-/// </summary>
-public class LeanPostDto
-{
-  /// <summary>
-  /// 岗位ID
-  /// </summary>
-  public long Id { get; set; }
-
-  /// <summary>
-  /// 岗位名称
-  /// </summary>
-  public string PostName { get; set; } = default!;
-
-  /// <summary>
-  /// 岗位编码
-  /// </summary>
-  public string PostCode { get; set; } = default!;
-
-  /// <summary>
-  /// 岗位描述
-  /// </summary>
-  public string? PostDescription { get; set; }
-
-  /// <summary>
-  /// 排序号
-  /// </summary>
-  public int OrderNum { get; set; }
-
-  /// <summary>
-  /// 状态
-  /// </summary>
-  public LeanPostStatus PostStatus { get; set; }
-}
-
-/// <summary>
 /// 岗位导入模板
 /// </summary>
 public class LeanImportTemplatePostDto
@@ -202,13 +193,41 @@ public class LeanImportTemplatePostDto
   /// 岗位名称
   /// </summary>
   [Required(ErrorMessage = "岗位名称不能为空")]
-  public string PostName { get; set; } = default!;
+  [StringLength(50, MinimumLength = 2, ErrorMessage = "岗位名称长度必须在2-50个字符之间")]
+  public string PostName { get; set; } = string.Empty;
 
   /// <summary>
   /// 岗位编码
   /// </summary>
   [Required(ErrorMessage = "岗位编码不能为空")]
-  public string PostCode { get; set; } = default!;
+  [StringLength(50, MinimumLength = 2, ErrorMessage = "岗位编码长度必须在2-50个字符之间")]
+  public string PostCode { get; set; } = string.Empty;
+
+  /// <summary>
+  /// 岗位描述
+  /// </summary>
+  [StringLength(500, ErrorMessage = "岗位描述长度不能超过500个字符")]
+  public string? PostDescription { get; set; }
+
+  /// <summary>
+  /// 排序号
+  /// </summary>
+  public int OrderNum { get; set; }
+}
+
+/// <summary>
+/// 岗位导入错误信息
+/// </summary>
+public class LeanImportPostErrorDto : LeanImportError
+{
+  /// <summary>
+  /// 岗位编码
+  /// </summary>
+  public string PostCode
+  {
+    get => Key;
+    set => Key = value;
+  }
 }
 
 /// <summary>
@@ -219,7 +238,21 @@ public class LeanImportPostResultDto : LeanImportResult
   /// <summary>
   /// 错误信息列表
   /// </summary>
-  public List<string> ErrorMessages { get; set; } = new();
+  public new List<LeanImportPostErrorDto> Errors { get; set; } = new();
+
+  /// <summary>
+  /// 添加错误信息
+  /// </summary>
+  public override void AddError(string postCode, string errorMessage)
+  {
+    base.AddError(postCode, errorMessage);
+    Errors.Add(new LeanImportPostErrorDto
+    {
+      RowIndex = TotalCount,
+      PostCode = postCode,
+      ErrorMessage = errorMessage
+    });
+  }
 }
 
 /// <summary>
@@ -235,71 +268,16 @@ public class LeanExportPostDto : LeanQueryPostDto
   /// <summary>
   /// 文件格式
   /// </summary>
+  [Required(ErrorMessage = "文件格式不能为空")]
   public string FileFormat { get; set; } = "xlsx";
-}
-
-/// <summary>
-/// 岗位树形结构 DTO
-/// </summary>
-public class LeanPostTreeDto : LeanPostDto
-{
-  /// <summary>
-  /// 子岗位列表
-  /// </summary>
-  public List<LeanPostTreeDto> Children { get; set; } = new();
-}
-
-/// <summary>
-/// 岗位权限信息
-/// </summary>
-public class LeanPostPermissionsDto
-{
-  /// <summary>
-  /// 菜单权限列表
-  /// </summary>
-  public List<string> MenuPermissions { get; set; } = new();
 
   /// <summary>
-  /// API权限列表
+  /// 是否导出全部
   /// </summary>
-  public List<string> ApiPermissions { get; set; } = new();
-}
-
-/// <summary>
-/// 设置岗位继承关系参数
-/// </summary>
-public class LeanSetPostInheritanceDto
-{
-  /// <summary>
-  /// 岗位ID
-  /// </summary>
-  [Required(ErrorMessage = "岗位ID不能为空")]
-  public long PostId { get; set; }
+  public bool IsExportAll { get; set; }
 
   /// <summary>
-  /// 继承岗位ID列表
+  /// 选中的ID列表
   /// </summary>
-  public List<long> InheritedPostIds { get; set; } = new();
-}
-
-/// <summary>
-/// 设置岗位权限参数
-/// </summary>
-public class LeanSetPostPermissionDto
-{
-  /// <summary>
-  /// 岗位ID
-  /// </summary>
-  [Required(ErrorMessage = "岗位ID不能为空")]
-  public long PostId { get; set; }
-
-  /// <summary>
-  /// 菜单ID列表
-  /// </summary>
-  public List<long> MenuIds { get; set; } = new();
-
-  /// <summary>
-  /// API ID列表
-  /// </summary>
-  public List<long> ApiIds { get; set; } = new();
+  public List<long> SelectedIds { get; set; } = new();
 }

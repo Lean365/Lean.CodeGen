@@ -69,6 +69,15 @@ public class LeanUser : LeanBaseEntity
   public string? EnglishName { get; set; }
 
   /// <summary>
+  /// 昵称
+  /// </summary>
+  /// <remarks>
+  /// 用户的昵称
+  /// </remarks>
+  [SugarColumn(ColumnName = "nickname", ColumnDescription = "昵称", Length = 50, IsNullable = true, ColumnDataType = "nvarchar")]
+  public string? Nickname { get; set; }
+
+  /// <summary>
   /// 用户类型
   /// </summary>
   /// <remarks>

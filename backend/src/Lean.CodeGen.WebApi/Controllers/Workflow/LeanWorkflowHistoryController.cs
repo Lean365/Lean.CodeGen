@@ -3,6 +3,7 @@ using Lean.CodeGen.Application.Services.Workflow;
 using Lean.CodeGen.Common.Models;
 using Lean.CodeGen.WebApi.Controllers;
 using Microsoft.AspNetCore.Mvc;
+using Lean.CodeGen.Common.Enums;
 
 namespace Lean.CodeGen.WebApi.Controllers.Workflow;
 
@@ -11,6 +12,7 @@ namespace Lean.CodeGen.WebApi.Controllers.Workflow;
 /// </summary>
 [ApiController]
 [Route("api/workflow/histories")]
+[ApiExplorerSettings(GroupName = "workflow")]
 public class LeanWorkflowHistoryController : LeanBaseController
 {
   private readonly ILeanWorkflowHistoryService _service;
@@ -30,9 +32,10 @@ public class LeanWorkflowHistoryController : LeanBaseController
   /// <param name="id">历史ID</param>
   /// <returns>工作流历史</returns>
   [HttpGet("{id}")]
-  public Task<LeanWorkflowHistoryDto> GetAsync(long id)
+  public async Task<IActionResult> GetAsync(long id)
   {
-    return _service.GetAsync(id);
+    var result = await _service.GetAsync(id);
+    return Success(result, LeanBusinessType.Query);
   }
 
   /// <summary>
@@ -41,9 +44,10 @@ public class LeanWorkflowHistoryController : LeanBaseController
   /// <param name="dto">创建参数</param>
   /// <returns>历史ID</returns>
   [HttpPost]
-  public Task<long> CreateAsync(LeanWorkflowHistoryDto dto)
+  public async Task<IActionResult> CreateAsync(LeanWorkflowHistoryDto dto)
   {
-    return _service.CreateAsync(dto);
+    var result = await _service.CreateAsync(dto);
+    return Success(result, LeanBusinessType.Create);
   }
 
   /// <summary>
@@ -53,13 +57,14 @@ public class LeanWorkflowHistoryController : LeanBaseController
   /// <param name="dto">更新参数</param>
   /// <returns>是否成功</returns>
   [HttpPut("{id}")]
-  public async Task<bool> UpdateAsync(long id, LeanWorkflowHistoryDto dto)
+  public async Task<IActionResult> UpdateAsync(long id, LeanWorkflowHistoryDto dto)
   {
     if (id != dto.Id)
     {
-      return false;
+      return Error("ID不匹配");
     }
-    return await _service.UpdateAsync(dto);
+    var result = await _service.UpdateAsync(dto);
+    return Success(result, LeanBusinessType.Update);
   }
 
   /// <summary>
@@ -68,9 +73,10 @@ public class LeanWorkflowHistoryController : LeanBaseController
   /// <param name="id">历史ID</param>
   /// <returns>是否成功</returns>
   [HttpDelete("{id}")]
-  public Task<bool> DeleteAsync(long id)
+  public async Task<IActionResult> DeleteAsync(long id)
   {
-    return _service.DeleteAsync(id);
+    var result = await _service.DeleteAsync(id);
+    return Success(result, LeanBusinessType.Delete);
   }
 
   /// <summary>
@@ -86,7 +92,7 @@ public class LeanWorkflowHistoryController : LeanBaseController
   /// <param name="endTime">结束时间</param>
   /// <returns>分页结果</returns>
   [HttpGet]
-  public Task<LeanPageResult<LeanWorkflowHistoryDto>> GetPagedListAsync(
+  public async Task<IActionResult> GetPagedListAsync(
       [FromQuery] int pageIndex = 1,
       [FromQuery] int pageSize = 10,
       [FromQuery] long? instanceId = null,
@@ -96,6 +102,7 @@ public class LeanWorkflowHistoryController : LeanBaseController
       [FromQuery] DateTime? startTime = null,
       [FromQuery] DateTime? endTime = null)
   {
-    return _service.GetPagedListAsync(pageIndex, pageSize, instanceId, taskId, operationType, operatorId, startTime, endTime);
+    var result = await _service.GetPagedListAsync(pageIndex, pageSize, instanceId, taskId, operationType, operatorId, startTime, endTime);
+    return Success(result, LeanBusinessType.Query);
   }
 }

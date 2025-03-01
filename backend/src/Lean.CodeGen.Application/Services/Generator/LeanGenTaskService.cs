@@ -40,16 +40,14 @@ namespace Lean.CodeGen.Application.Services.Generator
         ILeanRepository<LeanGenConfig> configRepository,
         ILeanRepository<LeanDbTable> tableRepository,
         ILeanRepository<LeanGenHistory> historyRepository,
-        ILeanSqlSafeService sqlSafeService,
-        IOptions<LeanSecurityOptions> securityOptions,
-        ILogger<LeanGenTaskService> logger)
-        : base(sqlSafeService, securityOptions, logger)
+        LeanBaseServiceContext context)
+        : base(context)
     {
-      _logger = logger;
       _repository = repository;
       _configRepository = configRepository;
       _tableRepository = tableRepository;
       _historyRepository = historyRepository;
+      _logger = (ILogger<LeanGenTaskService>)context.Logger;
       _uniqueValidator = new LeanUniqueValidator<LeanGenTask>(_repository);
     }
 

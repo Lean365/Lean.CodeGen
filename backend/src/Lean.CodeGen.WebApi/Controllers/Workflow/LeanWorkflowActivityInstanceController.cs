@@ -3,6 +3,7 @@ using Lean.CodeGen.Application.Services.Workflow;
 using Lean.CodeGen.Common.Models;
 using Lean.CodeGen.WebApi.Controllers;
 using Microsoft.AspNetCore.Mvc;
+using Lean.CodeGen.Common.Enums;
 
 namespace Lean.CodeGen.WebApi.Controllers.Workflow;
 
@@ -31,10 +32,10 @@ public class LeanWorkflowActivityInstanceController : LeanBaseController
   /// <param name="id">实例ID</param>
   /// <returns>活动实例</returns>
   [HttpGet("{id}")]
-  public async Task<LeanApiResult<LeanWorkflowActivityInstanceDto>> GetAsync(long id)
+  public async Task<IActionResult> GetAsync(long id)
   {
     var result = await _service.GetAsync(id);
-    return LeanApiResult<LeanWorkflowActivityInstanceDto>.Ok(result);
+    return Success(result, LeanBusinessType.Query);
   }
 
   /// <summary>
@@ -43,10 +44,10 @@ public class LeanWorkflowActivityInstanceController : LeanBaseController
   /// <param name="dto">活动实例</param>
   /// <returns>实例ID</returns>
   [HttpPost]
-  public async Task<LeanApiResult<long>> CreateAsync(LeanWorkflowActivityInstanceDto dto)
+  public async Task<IActionResult> CreateAsync(LeanWorkflowActivityInstanceDto dto)
   {
     var result = await _service.CreateAsync(dto);
-    return LeanApiResult<long>.Ok(result);
+    return Success(result, LeanBusinessType.Create);
   }
 
   /// <summary>
@@ -56,14 +57,14 @@ public class LeanWorkflowActivityInstanceController : LeanBaseController
   /// <param name="dto">活动实例</param>
   /// <returns>是否成功</returns>
   [HttpPut("{id}")]
-  public async Task<LeanApiResult> UpdateAsync(long id, LeanWorkflowActivityInstanceDto dto)
+  public async Task<IActionResult> UpdateAsync(long id, LeanWorkflowActivityInstanceDto dto)
   {
     if (id != dto.Id)
     {
-      return LeanApiResult.Error("ID不匹配");
+      return Error("ID不匹配");
     }
     var result = await _service.UpdateAsync(dto);
-    return result ? LeanApiResult.Ok() : LeanApiResult.Error("更新失败");
+    return Success(result, LeanBusinessType.Update);
   }
 
   /// <summary>
@@ -72,10 +73,10 @@ public class LeanWorkflowActivityInstanceController : LeanBaseController
   /// <param name="id">实例ID</param>
   /// <returns>是否成功</returns>
   [HttpDelete("{id}")]
-  public async Task<LeanApiResult> DeleteAsync(long id)
+  public async Task<IActionResult> DeleteAsync(long id)
   {
     var result = await _service.DeleteAsync(id);
-    return result ? LeanApiResult.Ok() : LeanApiResult.Error("删除失败");
+    return Success(result, LeanBusinessType.Delete);
   }
 
   /// <summary>
@@ -84,10 +85,10 @@ public class LeanWorkflowActivityInstanceController : LeanBaseController
   /// <param name="id">实例ID</param>
   /// <returns>是否成功</returns>
   [HttpPost("{id}/start")]
-  public async Task<LeanApiResult> StartAsync(long id)
+  public async Task<IActionResult> StartAsync(long id)
   {
     var result = await _service.StartAsync(id);
-    return result ? LeanApiResult.Ok() : LeanApiResult.Error("启动失败");
+    return Success(result, LeanBusinessType.Update);
   }
 
   /// <summary>
@@ -96,10 +97,10 @@ public class LeanWorkflowActivityInstanceController : LeanBaseController
   /// <param name="id">实例ID</param>
   /// <returns>是否成功</returns>
   [HttpPost("{id}/complete")]
-  public async Task<LeanApiResult> CompleteAsync(long id)
+  public async Task<IActionResult> CompleteAsync(long id)
   {
     var result = await _service.CompleteAsync(id);
-    return result ? LeanApiResult.Ok() : LeanApiResult.Error("完成失败");
+    return Success(result, LeanBusinessType.Update);
   }
 
   /// <summary>

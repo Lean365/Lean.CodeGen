@@ -1,18 +1,20 @@
+using Microsoft.AspNetCore.Mvc;
 using Lean.CodeGen.Application.Dtos.Admin;
 using Lean.CodeGen.Application.Services.Admin;
 using Lean.CodeGen.Common.Models;
-using Microsoft.AspNetCore.Mvc;
+using Lean.CodeGen.Common.Enums;
 using System.IO;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 
 namespace Lean.CodeGen.WebApi.Controllers.Admin;
 
 /// <summary>
 /// 字典数据控制器
 /// </summary>
-[Route("api/admin/[controller]")]
+[Route("api/admin/dict-data")]
 [ApiController]
 public class LeanDictDataController : LeanBaseController
 {
@@ -30,71 +32,111 @@ public class LeanDictDataController : LeanBaseController
   /// 创建字典数据
   /// </summary>
   [HttpPost]
-  public async Task<LeanApiResult<long>> CreateAsync([FromBody] LeanCreateDictDataDto input)
+  public async Task<IActionResult> CreateAsync([FromBody] LeanCreateDictDataDto input)
   {
-    return await _service.CreateAsync(input);
+    var result = await _service.CreateAsync(input);
+    return Success(result, LeanBusinessType.Create);
   }
 
   /// <summary>
   /// 更新字典数据
   /// </summary>
   [HttpPut]
-  public async Task<LeanApiResult> UpdateAsync([FromBody] LeanUpdateDictDataDto input)
+  public async Task<IActionResult> UpdateAsync([FromBody] LeanUpdateDictDataDto input)
   {
-    return await _service.UpdateAsync(input);
+    var result = await _service.UpdateAsync(input);
+    return Success(result, LeanBusinessType.Update);
   }
 
   /// <summary>
   /// 删除字典数据
   /// </summary>
   [HttpDelete("{id}")]
-  public async Task<LeanApiResult> DeleteAsync(long id)
+  public async Task<IActionResult> DeleteAsync(long id)
   {
-    return await _service.DeleteAsync(id);
+    await _service.DeleteAsync(id);
+    return Success(LeanBusinessType.Delete);
   }
 
   /// <summary>
   /// 批量删除字典数据
   /// </summary>
   [HttpDelete]
-  public async Task<LeanApiResult> BatchDeleteAsync([FromBody] List<long> ids)
+  public async Task<IActionResult> BatchDeleteAsync([FromBody] List<long> ids)
   {
-    return await _service.BatchDeleteAsync(ids);
+    var result = await _service.BatchDeleteAsync(ids);
+    return Success(result, LeanBusinessType.Delete);
   }
 
   /// <summary>
   /// 获取字典数据详情
   /// </summary>
   [HttpGet("{id}")]
-  public async Task<LeanApiResult<LeanDictDataDto>> GetAsync(long id)
+  public async Task<IActionResult> GetAsync(long id)
   {
-    return await _service.GetAsync(id);
+    var result = await _service.GetAsync(id);
+    return Success(result, LeanBusinessType.Query);
   }
 
   /// <summary>
   /// 分页查询字典数据
   /// </summary>
   [HttpGet("page")]
-  public async Task<LeanApiResult<LeanPageResult<LeanDictDataDto>>> GetPagedListAsync([FromQuery] LeanQueryDictDataDto input)
+  public async Task<IActionResult> GetPagedListAsync([FromQuery] LeanQueryDictDataDto input)
   {
-    return await _service.GetPageAsync(input);
+    var result = await _service.GetPageAsync(input);
+    return Success(result, LeanBusinessType.Query);
   }
 
   /// <summary>
   /// 设置字典数据状态
   /// </summary>
   [HttpPut("status")]
-  public async Task<LeanApiResult> SetStatusAsync([FromBody] LeanChangeDictDataStatusDto input)
+  public async Task<IActionResult> SetStatusAsync([FromBody] LeanChangeDictDataStatusDto input)
   {
-    return await _service.SetStatusAsync(input);
+    var result = await _service.SetStatusAsync(input);
+    return Success(result, LeanBusinessType.Update);
   }
 
   /// <summary>
   /// 根据字典类型编码获取字典数据列表
   /// </summary>
   [HttpGet("type/{typeCode}")]
-  public async Task<LeanApiResult<List<LeanDictDataDto>>> GetListByTypeAsync(string typeCode)
+  public async Task<IActionResult> GetListByTypeAsync(string typeCode)
   {
-    return await _service.GetListByTypeCodeAsync(typeCode);
+    var result = await _service.GetListByTypeCodeAsync(typeCode);
+    return Success(result, LeanBusinessType.Query);
+  }
+
+  /// <summary>
+  /// 导出字典数据
+  /// </summary>
+  [HttpGet("export")]
+  public async Task<IActionResult> ExportAsync([FromQuery] LeanQueryDictDataDto input)
+  {
+    var bytes = await _service.ExportAsync(input);
+    return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "dict-data.xlsx");
+  }
+
+  /// <summary>
+  /// 导入字典数据
+  /// </summary>
+  [HttpPost("import")]
+  public async Task<IActionResult> ImportAsync([FromForm] IFormFile file)
+  {
+    using var ms = new MemoryStream();
+    await file.CopyToAsync(ms);
+    var result = await _service.ImportAsync(ms.ToArray());
+    return Success(result, LeanBusinessType.Import);
+  }
+
+  /// <summary>
+  /// 获取导入模板
+  /// </summary>
+  [HttpGet("template")]
+  public async Task<IActionResult> GetImportTemplateAsync()
+  {
+    var bytes = await _service.GetImportTemplateAsync();
+    return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "dict-data-template.xlsx");
   }
 }

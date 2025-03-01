@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Lean.CodeGen.Application.Dtos.Audit;
 using Lean.CodeGen.Application.Services.Audit;
 using Lean.CodeGen.Common.Models;
+using Lean.CodeGen.Common.Enums;
 
 namespace Lean.CodeGen.WebApi.Controllers.Audit
 {
@@ -10,6 +11,7 @@ namespace Lean.CodeGen.WebApi.Controllers.Audit
   /// </summary>
   [Route("api/exception/logs")]
   [ApiController]
+  [ApiExplorerSettings(GroupName = "audit")]
   public class LeanExceptionLogController : LeanBaseController
   {
     private readonly ILeanExceptionLogService _exceptionLogService;
@@ -26,45 +28,50 @@ namespace Lean.CodeGen.WebApi.Controllers.Audit
     /// 获取异常日志列表（分页）
     /// </summary>
     [HttpGet]
-    public Task<LeanPageResult<LeanExceptionLogDto>> GetPageListAsync([FromQuery] LeanExceptionLogQueryDto queryDto)
+    public async Task<IActionResult> GetPageListAsync([FromQuery] LeanExceptionLogQueryDto queryDto)
     {
-      return _exceptionLogService.GetPageListAsync(queryDto);
+      var result = await _exceptionLogService.GetPageListAsync(queryDto);
+      return Success(result, LeanBusinessType.Query);
     }
 
     /// <summary>
     /// 获取异常日志详情
     /// </summary>
     [HttpGet("{id}")]
-    public Task<LeanExceptionLogDto> GetAsync(long id)
+    public async Task<IActionResult> GetAsync(long id)
     {
-      return _exceptionLogService.GetAsync(id);
+      var result = await _exceptionLogService.GetAsync(id);
+      return Success(result, LeanBusinessType.Query);
     }
 
     /// <summary>
     /// 导出异常日志
     /// </summary>
     [HttpGet("export")]
-    public Task<LeanFileResult> ExportAsync([FromQuery] LeanExceptionLogQueryDto queryDto)
+    public async Task<IActionResult> ExportAsync([FromQuery] LeanExceptionLogQueryDto queryDto)
     {
-      return _exceptionLogService.ExportAsync(queryDto);
+      var result = await _exceptionLogService.ExportAsync(queryDto);
+      return File(result.Stream, result.ContentType, result.FileName);
     }
 
     /// <summary>
     /// 清空异常日志
     /// </summary>
     [HttpDelete("clear")]
-    public Task<bool> ClearAsync()
+    public async Task<IActionResult> ClearAsync()
     {
-      return _exceptionLogService.ClearAsync();
+      var result = await _exceptionLogService.ClearAsync();
+      return Success(result, LeanBusinessType.Delete);
     }
 
     /// <summary>
     /// 处理异常日志
     /// </summary>
     [HttpPost("{id}/handle")]
-    public Task<bool> HandleAsync(LeanHandleExceptionLogDto handleDto)
+    public async Task<IActionResult> HandleAsync(LeanHandleExceptionLogDto handleDto)
     {
-      return _exceptionLogService.HandleAsync(handleDto);
+      var result = await _exceptionLogService.HandleAsync(handleDto);
+      return Success(result, LeanBusinessType.Update);
     }
   }
 }

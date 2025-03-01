@@ -32,16 +32,14 @@ public class LeanDictDataService : LeanBaseService, ILeanDictDataService
   /// 构造函数
   /// </summary>
   public LeanDictDataService(
-      ILogger<LeanDictDataService> logger,
       ILeanRepository<LeanDictData> dictDataRepository,
       ILeanRepository<LeanDictType> dictTypeRepository,
-      ILeanSqlSafeService sqlSafeService,
-      IOptions<LeanSecurityOptions> securityOptions)
-      : base(sqlSafeService, securityOptions, logger)
+      LeanBaseServiceContext context)
+      : base(context)
   {
-    _logger = logger;
     _dictDataRepository = dictDataRepository;
     _dictTypeRepository = dictTypeRepository;
+    _logger = (ILogger<LeanDictDataService>)context.Logger;
     _uniqueValidator = new LeanUniqueValidator<LeanDictData>(_dictDataRepository);
   }
 
@@ -305,5 +303,128 @@ public class LeanDictDataService : LeanBaseService, ILeanDictDataService
     {
       return LeanApiResult<List<LeanDictDataDto>>.Error($"获取字典数据列表失败: {ex.Message}");
     }
+  }
+
+  /// <summary>
+  /// 导出字典数据
+  /// </summary>
+  public async Task<byte[]> ExportAsync(LeanQueryDictDataDto input)
+  {
+    var predicate = BuildQueryPredicate(input);
+    var items = await _dictDataRepository.GetListAsync(predicate);
+    var dtos = items.Select(t => t.Adapt<LeanDictDataExportDto>()).ToList();
+    return LeanExcelHelper.Export(dtos);
+  }
+
+  /// <summary>
+  /// 导入字典数据
+  /// </summary>
+  public async Task<LeanExcelImportResult<LeanDictDataImportDto>> ImportAsync(byte[] file)
+  {
+    var result = new LeanExcelImportResult<LeanDictDataImportDto>();
+
+    try
+    {
+      // 读取Excel文件
+      var importDtos = LeanExcelHelper.Import<LeanDictDataImportDto>(file);
+
+      // 验证导入数据
+      foreach (var dto in importDtos.Data)
+      {
+        // 验证字典类型是否存在
+        var dictType = await _dictTypeRepository.FirstOrDefaultAsync(x => x.Id == dto.TypeId);
+        if (dictType == null)
+        {
+          result.Errors.Add(new LeanExcelImportError
+          {
+            RowIndex = importDtos.Data.IndexOf(dto) + 2,
+            ErrorMessage = $"字典类型 {dto.TypeId} 不存在"
+          });
+          continue;
+        }
+
+        // 验证字典键值是否已存在
+        var existingData = await _dictDataRepository.FirstOrDefaultAsync(x => x.TypeId == dto.TypeId && x.DictValue == dto.DictValue);
+        if (existingData != null)
+        {
+          result.Errors.Add(new LeanExcelImportError
+          {
+            RowIndex = importDtos.Data.IndexOf(dto) + 2,
+            ErrorMessage = $"字典键值 {dto.DictValue} 已存在"
+          });
+          continue;
+        }
+
+        // 创建新的字典数据
+        var entity = dto.Adapt<LeanDictData>();
+        entity.Status = LeanStatus.Normal;
+        await _dictDataRepository.CreateAsync(entity);
+        result.Data.Add(dto);
+      }
+
+      return result;
+    }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex, "导入字典数据失败");
+      result.ErrorMessage = $"导入失败：{ex.Message}";
+      return result;
+    }
+  }
+
+  /// <summary>
+  /// 获取导入模板
+  /// </summary>
+  public Task<byte[]> GetImportTemplateAsync()
+  {
+    var template = new List<LeanDictDataImportTemplateDto>
+    {
+      new LeanDictDataImportTemplateDto()
+    };
+
+    var bytes = LeanExcelHelper.Export(template);
+    return Task.FromResult(bytes);
+  }
+
+  /// <summary>
+  /// 构建查询条件
+  /// </summary>
+  private Expression<Func<LeanDictData, bool>> BuildQueryPredicate(LeanQueryDictDataDto input)
+  {
+    Expression<Func<LeanDictData, bool>> predicate = x => true;
+
+    if (input.TypeId.HasValue)
+    {
+      predicate = LeanExpressionExtensions.And(predicate, x => x.TypeId == input.TypeId.Value);
+    }
+
+    if (!string.IsNullOrEmpty(input.DictLabel))
+    {
+      var label = CleanInput(input.DictLabel);
+      predicate = LeanExpressionExtensions.And(predicate, x => x.DictLabel.Contains(label));
+    }
+
+    if (!string.IsNullOrEmpty(input.DictValue))
+    {
+      var value = CleanInput(input.DictValue);
+      predicate = LeanExpressionExtensions.And(predicate, x => x.DictValue.Contains(value));
+    }
+
+    if (input.Status.HasValue)
+    {
+      predicate = LeanExpressionExtensions.And(predicate, x => x.Status == input.Status.Value);
+    }
+
+    if (input.StartTime.HasValue)
+    {
+      predicate = LeanExpressionExtensions.And(predicate, x => x.CreateTime >= input.StartTime.Value);
+    }
+
+    if (input.EndTime.HasValue)
+    {
+      predicate = LeanExpressionExtensions.And(predicate, x => x.CreateTime <= input.EndTime.Value);
+    }
+
+    return predicate;
   }
 }

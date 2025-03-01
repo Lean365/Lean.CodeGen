@@ -17,7 +17,7 @@ namespace Lean.CodeGen.Domain.Entities.Identity;
 /// 部门实体
 /// </summary>
 [SugarTable("lean_dept", "部门表")]
-[SugarIndex("uk_code", nameof(DeptCode), OrderByType.Asc)]
+[SugarIndex("uk_code", nameof(DeptCode), OrderByType.Asc, true)]
 public class LeanDept : LeanBaseEntity
 {
   /// <summary>
@@ -124,4 +124,10 @@ public class LeanDept : LeanBaseEntity
   /// 状态
   /// </summary>
   public LeanStatus Status { get; set; }
+
+  /// <summary>
+  /// 角色部门关联
+  /// </summary>
+  [Navigate(NavigateType.OneToMany, nameof(LeanRoleDept.DeptId))]
+  public virtual ICollection<LeanRoleDept> RoleDepts { get; set; } = new List<LeanRoleDept>();
 }

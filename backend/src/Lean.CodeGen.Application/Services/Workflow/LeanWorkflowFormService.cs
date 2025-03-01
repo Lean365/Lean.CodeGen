@@ -4,26 +4,35 @@ using Lean.CodeGen.Domain.Entities.Workflow;
 using Lean.CodeGen.Domain.Interfaces.Repositories;
 using System.Linq.Expressions;
 using Mapster;
+using Microsoft.Extensions.Logging;
+using Lean.CodeGen.Application.Services.Base;
 
 namespace Lean.CodeGen.Application.Services.Workflow;
 
 /// <summary>
 /// 工作流表单服务
 /// </summary>
-public class LeanWorkflowFormService : ILeanWorkflowFormService
+public class LeanWorkflowFormService : LeanBaseService, ILeanWorkflowFormService
 {
   private readonly ILeanRepository<LeanWorkflowFormDefinition> _formDefinitionRepository;
   private readonly ILeanRepository<LeanWorkflowFormField> _formFieldRepository;
   private readonly ILeanRepository<LeanWorkflowFormData> _formDataRepository;
+  private readonly ILogger<LeanWorkflowFormService> _logger;
 
+  /// <summary>
+  /// 构造函数
+  /// </summary>
   public LeanWorkflowFormService(
       ILeanRepository<LeanWorkflowFormDefinition> formDefinitionRepository,
       ILeanRepository<LeanWorkflowFormField> formFieldRepository,
-      ILeanRepository<LeanWorkflowFormData> formDataRepository)
+      ILeanRepository<LeanWorkflowFormData> formDataRepository,
+      LeanBaseServiceContext context)
+      : base(context)
   {
     _formDefinitionRepository = formDefinitionRepository;
     _formFieldRepository = formFieldRepository;
     _formDataRepository = formDataRepository;
+    _logger = (ILogger<LeanWorkflowFormService>)context.Logger;
   }
 
   /// <inheritdoc/>

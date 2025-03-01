@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Lean.CodeGen.Application.Dtos.Audit;
 using Lean.CodeGen.Application.Services.Audit;
 using Lean.CodeGen.Common.Models;
+using Lean.CodeGen.Common.Enums;
 
 namespace Lean.CodeGen.WebApi.Controllers.Audit
 {
@@ -10,6 +11,7 @@ namespace Lean.CodeGen.WebApi.Controllers.Audit
   /// </summary>
   [Route("api/sql-diff/logs")]
   [ApiController]
+  [ApiExplorerSettings(GroupName = "audit")]
   public class LeanSqlDiffLogController : LeanBaseController
   {
     private readonly ILeanSqlDiffLogService _sqlDiffLogService;
@@ -26,36 +28,40 @@ namespace Lean.CodeGen.WebApi.Controllers.Audit
     /// 获取SQL差异日志列表（分页）
     /// </summary>
     [HttpGet]
-    public Task<LeanPageResult<LeanSqlDiffLogDto>> GetPageListAsync([FromQuery] LeanSqlDiffLogQueryDto queryDto)
+    public async Task<IActionResult> GetPageListAsync([FromQuery] LeanSqlDiffLogQueryDto queryDto)
     {
-      return _sqlDiffLogService.GetPageListAsync(queryDto);
+      var result = await _sqlDiffLogService.GetPageListAsync(queryDto);
+      return Success(result, LeanBusinessType.Query);
     }
 
     /// <summary>
     /// 获取SQL差异日志详情
     /// </summary>
     [HttpGet("{id}")]
-    public Task<LeanSqlDiffLogDto> GetAsync(long id)
+    public async Task<IActionResult> GetAsync(long id)
     {
-      return _sqlDiffLogService.GetAsync(id);
+      var result = await _sqlDiffLogService.GetAsync(id);
+      return Success(result, LeanBusinessType.Query);
     }
 
     /// <summary>
     /// 导出SQL差异日志
     /// </summary>
     [HttpGet("export")]
-    public Task<LeanFileResult> ExportAsync([FromQuery] LeanSqlDiffLogQueryDto queryDto)
+    public async Task<IActionResult> ExportAsync([FromQuery] LeanSqlDiffLogQueryDto queryDto)
     {
-      return _sqlDiffLogService.ExportAsync(queryDto);
+      var result = await _sqlDiffLogService.ExportAsync(queryDto);
+      return File(result.Stream, result.ContentType, result.FileName);
     }
 
     /// <summary>
     /// 清空SQL差异日志
     /// </summary>
     [HttpDelete("clear")]
-    public Task<bool> ClearAsync()
+    public async Task<IActionResult> ClearAsync()
     {
-      return _sqlDiffLogService.ClearAsync();
+      var result = await _sqlDiffLogService.ClearAsync();
+      return Success(result, LeanBusinessType.Delete);
     }
   }
 }

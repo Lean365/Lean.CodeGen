@@ -3,7 +3,7 @@ using Lean.CodeGen.Application.Services.Workflow;
 using Lean.CodeGen.Common.Models;
 using Lean.CodeGen.WebApi.Controllers;
 using Microsoft.AspNetCore.Mvc;
-
+using Lean.CodeGen.Common.Enums;
 namespace Lean.CodeGen.WebApi.Controllers.Workflow;
 
 /// <summary>
@@ -30,10 +30,10 @@ public class LeanWorkflowTaskController : LeanBaseController
   /// <param name="id">任务ID</param>
   /// <returns>工作流任务</returns>
   [HttpGet("{id}")]
-  public async Task<LeanApiResult<LeanWorkflowTaskDto>> GetAsync(long id)
+  public async Task<IActionResult> GetAsync(long id)
   {
     var result = await _service.GetAsync(id);
-    return LeanApiResult<LeanWorkflowTaskDto>.Ok(result);
+    return Success(result, LeanBusinessType.Query);
   }
 
   /// <summary>
@@ -42,10 +42,10 @@ public class LeanWorkflowTaskController : LeanBaseController
   /// <param name="dto">创建参数</param>
   /// <returns>任务ID</returns>
   [HttpPost]
-  public async Task<LeanApiResult<long>> CreateAsync(LeanWorkflowTaskDto dto)
+  public async Task<IActionResult> CreateAsync(LeanWorkflowTaskDto dto)
   {
     var result = await _service.CreateAsync(dto);
-    return LeanApiResult<long>.Ok(result);
+    return Success(result, LeanBusinessType.Create);
   }
 
   /// <summary>
@@ -55,14 +55,14 @@ public class LeanWorkflowTaskController : LeanBaseController
   /// <param name="dto">更新参数</param>
   /// <returns>是否成功</returns>
   [HttpPut("{id}")]
-  public async Task<LeanApiResult<bool>> UpdateAsync(long id, LeanWorkflowTaskDto dto)
+  public async Task<IActionResult> UpdateAsync(long id, LeanWorkflowTaskDto dto)
   {
     if (id != dto.Id)
     {
-      return LeanApiResult<bool>.Error("ID不匹配");
+      return Error("ID不匹配");
     }
     var result = await _service.UpdateAsync(dto);
-    return LeanApiResult<bool>.Ok(result);
+    return Success(result, LeanBusinessType.Update);
   }
 
   /// <summary>
@@ -71,10 +71,10 @@ public class LeanWorkflowTaskController : LeanBaseController
   /// <param name="id">任务ID</param>
   /// <returns>是否成功</returns>
   [HttpDelete("{id}")]
-  public async Task<LeanApiResult<bool>> DeleteAsync(long id)
+  public async Task<IActionResult> DeleteAsync(long id)
   {
     var result = await _service.DeleteAsync(id);
-    return LeanApiResult<bool>.Ok(result);
+    return Success(result, LeanBusinessType.Delete);
   }
 
   /// <summary>
@@ -84,10 +84,10 @@ public class LeanWorkflowTaskController : LeanBaseController
   /// <param name="comment">审批意见</param>
   /// <returns>是否成功</returns>
   [HttpPost("{id}/complete")]
-  public async Task<LeanApiResult<bool>> CompleteAsync(long id, [FromQuery] string? comment = null)
+  public async Task<IActionResult> CompleteAsync(long id, [FromQuery] string? comment = null)
   {
     var result = await _service.CompleteAsync(id, comment);
-    return LeanApiResult<bool>.Ok(result);
+    return Success(result, LeanBusinessType.Update);
   }
 
   /// <summary>
@@ -97,10 +97,10 @@ public class LeanWorkflowTaskController : LeanBaseController
   /// <param name="comment">审批意见</param>
   /// <returns>是否成功</returns>
   [HttpPost("{id}/reject")]
-  public async Task<LeanApiResult<bool>> RejectAsync(long id, [FromQuery] string? comment = null)
+  public async Task<IActionResult> RejectAsync(long id, [FromQuery] string? comment = null)
   {
     var result = await _service.RejectAsync(id, comment);
-    return LeanApiResult<bool>.Ok(result);
+    return Success(result, LeanBusinessType.Update);
   }
 
   /// <summary>
@@ -111,10 +111,10 @@ public class LeanWorkflowTaskController : LeanBaseController
   /// <param name="comment">审批意见</param>
   /// <returns>是否成功</returns>
   [HttpPost("{id}/transfer/{assigneeId}")]
-  public async Task<LeanApiResult<bool>> TransferAsync(long id, long assigneeId, [FromQuery] string? comment = null)
+  public async Task<IActionResult> TransferAsync(long id, long assigneeId, [FromQuery] string? comment = null)
   {
     var result = await _service.TransferAsync(id, assigneeId, comment);
-    return LeanApiResult<bool>.Ok(result);
+    return Success(result, LeanBusinessType.Update);
   }
 
   /// <summary>
@@ -125,10 +125,10 @@ public class LeanWorkflowTaskController : LeanBaseController
   /// <param name="comment">审批意见</param>
   /// <returns>是否成功</returns>
   [HttpPost("{id}/delegate/{assigneeId}")]
-  public async Task<LeanApiResult<bool>> DelegateAsync(long id, long assigneeId, [FromQuery] string? comment = null)
+  public async Task<IActionResult> DelegateAsync(long id, long assigneeId, [FromQuery] string? comment = null)
   {
     var result = await _service.DelegateAsync(id, assigneeId, comment);
-    return LeanApiResult<bool>.Ok(result);
+    return Success(result, LeanBusinessType.Update);
   }
 
   /// <summary>
@@ -146,7 +146,7 @@ public class LeanWorkflowTaskController : LeanBaseController
   /// <param name="endTime">结束时间</param>
   /// <returns>分页结果</returns>
   [HttpGet]
-  public async Task<LeanApiResult<LeanPageResult<LeanWorkflowTaskDto>>> GetPagedListAsync(
+  public async Task<IActionResult> GetPagedListAsync(
       [FromQuery] int pageIndex = 1,
       [FromQuery] int pageSize = 10,
       [FromQuery] long? instanceId = null,
@@ -159,6 +159,6 @@ public class LeanWorkflowTaskController : LeanBaseController
       [FromQuery] DateTime? endTime = null)
   {
     var result = await _service.GetPagedListAsync(pageIndex, pageSize, instanceId, taskType, taskNode, priority, assigneeId, taskStatus, startTime, endTime);
-    return LeanApiResult<LeanPageResult<LeanWorkflowTaskDto>>.Ok(result);
+    return Success(result, LeanBusinessType.Query);
   }
 }

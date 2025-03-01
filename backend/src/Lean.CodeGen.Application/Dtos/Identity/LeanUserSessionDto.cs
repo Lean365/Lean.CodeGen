@@ -1,7 +1,116 @@
+using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using Lean.CodeGen.Common.Enums;
 using Lean.CodeGen.Common.Models;
 
 namespace Lean.CodeGen.Application.Dtos.Identity;
+
+/// <summary>
+/// 用户会话基础信息
+/// </summary>
+public class LeanUserSessionDto : LeanBaseDto
+{
+  /// <summary>
+  /// 用户ID
+  /// </summary>
+  public long UserId { get; set; }
+
+  /// <summary>
+  /// 会话令牌
+  /// </summary>
+  public string Token { get; set; } = string.Empty;
+
+  /// <summary>
+  /// 刷新令牌
+  /// </summary>
+  public string? RefreshToken { get; set; }
+
+  /// <summary>
+  /// 过期时间
+  /// </summary>
+  public DateTime ExpireTime { get; set; }
+
+  /// <summary>
+  /// 设备ID
+  /// </summary>
+  public string DeviceId { get; set; } = string.Empty;
+
+  /// <summary>
+  /// 设备名称
+  /// </summary>
+  public string? DeviceName { get; set; }
+
+  /// <summary>
+  /// 设备类型
+  /// </summary>
+  public LeanDeviceType DeviceType { get; set; }
+
+  /// <summary>
+  /// 是否信任设备
+  /// </summary>
+  public bool IsTrusted { get; set; }
+
+  /// <summary>
+  /// 设备状态
+  /// </summary>
+  public LeanDeviceStatus DeviceStatus { get; set; }
+
+  /// <summary>
+  /// 登录IP
+  /// </summary>
+  public string? LoginIp { get; set; }
+
+  /// <summary>
+  /// 登录地点
+  /// </summary>
+  public string? LoginLocation { get; set; }
+
+  /// <summary>
+  /// 浏览器
+  /// </summary>
+  public string? Browser { get; set; }
+
+  /// <summary>
+  /// 操作系统
+  /// </summary>
+  public string? Os { get; set; }
+
+  /// <summary>
+  /// 登录方式
+  /// </summary>
+  public LeanLoginType? LoginType { get; set; }
+
+  /// <summary>
+  /// 登录状态
+  /// </summary>
+  public LeanLoginStatus LoginStatus { get; set; }
+
+  /// <summary>
+  /// 密码错误次数
+  /// </summary>
+  public int PasswordErrorCount { get; set; }
+
+  /// <summary>
+  /// 最后密码错误时间
+  /// </summary>
+  public DateTime? LastPasswordErrorTime { get; set; }
+
+  /// <summary>
+  /// 密码修改时间
+  /// </summary>
+  public DateTime? PasswordUpdateTime { get; set; }
+
+  /// <summary>
+  /// 活动角色列表
+  /// </summary>
+  public List<long> ActiveRoles { get; set; } = [];
+
+  /// <summary>
+  /// 关联的用户信息
+  /// </summary>
+  public LeanUserDto? User { get; set; }
+}
 
 /// <summary>
 /// 用户会话查询参数
@@ -14,9 +123,19 @@ public class LeanQueryUserSessionDto : LeanPage
   public long? UserId { get; set; }
 
   /// <summary>
-  /// 会话令牌
+  /// 设备ID
   /// </summary>
-  public string? Token { get; set; }
+  public string? DeviceId { get; set; }
+
+  /// <summary>
+  /// 设备类型
+  /// </summary>
+  public LeanDeviceType? DeviceType { get; set; }
+
+  /// <summary>
+  /// 设备状态
+  /// </summary>
+  public LeanDeviceStatus? DeviceStatus { get; set; }
 
   /// <summary>
   /// 登录IP
@@ -24,12 +143,17 @@ public class LeanQueryUserSessionDto : LeanPage
   public string? LoginIp { get; set; }
 
   /// <summary>
-  /// 开始时间
+  /// 登录状态
+  /// </summary>
+  public LeanLoginStatus? LoginStatus { get; set; }
+
+  /// <summary>
+  /// 创建时间范围-开始
   /// </summary>
   public DateTime? StartTime { get; set; }
 
   /// <summary>
-  /// 结束时间
+  /// 创建时间范围-结束
   /// </summary>
   public DateTime? EndTime { get; set; }
 }
@@ -46,18 +170,33 @@ public class LeanCreateUserSessionDto
   public long UserId { get; set; }
 
   /// <summary>
-  /// 会话令牌
+  /// 设备ID
   /// </summary>
-  [Required(ErrorMessage = "会话令牌不能为空")]
-  [StringLength(100, ErrorMessage = "会话令牌长度不能超过100个字符")]
-  public string Token { get; set; } = default!;
+  [Required(ErrorMessage = "设备ID不能为空")]
+  [StringLength(50, MinimumLength = 2, ErrorMessage = "设备ID长度必须在2-50个字符之间")]
+  public string DeviceId { get; set; } = string.Empty;
+
+  /// <summary>
+  /// 设备名称
+  /// </summary>
+  [StringLength(100, ErrorMessage = "设备名称长度不能超过100个字符")]
+  public string? DeviceName { get; set; }
+
+  /// <summary>
+  /// 设备类型
+  /// </summary>
+  public LeanDeviceType DeviceType { get; set; }
+
+  /// <summary>
+  /// 是否信任设备
+  /// </summary>
+  public bool IsTrusted { get; set; }
 
   /// <summary>
   /// 登录IP
   /// </summary>
-  [Required(ErrorMessage = "登录IP不能为空")]
   [StringLength(50, ErrorMessage = "登录IP长度不能超过50个字符")]
-  public string LoginIp { get; set; } = default!;
+  public string? LoginIp { get; set; }
 
   /// <summary>
   /// 登录地点
@@ -68,184 +207,112 @@ public class LeanCreateUserSessionDto
   /// <summary>
   /// 浏览器
   /// </summary>
-  [StringLength(100, ErrorMessage = "浏览器长度不能超过100个字符")]
+  [StringLength(50, ErrorMessage = "浏览器信息长度不能超过50个字符")]
   public string? Browser { get; set; }
 
   /// <summary>
   /// 操作系统
   /// </summary>
-  [StringLength(100, ErrorMessage = "操作系统长度不能超过100个字符")]
+  [StringLength(50, ErrorMessage = "操作系统信息长度不能超过50个字符")]
   public string? Os { get; set; }
 
   /// <summary>
-  /// 过期时间
+  /// 登录方式
   /// </summary>
-  [Required(ErrorMessage = "过期时间不能为空")]
-  public DateTime ExpireTime { get; set; }
+  public LeanLoginType? LoginType { get; set; }
 
   /// <summary>
-  /// 刷新令牌
+  /// 活动角色列表
   /// </summary>
-  [StringLength(100, ErrorMessage = "刷新令牌长度不能超过100个字符")]
-  public string? RefreshToken { get; set; }
-
-  /// <summary>
-  /// 激活的角色
-  /// </summary>
-  [StringLength(500, ErrorMessage = "激活的角色长度不能超过500个字符")]
-  public string? ActiveRoles { get; set; }
+  public List<long> ActiveRoles { get; set; } = [];
 }
 
 /// <summary>
 /// 用户会话更新参数
 /// </summary>
-public class LeanUpdateUserSessionDto : LeanCreateUserSessionDto
+public class LeanUpdateUserSessionDto
 {
   /// <summary>
   /// 会话ID
   /// </summary>
   [Required(ErrorMessage = "会话ID不能为空")]
   public long Id { get; set; }
+
+  /// <summary>
+  /// 设备名称
+  /// </summary>
+  [StringLength(100, ErrorMessage = "设备名称长度不能超过100个字符")]
+  public string? DeviceName { get; set; }
+
+  /// <summary>
+  /// 是否信任设备
+  /// </summary>
+  public bool IsTrusted { get; set; }
+
+  /// <summary>
+  /// 设备状态
+  /// </summary>
+  public LeanDeviceStatus DeviceStatus { get; set; }
+
+  /// <summary>
+  /// 活动角色列表
+  /// </summary>
+  public List<long> ActiveRoles { get; set; } = [];
 }
 
 /// <summary>
-/// 用户会话详情
+/// 用户会话状态变更参数
 /// </summary>
-public class LeanUserSessionDetailDto
+public class LeanChangeUserSessionStatusDto
 {
   /// <summary>
   /// 会话ID
   /// </summary>
+  [Required(ErrorMessage = "会话ID不能为空")]
   public long Id { get; set; }
 
   /// <summary>
-  /// 用户ID
+  /// 设备状态
   /// </summary>
-  public long UserId { get; set; }
-
-  /// <summary>
-  /// 用户名称
-  /// </summary>
-  public string UserName { get; set; } = default!;
-
-  /// <summary>
-  /// 会话令牌
-  /// </summary>
-  public string Token { get; set; } = default!;
-
-  /// <summary>
-  /// 登录IP
-  /// </summary>
-  public string LoginIp { get; set; } = default!;
-
-  /// <summary>
-  /// 登录地点
-  /// </summary>
-  public string? LoginLocation { get; set; }
-
-  /// <summary>
-  /// 浏览器
-  /// </summary>
-  public string? Browser { get; set; }
-
-  /// <summary>
-  /// 操作系统
-  /// </summary>
-  public string? Os { get; set; }
-
-  /// <summary>
-  /// 过期时间
-  /// </summary>
-  public DateTime ExpireTime { get; set; }
-
-  /// <summary>
-  /// 刷新令牌
-  /// </summary>
-  public string? RefreshToken { get; set; }
-
-  /// <summary>
-  /// 激活的角色
-  /// </summary>
-  public string? ActiveRoles { get; set; }
-
-  /// <summary>
-  /// 创建时间
-  /// </summary>
-  public DateTime CreateTime { get; set; }
-
-  /// <summary>
-  /// 创建者
-  /// </summary>
-  public string? CreateUserName { get; set; }
-
-  /// <summary>
-  /// 更新时间
-  /// </summary>
-  public DateTime? UpdateTime { get; set; }
-
-  /// <summary>
-  /// 更新者
-  /// </summary>
-  public string? UpdateUserName { get; set; }
+  [Required(ErrorMessage = "设备状态不能为空")]
+  public LeanDeviceStatus DeviceStatus { get; set; }
 }
 
 /// <summary>
-/// 用户会话 DTO
+/// 用户会话导出参数
 /// </summary>
-public class LeanUserSessionDto
+public class LeanExportUserSessionDto : LeanQueryUserSessionDto
+{
+  /// <summary>
+  /// 导出字段列表
+  /// </summary>
+  public List<string> ExportFields { get; set; } = new();
+
+  /// <summary>
+  /// 文件格式
+  /// </summary>
+  [Required(ErrorMessage = "文件格式不能为空")]
+  public string FileFormat { get; set; } = "xlsx";
+
+  /// <summary>
+  /// 是否导出全部
+  /// </summary>
+  public bool IsExportAll { get; set; }
+
+  /// <summary>
+  /// 选中的ID列表
+  /// </summary>
+  public List<long> SelectedIds { get; set; } = new();
+}
+
+/// <summary>
+/// 用户会话删除参数
+/// </summary>
+public class LeanDeleteUserSessionDto
 {
   /// <summary>
   /// 会话ID
   /// </summary>
+  [Required(ErrorMessage = "会话ID不能为空")]
   public long Id { get; set; }
-
-  /// <summary>
-  /// 用户ID
-  /// </summary>
-  public long UserId { get; set; }
-
-  /// <summary>
-  /// 用户名称
-  /// </summary>
-  public string UserName { get; set; } = default!;
-
-  /// <summary>
-  /// 会话令牌
-  /// </summary>
-  public string Token { get; set; } = default!;
-
-  /// <summary>
-  /// 登录IP
-  /// </summary>
-  public string LoginIp { get; set; } = default!;
-
-  /// <summary>
-  /// 登录地点
-  /// </summary>
-  public string? LoginLocation { get; set; }
-
-  /// <summary>
-  /// 浏览器
-  /// </summary>
-  public string? Browser { get; set; }
-
-  /// <summary>
-  /// 操作系统
-  /// </summary>
-  public string? Os { get; set; }
-
-  /// <summary>
-  /// 过期时间
-  /// </summary>
-  public DateTime ExpireTime { get; set; }
-
-  /// <summary>
-  /// 刷新令牌
-  /// </summary>
-  public string? RefreshToken { get; set; }
-
-  /// <summary>
-  /// 激活的角色
-  /// </summary>
-  public string? ActiveRoles { get; set; }
 }

@@ -35,5 +35,10 @@ namespace Lean.CodeGen.Application.Services.Audit
     /// </summary>
     /// <returns>是否成功</returns>
     Task<bool> ClearAsync();
+
+    /// <summary>
+    /// 根据审计日志ID获取SQL差异日志列表
+    /// </summary>
+    Task<List<LeanSqlDiffLogDto>> GetListByAuditLogIdAsync(long auditLogId);
   }
 }

@@ -1,587 +1,370 @@
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using System.Linq;
 using System.Linq.Expressions;
+using Mapster;
 using Lean.CodeGen.Application.Dtos.Identity;
+using Lean.CodeGen.Application.Services.Base;
+using Lean.CodeGen.Common.Enums;
+using Lean.CodeGen.Common.Exceptions;
 using Lean.CodeGen.Common.Models;
 using Lean.CodeGen.Domain.Entities.Identity;
 using Lean.CodeGen.Domain.Interfaces.Repositories;
 using Lean.CodeGen.Domain.Validators;
-using Mapster;
-using Lean.CodeGen.Common.Options;
-using Lean.CodeGen.Application.Services.Base;
-using Lean.CodeGen.Application.Services.Security;
-using Microsoft.Extensions.Options;
-using Lean.CodeGen.Common.Enums;
 using Lean.CodeGen.Common.Extensions;
-using Microsoft.Extensions.Logging;
 
 namespace Lean.CodeGen.Application.Services.Identity;
 
 /// <summary>
 /// 菜单服务实现
 /// </summary>
+/// <remarks>
+/// 提供菜单管理相关的业务功能，包括：
+/// 1. 菜单的增删改查
+/// 2. 菜单状态管理
+/// 3. 菜单树形结构管理
+/// 4. 菜单权限管理
+/// </remarks>
 public class LeanMenuService : LeanBaseService, ILeanMenuService
 {
   private readonly ILeanRepository<LeanMenu> _menuRepository;
-  private readonly ILeanRepository<LeanUserMenu> _userMenuRepository;
   private readonly ILeanRepository<LeanRoleMenu> _roleMenuRepository;
-  private readonly ILeanRepository<LeanMenuOperation> _menuOperationRepository;
+  private readonly ILeanRepository<LeanUserRole> _userRoleRepository;
   private readonly LeanUniqueValidator<LeanMenu> _uniqueValidator;
-  private readonly ILogger<LeanMenuService> _logger;
 
+  /// <summary>
+  /// 构造函数
+  /// </summary>
+  /// <param name="menuRepository">菜单仓储接口</param>
+  /// <param name="roleMenuRepository">角色菜单关联仓储接口</param>
+  /// <param name="userRoleRepository">用户角色关联仓储接口</param>
+  /// <param name="context">基础服务上下文</param>
   public LeanMenuService(
       ILeanRepository<LeanMenu> menuRepository,
-      ILeanRepository<LeanUserMenu> userMenuRepository,
       ILeanRepository<LeanRoleMenu> roleMenuRepository,
-      ILeanRepository<LeanMenuOperation> menuOperationRepository,
-      ILeanSqlSafeService sqlSafeService,
-      IOptions<LeanSecurityOptions> securityOptions,
-      ILogger<LeanMenuService> logger)
-      : base(sqlSafeService, securityOptions, logger)
+      ILeanRepository<LeanUserRole> userRoleRepository,
+      LeanBaseServiceContext context)
+      : base(context)
   {
     _menuRepository = menuRepository;
-    _userMenuRepository = userMenuRepository;
     _roleMenuRepository = roleMenuRepository;
-    _menuOperationRepository = menuOperationRepository;
-    _uniqueValidator = new LeanUniqueValidator<LeanMenu>(menuRepository);
-    _logger = logger;
+    _userRoleRepository = userRoleRepository;
+    _uniqueValidator = new LeanUniqueValidator<LeanMenu>(_menuRepository);
   }
 
   /// <summary>
   /// 创建菜单
   /// </summary>
-  public async Task<LeanApiResult<long>> CreateAsync(LeanCreateMenuDto input)
+  /// <param name="input">菜单创建参数</param>
+  /// <returns>创建成功的菜单信息</returns>
+  public async Task<LeanMenuDto> CreateAsync(LeanCreateMenuDto input)
   {
-    try
+    return await ExecuteInTransactionAsync(async () =>
     {
-      if (!await ValidateMenuInputAsync(input.MenuName, input.MenuCode))
+      // 验证菜单名称唯一性
+      await _uniqueValidator.ValidateAsync(x => x.MenuName, input.MenuName);
+
+      // 验证权限标识唯一性
+      if (!string.IsNullOrEmpty(input.Perms))
       {
-        return LeanApiResult<long>.Error("输入参数验证失败");
+        await _uniqueValidator.ValidateAsync(x => x.Perms, input.Perms);
       }
 
+      // 创建菜单实体
       var menu = input.Adapt<LeanMenu>();
-      menu.CreateTime = DateTime.Now;
-      menu.Perms = input.MenuCode;
-
       await _menuRepository.CreateAsync(menu);
 
-      return LeanApiResult<long>.Ok(menu.Id);
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult<long>.Error($"创建菜单失败: {ex.Message}");
-    }
+      LogAudit("CreateMenu", $"创建菜单: {menu.MenuName}");
+      return await GetAsync(menu.Id);
+    }, "创建菜单");
   }
 
   /// <summary>
   /// 更新菜单
   /// </summary>
-  public async Task<LeanApiResult> UpdateAsync(LeanUpdateMenuDto input)
+  /// <param name="input">菜单更新参数</param>
+  /// <returns>更新后的菜单信息</returns>
+  public async Task<LeanMenuDto> UpdateAsync(LeanUpdateMenuDto input)
   {
-    try
+    return await ExecuteInTransactionAsync(async () =>
     {
-      var menu = await GetMenuByIdAsync(input.Id);
+      var menu = await _menuRepository.GetByIdAsync(input.Id);
       if (menu == null)
       {
-        return LeanApiResult.Error($"菜单 {input.Id} 不存在");
+        throw new LeanException("菜单不存在");
       }
 
-      if (!await ValidateMenuInputAsync(input.MenuName, input.MenuCode, input.Id))
+      if (menu.IsBuiltin == LeanBuiltinStatus.Yes)
       {
-        return LeanApiResult.Error("输入参数验证失败");
+        throw new LeanException("内置菜单不能修改");
       }
 
-      input.Adapt(menu);
-      menu.Perms = input.MenuCode;
-      menu.UpdateTime = DateTime.Now;
+      // 验证菜单名称唯一性
+      await _uniqueValidator.ValidateAsync(x => x.MenuName, input.MenuName, input.Id);
 
+      // 验证权限标识唯一性
+      if (!string.IsNullOrEmpty(input.Perms))
+      {
+        await _uniqueValidator.ValidateAsync(x => x.Perms, input.Perms, input.Id);
+      }
+
+      // 更新菜单信息
+      input.Adapt(menu);
       await _menuRepository.UpdateAsync(menu);
 
-      return LeanApiResult.Ok();
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult.Error($"更新菜单失败: {ex.Message}");
-    }
+      LogAudit("UpdateMenu", $"更新菜单: {menu.MenuName}");
+      return await GetAsync(menu.Id);
+    }, "更新菜单");
   }
 
   /// <summary>
   /// 删除菜单
   /// </summary>
-  public async Task<LeanApiResult> DeleteAsync(long id)
+  /// <param name="input">菜单删除参数</param>
+  public async Task DeleteAsync(LeanDeleteMenuDto input)
   {
-    try
+    await ExecuteInTransactionAsync(async () =>
     {
-      var menu = await _menuRepository.GetByIdAsync(id);
+      var menu = await _menuRepository.GetByIdAsync(input.Id);
       if (menu == null)
       {
-        return LeanApiResult.Error($"菜单 {id} 不存在");
+        throw new LeanException("菜单不存在");
       }
 
       if (menu.IsBuiltin == LeanBuiltinStatus.Yes)
       {
-        return LeanApiResult.Error($"菜单 {menu.MenuName} 是内置菜单，不能删除");
+        throw new LeanException("内置菜单不能删除");
       }
 
-      // 检查是否有子菜单
-      var hasChildren = await _menuRepository.AnyAsync(m => m.ParentId == id);
+      // 检查是否存在子菜单
+      var hasChildren = await _menuRepository.AnyAsync(x => x.ParentId == input.Id);
       if (hasChildren)
       {
-        return LeanApiResult.Error($"菜单 {menu.MenuName} 存在子菜单，不能删除");
+        throw new LeanException("存在子菜单，不能删除");
       }
 
-      await DeleteMenuRelationsAsync(id);
-      await _menuRepository.DeleteAsync(m => m.Id == id);
+      // 删除角色菜单关联
+      await _roleMenuRepository.DeleteAsync(x => x.MenuId == input.Id);
 
-      return LeanApiResult.Ok();
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult.Error($"删除菜单失败: {ex.Message}");
-    }
-  }
+      // 删除菜单
+      await _menuRepository.DeleteAsync(menu);
 
-  /// <summary>
-  /// 批量删除菜单
-  /// </summary>
-  public async Task<LeanApiResult> BatchDeleteAsync(List<long> ids)
-  {
-    try
-    {
-      foreach (var id in ids)
-      {
-        var result = await DeleteAsync(id);
-        if (!result.Success)
-        {
-          return result;
-        }
-      }
-
-      return LeanApiResult.Ok();
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult.Error($"批量删除菜单失败: {ex.Message}");
-    }
+      LogAudit("DeleteMenu", $"删除菜单: {menu.MenuName}");
+    }, "删除菜单");
   }
 
   /// <summary>
   /// 获取菜单信息
   /// </summary>
-  public async Task<LeanApiResult<LeanMenuDto>> GetAsync(long id)
+  /// <param name="id">菜单ID</param>
+  /// <returns>菜单详细信息</returns>
+  public async Task<LeanMenuDto> GetAsync(long id)
   {
-    try
+    var menu = await _menuRepository.GetByIdAsync(id);
+    if (menu == null)
     {
-      var menu = await GetMenuByIdAsync(id);
-      if (menu == null)
-      {
-        return LeanApiResult<LeanMenuDto>.Error($"菜单 {id} 不存在");
-      }
-
-      var result = menu.Adapt<LeanMenuDto>();
-      result.MenuCode = menu.Perms;
-
-      return LeanApiResult<LeanMenuDto>.Ok(result);
+      throw new LeanException("菜单不存在");
     }
-    catch (Exception ex)
-    {
-      return LeanApiResult<LeanMenuDto>.Error($"获取菜单信息失败: {ex.Message}");
-    }
+
+    return menu.Adapt<LeanMenuDto>();
   }
 
   /// <summary>
-  /// 分页查询菜单
+  /// 查询菜单列表
   /// </summary>
-  public async Task<LeanApiResult<LeanPageResult<LeanMenuDto>>> GetPageAsync(LeanQueryMenuDto input)
+  /// <param name="input">查询参数</param>
+  /// <returns>菜单列表</returns>
+  public async Task<List<LeanMenuDto>> QueryAsync(LeanQueryMenuDto input)
   {
-    try
+    using (LogPerformance("查询菜单列表"))
     {
-      var predicate = BuildMenuQueryPredicate(input);
-      var page = await _menuRepository.GetPageListAsync(predicate, input.PageIndex, input.PageSize);
+      // 构建查询条件
+      Expression<Func<LeanMenu, bool>> predicate = x => true;
 
-      var result = new LeanPageResult<LeanMenuDto>
+      if (!string.IsNullOrEmpty(input.MenuName))
       {
-        Total = page.Total,
-        Items = page.Items.Select(m =>
-        {
-          var dto = m.Adapt<LeanMenuDto>();
-          dto.MenuCode = m.Perms;
-          return dto;
-        }).ToList()
-      };
-
-      return LeanApiResult<LeanPageResult<LeanMenuDto>>.Ok(result);
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult<LeanPageResult<LeanMenuDto>>.Error($"查询菜单失败: {ex.Message}");
-    }
-  }
-
-  /// <summary>
-  /// 修改菜单状态
-  /// </summary>
-  public async Task<LeanApiResult> SetStatusAsync(LeanChangeMenuStatusDto input)
-  {
-    try
-    {
-      var menu = await GetMenuByIdAsync(input.Id);
-      if (menu == null)
-      {
-        return LeanApiResult.Error($"菜单 {input.Id} 不存在");
+        var menuName = CleanInput(input.MenuName);
+        predicate = predicate.And(x => x.MenuName.Contains(menuName));
       }
 
-      menu.MenuStatus = input.MenuStatus;
-      menu.UpdateTime = DateTime.Now;
+      if (!string.IsNullOrEmpty(input.Perms))
+      {
+        var perms = CleanInput(input.Perms);
+        predicate = predicate.And(x => x.Perms.Contains(perms));
+      }
 
-      await _menuRepository.UpdateAsync(menu);
+      if (input.MenuType.HasValue)
+      {
+        predicate = predicate.And(x => x.MenuType == input.MenuType);
+      }
 
-      return LeanApiResult.Ok();
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult.Error($"修改菜单状态失败: {ex.Message}");
+      if (input.MenuStatus.HasValue)
+      {
+        predicate = predicate.And(x => x.MenuStatus == input.MenuStatus);
+      }
+
+      if (input.ParentId.HasValue)
+      {
+        predicate = predicate.And(x => x.ParentId == input.ParentId);
+      }
+
+      // 执行查询
+      var list = await _menuRepository.GetListAsync(predicate);
+      return list.OrderBy(x => x.OrderNum).Adapt<List<LeanMenuDto>>();
     }
   }
 
   /// <summary>
   /// 获取菜单树形结构
   /// </summary>
-  public async Task<LeanApiResult<List<LeanMenuTreeDto>>> GetTreeAsync()
+  /// <param name="input">查询参数</param>
+  /// <returns>菜单树形结构</returns>
+  public async Task<List<LeanMenuTreeDto>> GetTreeAsync(LeanQueryMenuDto input)
   {
-    try
-    {
-      var menus = await _menuRepository.GetListAsync(m => true);
-      var result = BuildMenuTree(menus);
+    // 获取菜单列表
+    var menus = await QueryAsync(input);
 
-      return LeanApiResult<List<LeanMenuTreeDto>>.Ok(result);
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult<List<LeanMenuTreeDto>>.Error($"获取菜单树失败: {ex.Message}");
-    }
+    // 构建树形结构
+    return BuildMenuTree(menus);
   }
 
   /// <summary>
-  /// 获取用户菜单树
+  /// 修改菜单状态
   /// </summary>
-  public async Task<LeanApiResult<List<LeanMenuTreeDto>>> GetUserMenuTreeAsync(long userId)
+  /// <param name="input">状态修改参数</param>
+  public async Task ChangeStatusAsync(LeanChangeMenuStatusDto input)
   {
-    try
+    await ExecuteInTransactionAsync(async () =>
     {
-      // 获取用户直接分配的菜单
-      var userMenus = await _userMenuRepository.GetListAsync(um => um.UserId == userId);
-      var userMenuIds = userMenus.Select(um => um.MenuId).ToList();
+      var menu = await _menuRepository.GetByIdAsync(input.Id);
+      if (menu == null)
+      {
+        throw new LeanException("菜单不存在");
+      }
 
-      // 获取用户角色分配的菜单
-      var roleMenus = await _roleMenuRepository.GetListAsync(rm => rm.Role.UserRoles.Any(ur => ur.UserId == userId));
-      var roleMenuIds = roleMenus.Select(rm => rm.MenuId).ToList();
+      if (menu.IsBuiltin == LeanBuiltinStatus.Yes)
+      {
+        throw new LeanException("内置菜单不能修改状态");
+      }
 
-      // 合并菜单ID
-      var menuIds = userMenuIds.Union(roleMenuIds).Distinct().ToList();
+      menu.MenuStatus = input.MenuStatus;
+      await _menuRepository.UpdateAsync(menu);
 
-      // 获取菜单信息
-      var menus = await _menuRepository.GetListAsync(m => menuIds.Contains(m.Id));
-      var result = BuildMenuTree(menus);
-
-      return LeanApiResult<List<LeanMenuTreeDto>>.Ok(result);
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult<List<LeanMenuTreeDto>>.Error($"获取用户菜单树失败: {ex.Message}");
-    }
-  }
-
-  /// <summary>
-  /// 获取用户权限列表
-  /// </summary>
-  public async Task<LeanApiResult<List<string>>> GetUserPermissionsAsync(long userId)
-  {
-    try
-    {
-      // 获取用户直接分配的菜单
-      var userMenus = await _userMenuRepository.GetListAsync(um => um.UserId == userId);
-      var userMenuIds = userMenus.Select(um => um.MenuId).ToList();
-
-      // 获取用户角色分配的菜单
-      var roleMenus = await _roleMenuRepository.GetListAsync(rm => rm.Role.UserRoles.Any(ur => ur.UserId == userId));
-      var roleMenuIds = roleMenus.Select(rm => rm.MenuId).ToList();
-
-      // 合并菜单ID
-      var menuIds = userMenuIds.Union(roleMenuIds).Distinct().ToList();
-
-      // 获取菜单权限标识
-      var menus = await _menuRepository.GetListAsync(m => menuIds.Contains(m.Id));
-      var permissions = menus.Where(m => !string.IsNullOrEmpty(m.Perms))
-                            .Select(m => m.Perms)
-                            .Distinct()
-                            .ToList();
-
-      return LeanApiResult<List<string>>.Ok(permissions);
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult<List<string>>.Error($"获取用户权限列表失败: {ex.Message}");
-    }
+      LogAudit("ChangeMenuStatus", $"修改菜单状态: {menu.MenuName}, 状态: {input.MenuStatus}");
+    }, "修改菜单状态");
   }
 
   /// <summary>
   /// 获取角色菜单树
   /// </summary>
-  public async Task<LeanApiResult<List<LeanMenuTreeDto>>> GetRoleMenuTreeAsync(long roleId)
+  /// <param name="roleId">角色ID</param>
+  /// <returns>菜单树形结构</returns>
+  public async Task<List<LeanMenuTreeDto>> GetRoleMenuTreeAsync(long roleId)
   {
-    try
-    {
-      var roleMenus = await _roleMenuRepository.GetListAsync(rm => rm.RoleId == roleId);
-      var menuIds = roleMenus.Select(rm => rm.MenuId).ToList();
-      var menus = await _menuRepository.GetListAsync(m => menuIds.Contains(m.Id));
-      var result = BuildMenuTree(menus);
+    // 获取角色菜单
+    var roleMenus = await _roleMenuRepository.GetListAsync(x => x.RoleId == roleId);
+    var menuIds = roleMenus.Select(x => x.MenuId).ToList();
 
-      return LeanApiResult<List<LeanMenuTreeDto>>.Ok(result);
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult<List<LeanMenuTreeDto>>.Error($"获取角色菜单树失败: {ex.Message}");
-    }
+    // 获取菜单列表
+    var menus = await _menuRepository.GetListAsync(
+        x => menuIds.Contains(x.Id) && x.MenuStatus == LeanMenuStatus.Normal);
+
+    // 转换为DTO并构建树形结构
+    var menuDtos = menus.OrderBy(x => x.OrderNum)
+                       .Select(x => x.Adapt<LeanMenuDto>())
+                       .ToList();
+    return BuildMenuTree(menuDtos);
   }
 
   /// <summary>
-  /// 获取菜单的操作权限列表
+  /// 获取用户菜单树
   /// </summary>
-  public async Task<LeanApiResult<List<LeanMenuOperationDto>>> GetMenuOperationsAsync(long menuId)
+  /// <param name="userId">用户ID</param>
+  /// <returns>用户菜单树</returns>
+  public async Task<List<LeanMenuTreeDto>> GetUserMenuTreeAsync(long userId)
   {
-    try
-    {
-      var menu = await GetMenuByIdAsync(menuId);
-      if (menu == null)
-      {
-        return LeanApiResult<List<LeanMenuOperationDto>>.Error($"菜单 {menuId} 不存在");
-      }
+    // 获取用户角色
+    var userRoles = await _userRoleRepository.GetListAsync(x => x.UserId == userId);
+    var roleIds = userRoles.Select(x => x.RoleId).ToList();
 
-      var operations = await _menuOperationRepository.GetListAsync(mo => mo.MenuId == menuId);
-      var result = operations.Select(o => o.Adapt<LeanMenuOperationDto>()).ToList();
+    // 获取角色菜单
+    var roleMenus = await _roleMenuRepository.GetListAsync(x => roleIds.Contains(x.RoleId));
+    var menuIds = roleMenus.Select(x => x.MenuId).Distinct().ToList();
 
-      return LeanApiResult<List<LeanMenuOperationDto>>.Ok(result);
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult<List<LeanMenuOperationDto>>.Error($"获取菜单操作权限失败: {ex.Message}");
-    }
+    // 获取菜单列表
+    var menus = await _menuRepository.GetListAsync(
+        x => menuIds.Contains(x.Id) && x.MenuStatus == LeanMenuStatus.Normal);
+    var menuDtos = menus.OrderBy(x => x.OrderNum)
+                       .Select(x => x.Adapt<LeanMenuDto>())
+                       .ToList();
+    return BuildMenuTree(menuDtos);
   }
 
   /// <summary>
-  /// 设置菜单的操作权限
+  /// 获取用户权限列表
   /// </summary>
-  public async Task<LeanApiResult> SetMenuOperationsAsync(LeanSetMenuOperationDto input)
+  /// <param name="userId">用户ID</param>
+  /// <returns>用户权限列表</returns>
+  public async Task<List<string>> GetUserPermissionsAsync(long userId)
   {
-    try
-    {
-      var menu = await GetMenuByIdAsync(input.MenuId);
-      if (menu == null)
-      {
-        return LeanApiResult.Error($"菜单 {input.MenuId} 不存在");
-      }
+    // 获取用户角色
+    var userRoles = await _userRoleRepository.GetListAsync(x => x.UserId == userId);
+    var roleIds = userRoles.Select(x => x.RoleId).ToList();
 
-      await _menuOperationRepository.DeleteAsync(mo => mo.MenuId == input.MenuId);
+    // 获取角色菜单
+    var roleMenus = await _roleMenuRepository.GetListAsync(x => roleIds.Contains(x.RoleId));
+    var menuIds = roleMenus.Select(x => x.MenuId).Distinct().ToList();
 
-      if (input.Operations?.Any() == true)
-      {
-        var operations = input.Operations.Select(o => new LeanMenuOperation
-        {
-          MenuId = input.MenuId,
-          Code = o.Code,
-          Name = o.Name,
-          CreateTime = DateTime.Now
-        }).ToList();
+    // 获取菜单权限
+    var menus = await _menuRepository.GetListAsync(
+        x => menuIds.Contains(x.Id) &&
+             x.MenuStatus == LeanMenuStatus.Normal &&
+             !string.IsNullOrEmpty(x.Perms));
 
-        await _menuOperationRepository.CreateRangeAsync(operations);
-      }
-
-      return LeanApiResult.Ok();
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult.Error($"设置菜单操作权限失败: {ex.Message}");
-    }
+    return menus.Select(x => x.Perms)
+               .Where(x => !string.IsNullOrEmpty(x))
+               .Distinct()
+               .ToList();
   }
 
   /// <summary>
-  /// 获取用户在指定菜单的操作权限
+  /// 构建菜单树形结构
   /// </summary>
-  public async Task<LeanApiResult<List<string>>> GetUserMenuOperationsAsync(long userId, long menuId)
+  /// <param name="menus">菜单列表</param>
+  /// <returns>树形结构</returns>
+  private List<LeanMenuTreeDto> BuildMenuTree(List<LeanMenuDto> menus)
   {
-    try
-    {
-      // 检查用户是否有菜单权限
-      var hasMenuPermission = await ValidateUserMenuOperationAsync(userId, menuId, null);
-      if (!hasMenuPermission.Success || !hasMenuPermission.Data)
-      {
-        return LeanApiResult<List<string>>.Ok(new List<string>());
-      }
+    var result = new List<LeanMenuTreeDto>();
+    var lookup = menus.ToLookup(x => x.ParentId);
 
-      // 获取菜单的所有操作权限
-      var operations = await _menuOperationRepository.GetListAsync(mo => mo.MenuId == menuId);
-      var result = operations.Select(o => o.Code).ToList();
-
-      return LeanApiResult<List<string>>.Ok(result);
-    }
-    catch (Exception ex)
+    foreach (var menu in menus.Where(x => x.ParentId == null || x.ParentId == 0))
     {
-      return LeanApiResult<List<string>>.Error($"获取用户菜单操作权限失败: {ex.Message}");
+      var node = menu.Adapt<LeanMenuTreeDto>();
+      node.Children = BuildMenuTreeNodes(lookup, menu.Id);
+      result.Add(node);
     }
+
+    return result;
   }
 
   /// <summary>
-  /// 验证用户是否有指定菜单的操作权限
+  /// 递归构建菜单树节点
   /// </summary>
-  public async Task<LeanApiResult<bool>> ValidateUserMenuOperationAsync(long userId, long menuId, string operation)
+  /// <param name="lookup">菜单查找表</param>
+  /// <param name="parentId">父级ID</param>
+  /// <returns>子节点列表</returns>
+  private List<LeanMenuTreeDto> BuildMenuTreeNodes(ILookup<long?, LeanMenuDto> lookup, long parentId)
   {
-    try
+    var result = new List<LeanMenuTreeDto>();
+
+    foreach (var menu in lookup[parentId])
     {
-      // 检查菜单是否存在
-      var menu = await GetMenuByIdAsync(menuId);
-      if (menu == null)
-      {
-        return LeanApiResult<bool>.Error($"菜单 {menuId} 不存在");
-      }
-
-      // 检查菜单状态
-      if (menu.MenuStatus != LeanMenuStatus.Normal)
-      {
-        return LeanApiResult<bool>.Ok(false);
-      }
-
-      // 检查用户是否有菜单权限
-      var userMenus = await _userMenuRepository.GetListAsync(um => um.UserId == userId && um.MenuId == menuId);
-      var roleMenus = await _roleMenuRepository.GetListAsync(rm => rm.MenuId == menuId && rm.Role.UserRoles.Any(ur => ur.UserId == userId));
-
-      if (!userMenus.Any() && !roleMenus.Any())
-      {
-        return LeanApiResult<bool>.Ok(false);
-      }
-
-      // 如果不需要检查具体操作权限，直接返回true
-      if (string.IsNullOrEmpty(operation))
-      {
-        return LeanApiResult<bool>.Ok(true);
-      }
-
-      // 检查操作权限是否存在
-      var hasOperation = await _menuOperationRepository.AnyAsync(mo => mo.MenuId == menuId && mo.Code == operation);
-      return LeanApiResult<bool>.Ok(hasOperation);
+      var node = menu.Adapt<LeanMenuTreeDto>();
+      node.Children = BuildMenuTreeNodes(lookup, menu.Id);
+      result.Add(node);
     }
-    catch (Exception ex)
-    {
-      return LeanApiResult<bool>.Error($"验证用户菜单操作权限失败: {ex.Message}");
-    }
+
+    return result;
   }
-
-  #region 私有方法
-
-  /// <summary>
-  /// 获取菜单
-  /// </summary>
-  private async Task<LeanMenu?> GetMenuByIdAsync(long id)
-  {
-    return await _menuRepository.GetByIdAsync(id);
-  }
-
-  /// <summary>
-  /// 验证菜单输入
-  /// </summary>
-  private async Task<bool> ValidateMenuInputAsync(string menuName, string perms, long? id = null)
-  {
-    if (string.IsNullOrEmpty(menuName) || string.IsNullOrEmpty(perms))
-    {
-      return false;
-    }
-
-    if (!ValidateInput(new[] { menuName, perms }))
-    {
-      return false;
-    }
-
-    try
-    {
-      await _uniqueValidator.ValidateAsync(
-          (m => m.MenuName, menuName, id, $"菜单名称 {menuName} 已存在"),
-          (m => m.Perms, perms, id, $"菜单编码 {perms} 已存在")
-      );
-      return true;
-    }
-    catch
-    {
-      return false;
-    }
-  }
-
-  /// <summary>
-  /// 删除菜单关联信息
-  /// </summary>
-  private async Task DeleteMenuRelationsAsync(long menuId)
-  {
-    await _userMenuRepository.DeleteAsync(um => um.MenuId == menuId);
-    await _roleMenuRepository.DeleteAsync(rm => rm.MenuId == menuId);
-    await _menuOperationRepository.DeleteAsync(mo => mo.MenuId == menuId);
-  }
-
-  /// <summary>
-  /// 构建菜单查询条件
-  /// </summary>
-  private Expression<Func<LeanMenu, bool>> BuildMenuQueryPredicate(LeanQueryMenuDto input)
-  {
-    Expression<Func<LeanMenu, bool>> predicate = m => true;
-
-    if (!string.IsNullOrEmpty(input.MenuName))
-    {
-      var menuName = CleanInput(input.MenuName);
-      predicate = LeanExpressionExtensions.And(predicate, m => m.MenuName.Contains(menuName));
-    }
-
-    if (!string.IsNullOrEmpty(input.MenuCode))
-    {
-      var menuCode = CleanInput(input.MenuCode);
-      predicate = LeanExpressionExtensions.And(predicate, m => m.Perms.Contains(menuCode));
-    }
-
-    if (input.MenuStatus.HasValue)
-    {
-      predicate = LeanExpressionExtensions.And(predicate, m => m.MenuStatus == input.MenuStatus.Value);
-    }
-
-    if (input.StartTime.HasValue)
-    {
-      predicate = LeanExpressionExtensions.And(predicate, m => m.CreateTime >= input.StartTime.Value);
-    }
-
-    if (input.EndTime.HasValue)
-    {
-      predicate = LeanExpressionExtensions.And(predicate, m => m.CreateTime <= input.EndTime.Value);
-    }
-
-    return predicate;
-  }
-
-  /// <summary>
-  /// 构建菜单树
-  /// </summary>
-  private List<LeanMenuTreeDto> BuildMenuTree(List<LeanMenu> menus)
-  {
-    var menuDict = menus.ToDictionary(m => m.Id, m =>
-    {
-      var dto = m.Adapt<LeanMenuTreeDto>();
-      dto.MenuCode = m.Perms;
-      return dto;
-    });
-
-    foreach (var menu in menus.Where(m => m.ParentId.HasValue))
-    {
-      if (menuDict.TryGetValue(menu.ParentId.Value, out var parentMenu))
-      {
-        parentMenu.Children.Add(menuDict[menu.Id]);
-      }
-    }
-
-    return menuDict.Values.Where(m => !m.ParentId.HasValue).ToList();
-  }
-
-  #endregion
 }

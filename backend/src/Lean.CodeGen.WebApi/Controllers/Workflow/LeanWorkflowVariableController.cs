@@ -3,6 +3,7 @@ using Lean.CodeGen.Application.Services.Workflow;
 using Lean.CodeGen.Common.Models;
 using Lean.CodeGen.WebApi.Controllers;
 using Microsoft.AspNetCore.Mvc;
+using Lean.CodeGen.Common.Enums;
 
 namespace Lean.CodeGen.WebApi.Controllers.Workflow;
 
@@ -11,6 +12,7 @@ namespace Lean.CodeGen.WebApi.Controllers.Workflow;
 /// </summary>
 [ApiController]
 [Route("api/workflow/variables")]
+[ApiExplorerSettings(GroupName = "workflow")]
 public class LeanWorkflowVariableController : LeanBaseController
 {
   private readonly ILeanWorkflowVariableService _service;
@@ -30,9 +32,10 @@ public class LeanWorkflowVariableController : LeanBaseController
   /// <param name="id">变量ID</param>
   /// <returns>变量</returns>
   [HttpGet("{id}")]
-  public Task<LeanWorkflowVariableDto?> GetAsync(long id)
+  public async Task<IActionResult> GetAsync(long id)
   {
-    return _service.GetAsync(id);
+    var result = await _service.GetAsync(id);
+    return Success(result, LeanBusinessType.Query);
   }
 
   /// <summary>
@@ -42,9 +45,10 @@ public class LeanWorkflowVariableController : LeanBaseController
   /// <param name="variableName">变量名称</param>
   /// <returns>变量</returns>
   [HttpGet("definition/{definitionId}/variable/{variableName}")]
-  public Task<LeanWorkflowVariableDto?> GetByNameAsync(long definitionId, string variableName)
+  public async Task<IActionResult> GetByNameAsync(long definitionId, string variableName)
   {
-    return _service.GetByNameAsync(definitionId, variableName);
+    var result = await _service.GetByNameAsync(definitionId, variableName);
+    return Success(result, LeanBusinessType.Query);
   }
 
   /// <summary>
@@ -53,9 +57,10 @@ public class LeanWorkflowVariableController : LeanBaseController
   /// <param name="dto">变量</param>
   /// <returns>变量ID</returns>
   [HttpPost]
-  public Task<long> CreateAsync(LeanWorkflowVariableDto dto)
+  public async Task<IActionResult> CreateAsync(LeanWorkflowVariableDto dto)
   {
-    return _service.CreateAsync(dto);
+    var result = await _service.CreateAsync(dto);
+    return Success(result, LeanBusinessType.Create);
   }
 
   /// <summary>
@@ -65,13 +70,14 @@ public class LeanWorkflowVariableController : LeanBaseController
   /// <param name="dto">变量</param>
   /// <returns>是否成功</returns>
   [HttpPut("{id}")]
-  public async Task<bool> UpdateAsync(long id, LeanWorkflowVariableDto dto)
+  public async Task<IActionResult> UpdateAsync(long id, LeanWorkflowVariableDto dto)
   {
     if (id != dto.Id)
     {
-      return false;
+      return Error("ID不匹配");
     }
-    return await _service.UpdateAsync(dto);
+    var result = await _service.UpdateAsync(dto);
+    return Success(result, LeanBusinessType.Update);
   }
 
   /// <summary>
@@ -80,8 +86,9 @@ public class LeanWorkflowVariableController : LeanBaseController
   /// <param name="id">变量ID</param>
   /// <returns>是否成功</returns>
   [HttpDelete("{id}")]
-  public Task<bool> DeleteAsync(long id)
+  public async Task<IActionResult> DeleteAsync(long id)
   {
-    return _service.DeleteAsync(id);
+    var result = await _service.DeleteAsync(id);
+    return Success(result, LeanBusinessType.Delete);
   }
 }

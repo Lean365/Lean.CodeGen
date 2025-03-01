@@ -1,7 +1,5 @@
 using Lean.CodeGen.Application.Dtos.Identity;
-using Lean.CodeGen.Application.Dtos.Identity.Login;
 using Lean.CodeGen.Common.Models;
-using System.Threading.Tasks;
 
 namespace Lean.CodeGen.Application.Services.Identity;
 
@@ -11,109 +9,74 @@ namespace Lean.CodeGen.Application.Services.Identity;
 public interface ILeanUserService
 {
   /// <summary>
-  /// 用户登录
-  /// </summary>
-  /// <param name="input">登录信息</param>
-  /// <returns>登录结果</returns>
-  Task<LeanLoginResultDto> LoginAsync(LeanLoginDto input);
-
-  /// <summary>
   /// 创建用户
   /// </summary>
-  Task<LeanApiResult<long>> CreateAsync(LeanCreateUserDto input);
+  /// <param name="input">用户创建参数</param>
+  /// <returns>用户信息</returns>
+  Task<LeanUserDto> CreateAsync(LeanCreateUserDto input);
 
   /// <summary>
   /// 更新用户
   /// </summary>
-  Task<LeanApiResult> UpdateAsync(LeanUpdateUserDto input);
+  /// <param name="input">用户更新参数</param>
+  /// <returns>用户信息</returns>
+  Task<LeanUserDto> UpdateAsync(LeanUpdateUserDto input);
 
   /// <summary>
   /// 删除用户
   /// </summary>
-  Task<LeanApiResult> DeleteAsync(long id);
-
-  /// <summary>
-  /// 批量删除用户
-  /// </summary>
-  Task<LeanApiResult> BatchDeleteAsync(List<long> ids);
+  /// <param name="input">用户删除参数</param>
+  Task DeleteAsync(LeanDeleteUserDto input);
 
   /// <summary>
   /// 获取用户信息
   /// </summary>
-  Task<LeanApiResult<LeanUserDto>> GetAsync(long id);
+  /// <param name="id">用户ID</param>
+  /// <returns>用户信息</returns>
+  Task<LeanUserDto> GetAsync(long id);
 
   /// <summary>
   /// 分页查询用户
   /// </summary>
-  Task<LeanApiResult<LeanPageResult<LeanUserDto>>> GetPageAsync(LeanQueryUserDto input);
+  /// <param name="input">查询参数</param>
+  /// <returns>用户列表</returns>
+  Task<LeanPageResult<LeanUserDto>> QueryAsync(LeanQueryUserDto input);
 
   /// <summary>
   /// 修改用户状态
   /// </summary>
-  Task<LeanApiResult> SetStatusAsync(LeanChangeUserStatusDto input);
+  /// <param name="input">状态修改参数</param>
+  Task ChangeStatusAsync(LeanChangeUserStatusDto input);
 
   /// <summary>
   /// 重置密码
   /// </summary>
-  Task<LeanApiResult> ResetPasswordAsync(LeanResetUserPasswordDto input);
+  /// <param name="input">重置密码参数</param>
+  Task ResetPasswordAsync(LeanResetUserPasswordDto input);
 
   /// <summary>
   /// 修改密码
   /// </summary>
-  Task<LeanApiResult> ChangePasswordAsync(LeanChangeUserPasswordDto input);
-
-  /// <summary>
-  /// 导入用户
-  /// </summary>
-  Task<LeanApiResult<LeanImportUserResultDto>> ImportAsync(List<LeanImportTemplateUserDto> users);
+  /// <param name="input">修改密码参数</param>
+  Task ChangePasswordAsync(LeanChangeUserPasswordDto input);
 
   /// <summary>
   /// 导出用户
   /// </summary>
-  Task<LeanApiResult<byte[]>> ExportAsync(LeanExportUserDto input);
+  /// <param name="input">导出参数</param>
+  /// <returns>导出文件字节数组</returns>
+  Task<byte[]> ExportAsync(LeanExportUserDto input);
 
   /// <summary>
-  /// 获取用户直接分配的菜单权限列表
+  /// 导入用户
   /// </summary>
-  Task<LeanApiResult<List<long>>> GetUserDirectMenusAsync(long userId);
+  /// <param name="file">导入文件</param>
+  /// <returns>导入结果</returns>
+  Task<LeanImportResult> ImportAsync(byte[] file);
 
   /// <summary>
-  /// 分配用户直接菜单权限
+  /// 获取导入模板
   /// </summary>
-  Task<LeanApiResult> AssignUserMenusAsync(LeanAssignUserMenuDto input);
-
-  /// <summary>
-  /// 获取用户直接分配的API权限列表
-  /// </summary>
-  Task<LeanApiResult<List<long>>> GetUserDirectApisAsync(long userId);
-
-  /// <summary>
-  /// 分配用户直接API权限
-  /// </summary>
-  Task<LeanApiResult> AssignUserApisAsync(LeanAssignUserApiDto input);
-
-  /// <summary>
-  /// 获取用户的所有权限（包括角色继承的权限）
-  /// </summary>
-  Task<LeanApiResult<LeanUserPermissionsDto>> GetUserAllPermissionsAsync(long userId);
-
-  /// <summary>
-  /// 验证用户是否具有指定权限
-  /// </summary>
-  Task<LeanApiResult<bool>> ValidateUserPermissionAsync(string permission, long userId);
-
-  /// <summary>
-  /// 批量验证用户权限
-  /// </summary>
-  Task<LeanApiResult<Dictionary<string, bool>>> ValidateUserPermissionsAsync(List<string> permissions, long userId);
-
-  /// <summary>
-  /// 验证用户是否具有指定资源的访问权限
-  /// </summary>
-  Task<LeanApiResult<bool>> ValidateUserResourceAccessAsync(LeanValidateUserResourceAccessDto input);
-
-  /// <summary>
-  /// 获取当前登录用户信息
-  /// </summary>
-  Task<LeanApiResult<LeanUserDto>> GetCurrentUserInfoAsync();
+  /// <returns>模板文件字节数组</returns>
+  Task<byte[]> GetImportTemplateAsync();
 }

@@ -1,5 +1,6 @@
 using Lean.CodeGen.Application.Dtos.Admin;
 using Lean.CodeGen.Common.Models;
+using Lean.CodeGen.Common.Excel;
 
 namespace Lean.CodeGen.Application.Services.Admin;
 
@@ -47,4 +48,19 @@ public interface ILeanDictDataService
   /// 根据字典类型编码获取字典数据列表
   /// </summary>
   Task<LeanApiResult<List<LeanDictDataDto>>> GetListByTypeCodeAsync(string typeCode);
+
+  /// <summary>
+  /// 导出字典数据
+  /// </summary>
+  Task<byte[]> ExportAsync(LeanQueryDictDataDto input);
+
+  /// <summary>
+  /// 导入字典数据
+  /// </summary>
+  Task<LeanExcelImportResult<LeanDictDataImportDto>> ImportAsync(byte[] file);
+
+  /// <summary>
+  /// 获取导入模板
+  /// </summary>
+  Task<byte[]> GetImportTemplateAsync();
 }

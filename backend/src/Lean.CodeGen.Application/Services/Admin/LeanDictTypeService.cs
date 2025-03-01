@@ -32,16 +32,14 @@ public class LeanDictTypeService : LeanBaseService, ILeanDictTypeService
   /// 构造函数
   /// </summary>
   public LeanDictTypeService(
-      ILogger<LeanDictTypeService> logger,
       ILeanRepository<LeanDictType> dictTypeRepository,
       ILeanRepository<LeanDictData> dictDataRepository,
-      ILeanSqlSafeService sqlSafeService,
-      IOptions<LeanSecurityOptions> securityOptions)
-      : base(sqlSafeService, securityOptions, logger)
+      LeanBaseServiceContext context)
+      : base(context)
   {
-    _logger = logger;
     _dictTypeRepository = dictTypeRepository;
     _dictDataRepository = dictDataRepository;
+    _logger = (ILogger<LeanDictTypeService>)context.Logger;
     _uniqueValidator = new LeanUniqueValidator<LeanDictType>(_dictTypeRepository);
   }
 
@@ -271,125 +269,99 @@ public class LeanDictTypeService : LeanBaseService, ILeanDictTypeService
   /// <summary>
   /// 导出字典类型
   /// </summary>
-  public async Task<LeanApiResult<byte[]>> ExportAsync(LeanQueryDictTypeDto input)
+  public async Task<byte[]> ExportAsync(LeanQueryDictTypeDto input)
   {
-    try
+    Expression<Func<LeanDictType, bool>> predicate = x => true;
+
+    if (!string.IsNullOrEmpty(input.DictName))
     {
-      Expression<Func<LeanDictType, bool>> predicate = x => true;
-
-      if (!string.IsNullOrEmpty(input.DictName))
-      {
-        var name = input.DictName.Trim();
-        predicate = predicate.And(x => x.DictName.Contains(name));
-      }
-
-      if (!string.IsNullOrEmpty(input.DictCode))
-      {
-        var code = input.DictCode.Trim();
-        predicate = predicate.And(x => x.DictCode.Contains(code));
-      }
-
-      if (input.Status.HasValue)
-      {
-        predicate = LeanExpressionExtensions.And(predicate, x => x.Status == input.Status.Value);
-      }
-
-      if (input.StartTime.HasValue)
-      {
-        predicate = LeanExpressionExtensions.And(predicate, x => x.CreateTime >= input.StartTime.Value);
-      }
-
-      if (input.EndTime.HasValue)
-      {
-        predicate = LeanExpressionExtensions.And(predicate, x => x.CreateTime <= input.EndTime.Value);
-      }
-
-      var items = await _dictTypeRepository.GetListAsync(predicate);
-      var dtos = items.Select(t => t.Adapt<LeanDictTypeExportDto>()).ToList();
-
-      var bytes = LeanExcelHelper.Export(dtos);
-      return LeanApiResult<byte[]>.Ok(bytes);
+      var name = input.DictName.Trim();
+      predicate = predicate.And(x => x.DictName.Contains(name));
     }
-    catch (Exception ex)
+
+    if (!string.IsNullOrEmpty(input.DictCode))
     {
-      return LeanApiResult<byte[]>.Error($"导出字典类型失败: {ex.Message}");
+      var code = input.DictCode.Trim();
+      predicate = predicate.And(x => x.DictCode.Contains(code));
     }
+
+    if (input.Status.HasValue)
+    {
+      predicate = LeanExpressionExtensions.And(predicate, x => x.Status == input.Status.Value);
+    }
+
+    if (input.StartTime.HasValue)
+    {
+      predicate = LeanExpressionExtensions.And(predicate, x => x.CreateTime >= input.StartTime.Value);
+    }
+
+    if (input.EndTime.HasValue)
+    {
+      predicate = LeanExpressionExtensions.And(predicate, x => x.CreateTime <= input.EndTime.Value);
+    }
+
+    var items = await _dictTypeRepository.GetListAsync(predicate);
+    var dtos = items.Select(t => t.Adapt<LeanDictTypeExportDto>()).ToList();
+
+    return LeanExcelHelper.Export(dtos);
   }
 
   /// <summary>
   /// 导入字典类型
   /// </summary>
-  public async Task<LeanApiResult<LeanExcelImportResult<LeanDictTypeImportDto>>> ImportAsync(LeanFileInfo file)
+  public async Task<LeanExcelImportResult<LeanDictTypeImportDto>> ImportAsync(LeanFileInfo file)
   {
-    try
+    var result = new LeanExcelImportResult<LeanDictTypeImportDto>();
+
+    // 导入Excel
+    var importResult = LeanExcelHelper.Import<LeanDictTypeImportDto>(File.ReadAllBytes(file.FilePath));
+    result.Data.AddRange(importResult.Data);
+    result.Errors.AddRange(importResult.Errors);
+
+    if (result.IsSuccess)
     {
-      var result = new LeanExcelImportResult<LeanDictTypeImportDto>();
-
-      // 导入Excel
-      var importResult = LeanExcelHelper.Import<LeanDictTypeImportDto>(File.ReadAllBytes(file.FilePath));
-      result.Data.AddRange(importResult.Data);
-      result.Errors.AddRange(importResult.Errors);
-
-      if (result.IsSuccess)
+      foreach (var item in result.Data)
       {
-        foreach (var item in result.Data)
+        try
         {
-          try
-          {
-            // 检查字典类型编码是否存在
-            var exists = await _dictTypeRepository.AnyAsync(x => x.DictCode == item.DictCode);
-            if (exists)
-            {
-              result.Errors.Add(new LeanExcelImportError
-              {
-                RowIndex = importResult.Data.IndexOf(item) + 2,
-                ErrorMessage = $"字典类型编码 {item.DictCode} 已存在"
-              });
-              continue;
-            }
-
-            // 创建实体
-            var entity = item.Adapt<LeanDictType>();
-            entity.Status = LeanStatus.Normal;
-            await _dictTypeRepository.CreateAsync(entity);
-          }
-          catch (Exception ex)
+          // 检查字典类型编码是否存在
+          var exists = await _dictTypeRepository.AnyAsync(x => x.DictCode == item.DictCode);
+          if (exists)
           {
             result.Errors.Add(new LeanExcelImportError
             {
               RowIndex = importResult.Data.IndexOf(item) + 2,
-              ErrorMessage = ex.Message
+              ErrorMessage = $"字典类型编码 {item.DictCode} 已存在"
             });
+            continue;
           }
+
+          // 创建实体
+          var entity = item.Adapt<LeanDictType>();
+          entity.Status = LeanStatus.Normal;
+          await _dictTypeRepository.CreateAsync(entity);
+        }
+        catch (Exception ex)
+        {
+          result.Errors.Add(new LeanExcelImportError
+          {
+            RowIndex = importResult.Data.IndexOf(item) + 2,
+            ErrorMessage = ex.Message
+          });
         }
       }
+    }
 
-      return LeanApiResult<LeanExcelImportResult<LeanDictTypeImportDto>>.Ok(result);
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult<LeanExcelImportResult<LeanDictTypeImportDto>>.Error($"导入字典类型失败: {ex.Message}");
-    }
+    return result;
   }
 
   /// <summary>
   /// 获取导入模板
   /// </summary>
-  public Task<LeanApiResult<byte[]>> GetImportTemplateAsync()
+  public Task<byte[]> GetImportTemplateAsync()
   {
-    try
-    {
-      var template = new List<LeanDictTypeImportTemplateDto>
-      {
-        new LeanDictTypeImportTemplateDto()
-      };
-
-      var bytes = LeanExcelHelper.Export(template);
-      return Task.FromResult(LeanApiResult<byte[]>.Ok(bytes));
-    }
-    catch (Exception ex)
-    {
-      return Task.FromResult(LeanApiResult<byte[]>.Error($"获取导入模板失败: {ex.Message}"));
-    }
+    var template = new List<LeanDictTypeImportDto>();
+    var bytes = LeanExcelHelper.Export(template);
+    return Task.FromResult(bytes);
   }
 }

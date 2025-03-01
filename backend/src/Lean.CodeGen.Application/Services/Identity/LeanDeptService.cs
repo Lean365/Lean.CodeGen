@@ -1,779 +1,321 @@
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using System.Linq;
 using System.Linq.Expressions;
+using Mapster;
 using Lean.CodeGen.Application.Dtos.Identity;
+using Lean.CodeGen.Application.Services.Base;
+using Lean.CodeGen.Common.Enums;
+using Lean.CodeGen.Common.Exceptions;
 using Lean.CodeGen.Common.Models;
 using Lean.CodeGen.Domain.Entities.Identity;
 using Lean.CodeGen.Domain.Interfaces.Repositories;
 using Lean.CodeGen.Domain.Validators;
-using Mapster;
-using Lean.CodeGen.Common.Options;
-using Lean.CodeGen.Application.Services.Base;
-using Lean.CodeGen.Application.Services.Security;
-using Microsoft.Extensions.Options;
-using Lean.CodeGen.Common.Enums;
 using Lean.CodeGen.Common.Extensions;
-using Microsoft.Extensions.Logging;
 
 namespace Lean.CodeGen.Application.Services.Identity;
 
 /// <summary>
 /// 部门服务实现
 /// </summary>
+/// <remarks>
+/// 提供部门管理相关的业务功能，包括：
+/// 1. 部门的增删改查
+/// 2. 部门状态管理
+/// 3. 部门树形结构管理
+/// 4. 部门数据权限管理
+/// </remarks>
 public class LeanDeptService : LeanBaseService, ILeanDeptService
 {
   private readonly ILeanRepository<LeanDept> _deptRepository;
-  private readonly ILeanRepository<LeanUserDept> _userDeptRepository;
   private readonly ILeanRepository<LeanRoleDept> _roleDeptRepository;
-  private readonly ILeanRepository<LeanDeptDataPermission> _deptDataPermissionRepository;
+  private readonly ILeanRepository<LeanUserDept> _userDeptRepository;
   private readonly LeanUniqueValidator<LeanDept> _uniqueValidator;
-  private readonly ILogger<LeanDeptService> _logger;
 
+  /// <summary>
+  /// 构造函数
+  /// </summary>
+  /// <param name="deptRepository">部门仓储接口</param>
+  /// <param name="roleDeptRepository">角色部门关联仓储接口</param>
+  /// <param name="userDeptRepository">用户部门关联仓储接口</param>
+  /// <param name="context">基础服务上下文</param>
   public LeanDeptService(
       ILeanRepository<LeanDept> deptRepository,
-      ILeanRepository<LeanUserDept> userDeptRepository,
       ILeanRepository<LeanRoleDept> roleDeptRepository,
-      ILeanRepository<LeanDeptDataPermission> deptDataPermissionRepository,
-      ILeanSqlSafeService sqlSafeService,
-      IOptions<LeanSecurityOptions> securityOptions,
-      ILogger<LeanDeptService> logger)
-      : base(sqlSafeService, securityOptions, logger)
+      ILeanRepository<LeanUserDept> userDeptRepository,
+      LeanBaseServiceContext context)
+      : base(context)
   {
     _deptRepository = deptRepository;
-    _userDeptRepository = userDeptRepository;
     _roleDeptRepository = roleDeptRepository;
-    _deptDataPermissionRepository = deptDataPermissionRepository;
-    _uniqueValidator = new LeanUniqueValidator<LeanDept>(deptRepository);
-    _logger = logger;
+    _userDeptRepository = userDeptRepository;
+    _uniqueValidator = new LeanUniqueValidator<LeanDept>(_deptRepository);
   }
 
   /// <summary>
   /// 创建部门
   /// </summary>
-  public async Task<LeanApiResult<long>> CreateAsync(LeanCreateDeptDto input)
+  /// <param name="input">部门创建参数</param>
+  /// <returns>创建成功的部门信息</returns>
+  public async Task<LeanDeptDto> CreateAsync(LeanCreateDeptDto input)
   {
-    try
+    return await ExecuteInTransactionAsync(async () =>
     {
-      if (!await ValidateDeptInputAsync(input.DeptName, input.DeptCode))
-      {
-        return LeanApiResult<long>.Error("输入参数验证失败");
-      }
+      // 验证部门名称唯一性
+      await _uniqueValidator.ValidateAsync(x => x.DeptName, input.DeptName);
 
+      // 创建部门实体
       var dept = input.Adapt<LeanDept>();
-      dept.CreateTime = DateTime.Now;
-
       await _deptRepository.CreateAsync(dept);
 
-      return LeanApiResult<long>.Ok(dept.Id);
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult<long>.Error($"创建部门失败: {ex.Message}");
-    }
+      LogAudit("CreateDept", $"创建部门: {dept.DeptName}");
+      return await GetAsync(dept.Id);
+    }, "创建部门");
   }
 
   /// <summary>
   /// 更新部门
   /// </summary>
-  public async Task<LeanApiResult> UpdateAsync(LeanUpdateDeptDto input)
+  /// <param name="input">部门更新参数</param>
+  /// <returns>更新后的部门信息</returns>
+  public async Task<LeanDeptDto> UpdateAsync(LeanUpdateDeptDto input)
   {
-    try
+    return await ExecuteInTransactionAsync(async () =>
     {
-      var dept = await GetDeptByIdAsync(input.Id);
+      var dept = await _deptRepository.GetByIdAsync(input.Id);
       if (dept == null)
       {
-        return LeanApiResult.Error($"部门 {input.Id} 不存在");
+        throw new LeanException("部门不存在");
       }
 
-      if (!await ValidateDeptInputAsync(input.DeptName, input.DeptCode, input.Id))
+      if (dept.IsBuiltin == LeanBuiltinStatus.Yes)
       {
-        return LeanApiResult.Error("输入参数验证失败");
+        throw new LeanException("内置部门不能修改");
       }
 
-      input.Adapt(dept);
-      dept.UpdateTime = DateTime.Now;
+      // 验证部门名称唯一性
+      await _uniqueValidator.ValidateAsync(x => x.DeptName, input.DeptName, input.Id);
 
+      // 更新部门信息
+      input.Adapt(dept);
       await _deptRepository.UpdateAsync(dept);
 
-      return LeanApiResult.Ok();
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult.Error($"更新部门失败: {ex.Message}");
-    }
+      LogAudit("UpdateDept", $"更新部门: {dept.DeptName}");
+      return await GetAsync(dept.Id);
+    }, "更新部门");
   }
 
   /// <summary>
   /// 删除部门
   /// </summary>
-  public async Task<LeanApiResult> DeleteAsync(long id)
+  /// <param name="input">部门删除参数</param>
+  public async Task DeleteAsync(LeanDeleteDeptDto input)
   {
-    try
+    await ExecuteInTransactionAsync(async () =>
     {
-      var dept = await _deptRepository.GetByIdAsync(id);
+      var dept = await _deptRepository.GetByIdAsync(input.Id);
       if (dept == null)
       {
-        return LeanApiResult.Error($"部门 {id} 不存在");
+        throw new LeanException("部门不存在");
       }
 
       if (dept.IsBuiltin == LeanBuiltinStatus.Yes)
       {
-        return LeanApiResult.Error($"部门 {dept.DeptName} 是内置部门，不能删除");
+        throw new LeanException("内置部门不能删除");
       }
 
-      // 检查是否有子部门
-      var hasChildren = await _deptRepository.AnyAsync(d => d.ParentId == id);
+      // 检查是否存在子部门
+      var hasChildren = await _deptRepository.AnyAsync(x => x.ParentId == input.Id);
       if (hasChildren)
       {
-        return LeanApiResult.Error($"部门 {dept.DeptName} 存在子部门，不能删除");
+        throw new LeanException("存在子部门，不能删除");
       }
 
-      await DeleteDeptRelationsAsync(id);
-      await _deptRepository.DeleteAsync(d => d.Id == id);
+      // 删除角色部门关联
+      await _roleDeptRepository.DeleteAsync(x => x.DeptId == input.Id);
 
-      return LeanApiResult.Ok();
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult.Error($"删除部门失败: {ex.Message}");
-    }
-  }
+      // 删除用户部门关联
+      await _userDeptRepository.DeleteAsync(x => x.DeptId == input.Id);
 
-  /// <summary>
-  /// 批量删除部门
-  /// </summary>
-  public async Task<LeanApiResult> BatchDeleteAsync(List<long> ids)
-  {
-    try
-    {
-      foreach (var id in ids)
-      {
-        var result = await DeleteAsync(id);
-        if (!result.Success)
-        {
-          return result;
-        }
-      }
+      // 删除部门
+      await _deptRepository.DeleteAsync(dept);
 
-      return LeanApiResult.Ok();
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult.Error($"批量删除部门失败: {ex.Message}");
-    }
+      LogAudit("DeleteDept", $"删除部门: {dept.DeptName}");
+    }, "删除部门");
   }
 
   /// <summary>
   /// 获取部门信息
   /// </summary>
-  public async Task<LeanApiResult<LeanDeptDto>> GetAsync(long id)
+  /// <param name="id">部门ID</param>
+  /// <returns>部门详细信息</returns>
+  public async Task<LeanDeptDto> GetAsync(long id)
   {
-    try
+    var dept = await _deptRepository.GetByIdAsync(id);
+    if (dept == null)
     {
-      var dept = await GetDeptByIdAsync(id);
-      if (dept == null)
-      {
-        return LeanApiResult<LeanDeptDto>.Error($"部门 {id} 不存在");
-      }
-
-      var result = dept.Adapt<LeanDeptDto>();
-
-      return LeanApiResult<LeanDeptDto>.Ok(result);
+      throw new LeanException("部门不存在");
     }
-    catch (Exception ex)
-    {
-      return LeanApiResult<LeanDeptDto>.Error($"获取部门信息失败: {ex.Message}");
-    }
+
+    return dept.Adapt<LeanDeptDto>();
   }
 
   /// <summary>
-  /// 分页查询部门
+  /// 查询部门列表
   /// </summary>
-  public async Task<LeanApiResult<LeanPageResult<LeanDeptDto>>> GetPageAsync(LeanQueryDeptDto input)
+  /// <param name="input">查询参数</param>
+  /// <returns>部门列表</returns>
+  public async Task<List<LeanDeptDto>> QueryAsync(LeanQueryDeptDto input)
   {
-    try
+    using (LogPerformance("查询部门列表"))
     {
-      var predicate = BuildDeptQueryPredicate(input);
-      var (total, items) = await _deptRepository.GetPageListAsync(predicate, input.PageSize, input.PageIndex);
+      // 构建查询条件
+      Expression<Func<LeanDept, bool>> predicate = x => true;
 
-      var result = new LeanPageResult<LeanDeptDto>
+      if (!string.IsNullOrEmpty(input.DeptName))
       {
-        Total = total,
-        Items = items.Select(d => d.Adapt<LeanDeptDto>()).ToList()
-      };
-
-      return LeanApiResult<LeanPageResult<LeanDeptDto>>.Ok(result);
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult<LeanPageResult<LeanDeptDto>>.Error($"查询部门失败: {ex.Message}");
-    }
-  }
-
-  /// <summary>
-  /// 修改部门状态
-  /// </summary>
-  public async Task<LeanApiResult> SetStatusAsync(LeanChangeDeptStatusDto input)
-  {
-    try
-    {
-      var dept = await GetDeptByIdAsync(input.Id);
-      if (dept == null)
-      {
-        return LeanApiResult.Error($"部门 {input.Id} 不存在");
+        var deptName = CleanInput(input.DeptName);
+        predicate = predicate.And(x => x.DeptName.Contains(deptName));
       }
 
-      dept.DeptStatus = input.DeptStatus;
-      dept.UpdateTime = DateTime.Now;
+      if (input.DeptStatus.HasValue)
+      {
+        predicate = predicate.And(x => x.DeptStatus == input.DeptStatus);
+      }
 
-      await _deptRepository.UpdateAsync(dept);
+      if (input.ParentId.HasValue)
+      {
+        predicate = predicate.And(x => x.ParentId == input.ParentId);
+      }
 
-      return LeanApiResult.Ok();
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult.Error($"修改部门状态失败: {ex.Message}");
+      // 执行查询
+      var list = await _deptRepository.GetListAsync(predicate);
+      return list.OrderBy(x => x.OrderNum).Adapt<List<LeanDeptDto>>();
     }
   }
 
   /// <summary>
   /// 获取部门树形结构
   /// </summary>
-  public async Task<LeanApiResult<List<LeanDeptTreeDto>>> GetTreeAsync()
+  /// <param name="input">查询参数</param>
+  /// <returns>部门树形结构</returns>
+  public async Task<List<LeanDeptTreeDto>> GetTreeAsync(LeanQueryDeptDto input)
   {
-    try
-    {
-      var depts = await _deptRepository.GetListAsync(d => true);
-      var result = BuildDeptTree(depts);
+    // 获取部门列表
+    var depts = await QueryAsync(input);
 
-      return LeanApiResult<List<LeanDeptTreeDto>>.Ok(result);
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult<List<LeanDeptTreeDto>>.Error($"获取部门树失败: {ex.Message}");
-    }
+    // 构建树形结构
+    return BuildDeptTree(depts);
   }
 
   /// <summary>
-  /// 获取用户部门树
+  /// 修改部门状态
   /// </summary>
-  public async Task<LeanApiResult<List<LeanDeptTreeDto>>> GetUserDeptTreeAsync(long userId)
+  /// <param name="input">状态修改参数</param>
+  public async Task ChangeStatusAsync(LeanChangeDeptStatusDto input)
   {
-    try
+    await ExecuteInTransactionAsync(async () =>
     {
-      var userDepts = await _userDeptRepository.GetListAsync(ud => ud.UserId == userId);
-      var deptIds = userDepts.Select(ud => ud.DeptId).ToList();
-      var depts = await _deptRepository.GetListAsync(d => deptIds.Contains(d.Id));
-      var result = BuildDeptTree(depts);
+      var dept = await _deptRepository.GetByIdAsync(input.Id);
+      if (dept == null)
+      {
+        throw new LeanException("部门不存在");
+      }
 
-      return LeanApiResult<List<LeanDeptTreeDto>>.Ok(result);
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult<List<LeanDeptTreeDto>>.Error($"获取用户部门树失败: {ex.Message}");
-    }
+      if (dept.IsBuiltin == LeanBuiltinStatus.Yes)
+      {
+        throw new LeanException("内置部门不能修改状态");
+      }
+
+      dept.DeptStatus = input.DeptStatus;
+      await _deptRepository.UpdateAsync(dept);
+
+      LogAudit("ChangeDeptStatus", $"修改部门状态: {dept.DeptName}, 状态: {input.DeptStatus}");
+    }, "修改部门状态");
   }
 
   /// <summary>
   /// 获取角色部门树
   /// </summary>
-  public async Task<LeanApiResult<List<LeanDeptTreeDto>>> GetRoleDeptTreeAsync(long roleId)
+  /// <param name="roleId">角色ID</param>
+  /// <returns>角色部门树</returns>
+  public async Task<List<LeanDeptTreeDto>> GetRoleDeptTreeAsync(long roleId)
   {
-    try
-    {
-      var roleDepts = await _roleDeptRepository.GetListAsync(rd => rd.RoleId == roleId);
-      var deptIds = roleDepts.Select(rd => rd.DeptId).ToList();
-      var depts = await _deptRepository.GetListAsync(d => deptIds.Contains(d.Id));
-      var result = BuildDeptTree(depts);
+    // 获取角色部门
+    var roleDepts = await _roleDeptRepository.GetListAsync(x => x.RoleId == roleId);
+    var deptIds = roleDepts.Select(x => x.DeptId).ToList();
 
-      return LeanApiResult<List<LeanDeptTreeDto>>.Ok(result);
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult<List<LeanDeptTreeDto>>.Error($"获取角色部门树失败: {ex.Message}");
-    }
+    // 获取部门列表
+    var depts = await _deptRepository.GetListAsync(
+        x => deptIds.Contains(x.Id) && x.DeptStatus == LeanDeptStatus.Normal);
+
+    // 转换为DTO并构建树形结构
+    var deptDtos = depts.OrderBy(x => x.OrderNum)
+                       .Select(x => x.Adapt<LeanDeptDto>())
+                       .ToList();
+    return BuildDeptTree(deptDtos);
   }
 
   /// <summary>
-  /// 获取部门的所有下级部门ID列表
+  /// 获取用户部门树
   /// </summary>
-  public async Task<LeanApiResult<List<long>>> GetDeptChildrenIdsAsync(long deptId)
+  /// <param name="userId">用户ID</param>
+  /// <returns>用户部门树</returns>
+  public async Task<List<LeanDeptTreeDto>> GetUserDeptTreeAsync(long userId)
   {
-    try
-    {
-      var childrenIds = new List<long>();
-      await GetChildrenIdsRecursiveAsync(deptId, childrenIds);
-      return LeanApiResult<List<long>>.Ok(childrenIds);
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult<List<long>>.Error($"获取部门下级ID列表失败: {ex.Message}");
-    }
+    // 获取用户部门
+    var userDepts = await _userDeptRepository.GetListAsync(x => x.UserId == userId);
+    var deptIds = userDepts.Select(x => x.DeptId).ToList();
+
+    // 获取部门列表
+    var depts = await _deptRepository.GetListAsync(
+        x => deptIds.Contains(x.Id) && x.DeptStatus == LeanDeptStatus.Normal);
+
+    // 转换为DTO并构建树形结构
+    var deptDtos = depts.OrderBy(x => x.OrderNum)
+                       .Select(x => x.Adapt<LeanDeptDto>())
+                       .ToList();
+    return BuildDeptTree(deptDtos);
   }
 
   /// <summary>
-  /// 获取部门的所有上级部门ID列表
+  /// 构建部门树形结构
   /// </summary>
-  public async Task<LeanApiResult<List<long>>> GetDeptParentIdsAsync(long deptId)
+  /// <param name="depts">部门列表</param>
+  /// <returns>树形结构</returns>
+  private List<LeanDeptTreeDto> BuildDeptTree(List<LeanDeptDto> depts)
   {
-    try
+    var result = new List<LeanDeptTreeDto>();
+    var lookup = depts.ToLookup(x => x.ParentId);
+
+    foreach (var dept in depts.Where(x => x.ParentId == null || x.ParentId == 0))
     {
-      var parentIds = new List<long>();
-      await GetParentIdsRecursiveAsync(deptId, parentIds);
-      return LeanApiResult<List<long>>.Ok(parentIds);
+      var node = dept.Adapt<LeanDeptTreeDto>();
+      node.Children = BuildDeptTreeNodes(lookup, dept.Id);
+      result.Add(node);
     }
-    catch (Exception ex)
-    {
-      return LeanApiResult<List<long>>.Error($"获取部门上级ID列表失败: {ex.Message}");
-    }
+
+    return result;
   }
 
   /// <summary>
-  /// 获取用户的所有部门ID列表
+  /// 递归构建部门树节点
   /// </summary>
-  public async Task<LeanApiResult<List<long>>> GetUserDeptIdsAsync(long userId)
+  /// <param name="lookup">部门查找表</param>
+  /// <param name="parentId">父级ID</param>
+  /// <returns>子节点列表</returns>
+  private List<LeanDeptTreeDto> BuildDeptTreeNodes(ILookup<long?, LeanDeptDto> lookup, long parentId)
   {
-    try
+    var result = new List<LeanDeptTreeDto>();
+
+    foreach (var dept in lookup[parentId])
     {
-      var userDepts = await _userDeptRepository.GetListAsync(ud => ud.UserId == userId);
-      var deptIds = userDepts.Select(ud => ud.DeptId).ToList();
-      return LeanApiResult<List<long>>.Ok(deptIds);
+      var node = dept.Adapt<LeanDeptTreeDto>();
+      node.Children = BuildDeptTreeNodes(lookup, dept.Id);
+      result.Add(node);
     }
-    catch (Exception ex)
-    {
-      return LeanApiResult<List<long>>.Error($"获取用户部门ID列表失败: {ex.Message}");
-    }
+
+    return result;
   }
-
-  /// <summary>
-  /// 获取角色的所有部门ID列表
-  /// </summary>
-  public async Task<LeanApiResult<List<long>>> GetRoleDeptIdsAsync(long roleId)
-  {
-    try
-    {
-      var roleDepts = await _roleDeptRepository.GetListAsync(rd => rd.RoleId == roleId);
-      var deptIds = roleDepts.Select(rd => rd.DeptId).ToList();
-      return LeanApiResult<List<long>>.Ok(deptIds);
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult<List<long>>.Error($"获取角色部门ID列表失败: {ex.Message}");
-    }
-  }
-
-  /// <summary>
-  /// 获取用户的主部门
-  /// </summary>
-  public async Task<LeanApiResult<LeanDeptDto>> GetUserPrimaryDeptAsync(long userId)
-  {
-    try
-    {
-      var userDept = await _userDeptRepository.FirstOrDefaultAsync(ud => ud.UserId == userId && ud.IsPrimary == LeanPrimaryStatus.Yes);
-      if (userDept == null)
-      {
-        return LeanApiResult<LeanDeptDto>.Error($"用户 {userId} 没有主部门");
-      }
-
-      var dept = await GetDeptByIdAsync(userDept.DeptId);
-      if (dept == null)
-      {
-        return LeanApiResult<LeanDeptDto>.Error($"部门 {userDept.DeptId} 不存在");
-      }
-
-      var result = dept.Adapt<LeanDeptDto>();
-      return LeanApiResult<LeanDeptDto>.Ok(result);
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult<LeanDeptDto>.Error($"获取用户主部门失败: {ex.Message}");
-    }
-  }
-
-  /// <summary>
-  /// 验证部门编码是否唯一
-  /// </summary>
-  public async Task<LeanApiResult<bool>> ValidateDeptCodeUniqueAsync(string deptCode, long? id = null)
-  {
-    try
-    {
-      var exists = await _deptRepository.AnyAsync(d => d.DeptCode == deptCode && (id == null || d.Id != id));
-      return LeanApiResult<bool>.Ok(!exists);
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult<bool>.Error($"验证部门编码唯一性失败: {ex.Message}");
-    }
-  }
-
-  /// <summary>
-  /// 获取部门的所有用户ID列表
-  /// </summary>
-  public async Task<LeanApiResult<List<long>>> GetDeptUserIdsAsync(long deptId, bool includeChildDepts = false)
-  {
-    try
-    {
-      var deptIds = new List<long> { deptId };
-      if (includeChildDepts)
-      {
-        var childrenIds = new List<long>();
-        await GetChildrenIdsRecursiveAsync(deptId, childrenIds);
-        deptIds.AddRange(childrenIds);
-      }
-
-      var userDepts = await _userDeptRepository.GetListAsync(ud => deptIds.Contains(ud.DeptId));
-      var userIds = userDepts.Select(ud => ud.UserId).Distinct().ToList();
-      return LeanApiResult<List<long>>.Ok(userIds);
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult<List<long>>.Error($"获取部门用户ID列表失败: {ex.Message}");
-    }
-  }
-
-  /// <summary>
-  /// 获取部门的所有角色ID列表
-  /// </summary>
-  public async Task<LeanApiResult<List<long>>> GetDeptRoleIdsAsync(long deptId, bool includeChildDepts = false)
-  {
-    try
-    {
-      var deptIds = new List<long> { deptId };
-      if (includeChildDepts)
-      {
-        var childrenIds = new List<long>();
-        await GetChildrenIdsRecursiveAsync(deptId, childrenIds);
-        deptIds.AddRange(childrenIds);
-      }
-
-      var roleDepts = await _roleDeptRepository.GetListAsync(rd => deptIds.Contains(rd.DeptId));
-      var roleIds = roleDepts.Select(rd => rd.RoleId).Distinct().ToList();
-      return LeanApiResult<List<long>>.Ok(roleIds);
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult<List<long>>.Error($"获取部门角色ID列表失败: {ex.Message}");
-    }
-  }
-
-  /// <summary>
-  /// 导入部门数据
-  /// </summary>
-  public async Task<LeanApiResult<LeanImportDeptResultDto>> ImportAsync(List<LeanImportTemplateDeptDto> depts)
-  {
-    try
-    {
-      var result = new LeanImportDeptResultDto();
-
-      foreach (var dept in depts)
-      {
-        try
-        {
-          if (!await ValidateDeptInputAsync(dept.DeptName, dept.DeptCode))
-          {
-            result.ErrorMessages.Add($"部门 {dept.DeptName} 验证失败");
-            continue;
-          }
-
-          var parentDept = string.IsNullOrEmpty(dept.ParentDeptCode)
-              ? null
-              : await _deptRepository.FirstOrDefaultAsync(d => d.DeptCode == dept.ParentDeptCode);
-
-          var newDept = new LeanDept
-          {
-            ParentId = parentDept?.Id,
-            DeptName = dept.DeptName,
-            DeptCode = dept.DeptCode,
-            CreateTime = DateTime.Now
-          };
-
-          await _deptRepository.CreateAsync(newDept);
-          result.SuccessCount++;
-        }
-        catch (Exception ex)
-        {
-          result.ErrorMessages.Add($"部门 {dept.DeptName} 导入失败: {ex.Message}");
-          result.FailCount++;
-        }
-      }
-
-      return LeanApiResult<LeanImportDeptResultDto>.Ok(result);
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult<LeanImportDeptResultDto>.Error($"导入部门数据失败: {ex.Message}");
-    }
-  }
-
-  /// <summary>
-  /// 导出部门数据
-  /// </summary>
-  public async Task<LeanApiResult<byte[]>> ExportAsync(LeanExportDeptDto input)
-  {
-    try
-    {
-      var predicate = BuildDeptQueryPredicate(input);
-      var depts = await _deptRepository.GetListAsync(predicate);
-      var deptDtos = depts.Select(d => d.Adapt<LeanDeptDto>()).ToList();
-
-      // TODO: 实现导出逻辑，生成Excel文件
-      var excelBytes = new byte[] { };
-
-      return LeanApiResult<byte[]>.Ok(excelBytes);
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult<byte[]>.Error($"导出部门数据失败: {ex.Message}");
-    }
-  }
-
-  /// <summary>
-  /// 获取用户可访问的部门数据范围
-  /// </summary>
-  public async Task<LeanApiResult<List<long>>> GetUserDataScopeDeptIdsAsync(long userId)
-  {
-    try
-    {
-      // 获取用户所属部门
-      var userDepts = await _userDeptRepository.GetListAsync(ud => ud.UserId == userId);
-      var userDeptIds = userDepts.Select(ud => ud.DeptId).ToList();
-
-      // 获取用户角色的数据权限
-      var roleDepts = await _roleDeptRepository.GetListAsync(rd => rd.Role.UserRoles.Any(ur => ur.UserId == userId));
-      var roleDeptIds = roleDepts.Select(rd => rd.DeptId).ToList();
-
-      // 合并部门ID
-      var deptIds = userDeptIds.Union(roleDeptIds).Distinct().ToList();
-
-      return LeanApiResult<List<long>>.Ok(deptIds);
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult<List<long>>.Error($"获取用户数据范围失败: {ex.Message}");
-    }
-  }
-
-  /// <summary>
-  /// 设置部门数据访问权限
-  /// </summary>
-  public async Task<LeanApiResult> SetDeptDataPermissionAsync(LeanSetDeptDataPermissionDto input)
-  {
-    try
-    {
-      var dept = await _deptRepository.GetByIdAsync(input.DeptId);
-      if (dept == null)
-      {
-        return LeanApiResult.Error($"部门 {input.DeptId} 不存在");
-      }
-
-      await _deptDataPermissionRepository.DeleteAsync(dp => dp.DeptId == input.DeptId);
-
-      if (input.AccessibleDeptIds?.Any() == true)
-      {
-        var permissions = input.AccessibleDeptIds.Select(accessibleDeptId => new LeanDeptDataPermission
-        {
-          DeptId = input.DeptId,
-          AccessibleDeptId = accessibleDeptId,
-          DataScope = input.DataScope,
-          CreateTime = DateTime.Now
-        }).ToList();
-
-        await _deptDataPermissionRepository.CreateRangeAsync(permissions);
-      }
-
-      return LeanApiResult.Ok();
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult.Error($"设置部门数据权限失败: {ex.Message}");
-    }
-  }
-
-  /// <summary>
-  /// 验证用户是否有权限访问指定部门的数据
-  /// </summary>
-  public async Task<LeanApiResult<bool>> ValidateUserDeptDataPermissionAsync(long userId, long deptId)
-  {
-    try
-    {
-      // 获取用户可访问的部门ID列表
-      var result = await GetUserDataScopeDeptIdsAsync(userId);
-      if (!result.Success)
-      {
-        return LeanApiResult<bool>.Error(result.Message);
-      }
-
-      return LeanApiResult<bool>.Ok(result.Data.Contains(deptId));
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult<bool>.Error($"验证用户部门数据权限失败: {ex.Message}");
-    }
-  }
-
-  /// <summary>
-  /// 获取部门数据访问策略
-  /// </summary>
-  public async Task<LeanApiResult<LeanDeptDataPermissionDto>> GetDeptDataPermissionAsync(long deptId)
-  {
-    try
-    {
-      var dept = await _deptRepository.GetByIdAsync(deptId);
-      if (dept == null)
-      {
-        return LeanApiResult<LeanDeptDataPermissionDto>.Error($"部门 {deptId} 不存在");
-      }
-
-      var permissions = await _deptDataPermissionRepository.GetListAsync(dp => dp.DeptId == deptId);
-      var result = new LeanDeptDataPermissionDto
-      {
-        DataScope = dept.DataScope,
-        AccessibleDeptIds = permissions.Select(dp => dp.AccessibleDeptId).ToList()
-      };
-
-      return LeanApiResult<LeanDeptDataPermissionDto>.Ok(result);
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult<LeanDeptDataPermissionDto>.Error($"获取部门数据权限失败: {ex.Message}");
-    }
-  }
-
-  #region 私有方法
-
-  /// <summary>
-  /// 获取部门
-  /// </summary>
-  private async Task<LeanDept?> GetDeptByIdAsync(long id)
-  {
-    return await _deptRepository.GetByIdAsync(id);
-  }
-
-  /// <summary>
-  /// 验证部门输入
-  /// </summary>
-  private async Task<bool> ValidateDeptInputAsync(string deptName, string deptCode, long? id = null)
-  {
-    // 验证部门名称是否重复
-    var exists = await _deptRepository.AnyAsync(d => d.DeptName == deptName && d.Id != id);
-    if (exists)
-    {
-      return false;
-    }
-
-    // 验证部门编码是否重复
-    exists = await _deptRepository.AnyAsync(d => d.DeptCode == deptCode && d.Id != id);
-    if (exists)
-    {
-      return false;
-    }
-
-    return true;
-  }
-
-  /// <summary>
-  /// 删除部门关联信息
-  /// </summary>
-  private async Task DeleteDeptRelationsAsync(long deptId)
-  {
-    await _userDeptRepository.DeleteAsync(ud => ud.DeptId == deptId);
-    await _roleDeptRepository.DeleteAsync(rd => rd.DeptId == deptId);
-    await _deptDataPermissionRepository.DeleteAsync(dp => dp.DeptId == deptId || dp.AccessibleDeptId == deptId);
-  }
-
-  /// <summary>
-  /// 递归获取子部门ID列表
-  /// </summary>
-  private async Task GetChildrenIdsRecursiveAsync(long deptId, List<long> childrenIds)
-  {
-    var children = await _deptRepository.GetListAsync(d => d.ParentId == deptId);
-    foreach (var child in children)
-    {
-      childrenIds.Add(child.Id);
-      await GetChildrenIdsRecursiveAsync(child.Id, childrenIds);
-    }
-  }
-
-  /// <summary>
-  /// 递归获取父部门ID列表
-  /// </summary>
-  private async Task GetParentIdsRecursiveAsync(long deptId, List<long> parentIds)
-  {
-    var dept = await GetDeptByIdAsync(deptId);
-    if (dept?.ParentId != null)
-    {
-      parentIds.Add(dept.ParentId.Value);
-      await GetParentIdsRecursiveAsync(dept.ParentId.Value, parentIds);
-    }
-  }
-
-  /// <summary>
-  /// 构建部门查询条件
-  /// </summary>
-  private Expression<Func<LeanDept, bool>> BuildDeptQueryPredicate(LeanQueryDeptDto input)
-  {
-    Expression<Func<LeanDept, bool>> predicate = d => true;
-
-    if (!string.IsNullOrEmpty(input.DeptName))
-    {
-      var deptName = CleanInput(input.DeptName);
-      predicate = LeanExpressionExtensions.And(predicate, d => d.DeptName.Contains(deptName));
-    }
-
-    if (!string.IsNullOrEmpty(input.DeptCode))
-    {
-      var deptCode = CleanInput(input.DeptCode);
-      predicate = LeanExpressionExtensions.And(predicate, d => d.DeptCode.Contains(deptCode));
-    }
-
-    if (input.DeptStatus.HasValue)
-    {
-      predicate = LeanExpressionExtensions.And(predicate, d => d.DeptStatus == input.DeptStatus.Value);
-    }
-
-    if (input.StartTime.HasValue)
-    {
-      predicate = LeanExpressionExtensions.And(predicate, d => d.CreateTime >= input.StartTime.Value);
-    }
-
-    if (input.EndTime.HasValue)
-    {
-      predicate = LeanExpressionExtensions.And(predicate, d => d.CreateTime <= input.EndTime.Value);
-    }
-
-    return predicate;
-  }
-
-  /// <summary>
-  /// 构建部门树
-  /// </summary>
-  private List<LeanDeptTreeDto> BuildDeptTree(List<LeanDept> depts)
-  {
-    var deptDict = depts.ToDictionary(d => d.Id, d => d.Adapt<LeanDeptTreeDto>());
-
-    foreach (var dept in depts.Where(d => d.ParentId.HasValue))
-    {
-      if (deptDict.TryGetValue(dept.ParentId.Value, out var parentDept))
-      {
-        parentDept.Children.Add(deptDict[dept.Id]);
-      }
-    }
-
-    return deptDict.Values.Where(d => !d.ParentId.HasValue).ToList();
-  }
-
-  private async Task<LeanUserDept?> GetUserDeptAsync(long userId, long deptId)
-  {
-    return await _userDeptRepository.FirstOrDefaultAsync(ud => ud.UserId == userId && ud.DeptId == deptId);
-  }
-
-  private async Task<bool> ValidateDeptExistsAsync(long deptId)
-  {
-    return await _deptRepository.AnyAsync(d => d.Id == deptId);
-  }
-
-  private async Task<LeanDept?> GetFirstDeptAsync(Expression<Func<LeanDept, bool>> predicate)
-  {
-    return await _deptRepository.FirstOrDefaultAsync(predicate);
-  }
-
-  #endregion
 }

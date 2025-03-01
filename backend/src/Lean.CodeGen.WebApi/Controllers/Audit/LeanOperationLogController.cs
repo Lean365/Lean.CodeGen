@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Lean.CodeGen.Application.Dtos.Audit;
 using Lean.CodeGen.Application.Services.Audit;
 using Lean.CodeGen.Common.Models;
+using Lean.CodeGen.Common.Enums;
 
 namespace Lean.CodeGen.WebApi.Controllers.Audit
 {
@@ -27,36 +28,40 @@ namespace Lean.CodeGen.WebApi.Controllers.Audit
     /// 获取操作日志列表（分页）
     /// </summary>
     [HttpGet]
-    public Task<LeanPageResult<LeanOperationLogDto>> GetPageListAsync([FromQuery] LeanOperationLogQueryDto queryDto)
+    public async Task<IActionResult> GetPageListAsync([FromQuery] LeanOperationLogQueryDto queryDto)
     {
-      return _operationLogService.GetPageListAsync(queryDto);
+      var result = await _operationLogService.GetPageListAsync(queryDto);
+      return Success(result, LeanBusinessType.Query);
     }
 
     /// <summary>
     /// 获取操作日志详情
     /// </summary>
     [HttpGet("{id}")]
-    public Task<LeanOperationLogDto> GetAsync(long id)
+    public async Task<IActionResult> GetAsync(long id)
     {
-      return _operationLogService.GetAsync(id);
+      var result = await _operationLogService.GetAsync(id);
+      return Success(result, LeanBusinessType.Query);
     }
 
     /// <summary>
     /// 导出操作日志
     /// </summary>
     [HttpGet("export")]
-    public Task<LeanFileResult> ExportAsync([FromQuery] LeanOperationLogQueryDto queryDto)
+    public async Task<IActionResult> ExportAsync([FromQuery] LeanOperationLogQueryDto queryDto)
     {
-      return _operationLogService.ExportAsync(queryDto);
+      var result = await _operationLogService.ExportAsync(queryDto);
+      return File(result.Stream, result.ContentType, result.FileName);
     }
 
     /// <summary>
     /// 清空操作日志
     /// </summary>
     [HttpDelete("clear")]
-    public Task<bool> ClearAsync()
+    public async Task<IActionResult> ClearAsync()
     {
-      return _operationLogService.ClearAsync();
+      var result = await _operationLogService.ClearAsync();
+      return Success(result, LeanBusinessType.Delete);
     }
   }
 }

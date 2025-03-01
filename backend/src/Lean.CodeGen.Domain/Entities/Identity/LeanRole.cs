@@ -104,6 +104,15 @@ public class LeanRole : LeanBaseEntity
   public virtual ICollection<LeanUserRole> UserRoles { get; set; } = new List<LeanUserRole>();
 
   /// <summary>
+  /// 角色部门关联
+  /// </summary>
+  /// <remarks>
+  /// 角色与部门的多对多关系
+  /// </remarks>
+  [Navigate(NavigateType.OneToMany, nameof(LeanRoleDept.RoleId))]
+  public virtual ICollection<LeanRoleDept> RoleDepts { get; set; } = new List<LeanRoleDept>();
+
+  /// <summary>
   /// 角色菜单关联
   /// </summary>
   /// <remarks>

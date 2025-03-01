@@ -32,14 +32,12 @@ public class LeanLanguageService : LeanBaseService, ILeanLanguageService
   /// </summary>
   public LeanLanguageService(
       ILeanRepository<LeanLanguage> languageRepository,
-      ILeanSqlSafeService sqlSafeService,
-      IOptions<LeanSecurityOptions> securityOptions,
-      ILogger<LeanLanguageService> logger)
-      : base(sqlSafeService, securityOptions, logger)
+      LeanBaseServiceContext context)
+      : base(context)
   {
     _languageRepository = languageRepository;
-    _uniqueValidator = new LeanUniqueValidator<LeanLanguage>(languageRepository);
-    _logger = logger;
+    _logger = (ILogger<LeanLanguageService>)context.Logger;
+    _uniqueValidator = new LeanUniqueValidator<LeanLanguage>(_languageRepository);
   }
 
   /// <summary>
@@ -264,126 +262,103 @@ public class LeanLanguageService : LeanBaseService, ILeanLanguageService
   /// <summary>
   /// 导出语言
   /// </summary>
-  public async Task<LeanApiResult<byte[]>> ExportAsync(LeanQueryLanguageDto input)
+  public async Task<byte[]> ExportAsync(LeanQueryLanguageDto input)
   {
-    try
+    Expression<Func<LeanLanguage, bool>> predicate = x => true;
+
+    if (!string.IsNullOrEmpty(input.LangName))
     {
-      Expression<Func<LeanLanguage, bool>> predicate = x => true;
-
-      if (!string.IsNullOrEmpty(input.LangName))
-      {
-        var langName = CleanInput(input.LangName);
-        predicate = LeanExpressionExtensions.And(predicate, x => x.LangName.Contains(langName));
-      }
-
-      if (!string.IsNullOrEmpty(input.LangCode))
-      {
-        var langCode = CleanInput(input.LangCode);
-        predicate = LeanExpressionExtensions.And(predicate, x => x.LangCode.Contains(langCode));
-      }
-
-      if (input.Status.HasValue)
-      {
-        predicate = LeanExpressionExtensions.And(predicate, x => x.Status == input.Status.Value);
-      }
-
-      if (input.StartTime.HasValue)
-      {
-        predicate = LeanExpressionExtensions.And(predicate, x => x.CreateTime >= input.StartTime.Value);
-      }
-
-      if (input.EndTime.HasValue)
-      {
-        predicate = LeanExpressionExtensions.And(predicate, x => x.CreateTime <= input.EndTime.Value);
-      }
-
-      var items = await _languageRepository.GetListAsync(predicate);
-      var dtos = items.Select(t => t.Adapt<LeanLanguageExportDto>()).ToList();
-
-      var bytes = LeanExcelHelper.Export(dtos);
-      return LeanApiResult<byte[]>.Ok(bytes);
+      var langName = CleanInput(input.LangName);
+      predicate = LeanExpressionExtensions.And(predicate, x => x.LangName.Contains(langName));
     }
-    catch (Exception ex)
+
+    if (!string.IsNullOrEmpty(input.LangCode))
     {
-      return LeanApiResult<byte[]>.Error($"导出语言失败: {ex.Message}");
+      var langCode = CleanInput(input.LangCode);
+      predicate = LeanExpressionExtensions.And(predicate, x => x.LangCode.Contains(langCode));
     }
+
+    if (input.Status.HasValue)
+    {
+      predicate = LeanExpressionExtensions.And(predicate, x => x.Status == input.Status.Value);
+    }
+
+    if (input.StartTime.HasValue)
+    {
+      predicate = LeanExpressionExtensions.And(predicate, x => x.CreateTime >= input.StartTime.Value);
+    }
+
+    if (input.EndTime.HasValue)
+    {
+      predicate = LeanExpressionExtensions.And(predicate, x => x.CreateTime <= input.EndTime.Value);
+    }
+
+    var items = await _languageRepository.GetListAsync(predicate);
+    var dtos = items.Select(t => t.Adapt<LeanLanguageExportDto>()).ToList();
+    return LeanExcelHelper.Export(dtos);
   }
 
   /// <summary>
   /// 导入语言
   /// </summary>
-  public async Task<LeanApiResult<LeanExcelImportResult<LeanLanguageImportDto>>> ImportAsync(LeanFileInfo file)
+  public async Task<LeanExcelImportResult<LeanLanguageImportDto>> ImportAsync(LeanFileInfo file)
   {
-    try
+    var result = new LeanExcelImportResult<LeanLanguageImportDto>();
+
+    // 导入Excel
+    var importResult = LeanExcelHelper.Import<LeanLanguageImportDto>(File.ReadAllBytes(file.FilePath));
+    result.Data.AddRange(importResult.Data);
+    result.Errors.AddRange(importResult.Errors);
+
+    if (result.IsSuccess)
     {
-      var result = new LeanExcelImportResult<LeanLanguageImportDto>();
-
-      // 导入Excel
-      var importResult = LeanExcelHelper.Import<LeanLanguageImportDto>(File.ReadAllBytes(file.FilePath));
-      result.Data.AddRange(importResult.Data);
-      result.Errors.AddRange(importResult.Errors);
-
-      if (result.IsSuccess)
+      foreach (var item in result.Data)
       {
-        foreach (var item in result.Data)
+        try
         {
-          try
-          {
-            // 检查语言代码是否存在
-            var exists = await _languageRepository.AnyAsync(x => x.LangCode == item.LangCode);
-            if (exists)
-            {
-              result.Errors.Add(new LeanExcelImportError
-              {
-                RowIndex = importResult.Data.IndexOf(item) + 2,
-                ErrorMessage = $"语言代码 {item.LangCode} 已存在"
-              });
-              continue;
-            }
-
-            // 创建实体
-            var entity = item.Adapt<LeanLanguage>();
-            entity.Status = LeanStatus.Normal;
-            await _languageRepository.CreateAsync(entity);
-          }
-          catch (Exception ex)
+          // 检查语言代码是否存在
+          var exists = await _languageRepository.AnyAsync(x => x.LangCode == item.LangCode);
+          if (exists)
           {
             result.Errors.Add(new LeanExcelImportError
             {
               RowIndex = importResult.Data.IndexOf(item) + 2,
-              ErrorMessage = ex.Message
+              ErrorMessage = $"语言代码 {item.LangCode} 已存在"
             });
+            continue;
           }
+
+          // 创建实体
+          var entity = item.Adapt<LeanLanguage>();
+          entity.Status = LeanStatus.Normal;
+          await _languageRepository.CreateAsync(entity);
+        }
+        catch (Exception ex)
+        {
+          result.Errors.Add(new LeanExcelImportError
+          {
+            RowIndex = importResult.Data.IndexOf(item) + 2,
+            ErrorMessage = ex.Message
+          });
         }
       }
+    }
 
-      return LeanApiResult<LeanExcelImportResult<LeanLanguageImportDto>>.Ok(result);
-    }
-    catch (Exception ex)
-    {
-      return LeanApiResult<LeanExcelImportResult<LeanLanguageImportDto>>.Error($"导入语言失败: {ex.Message}");
-    }
+    return result;
   }
 
   /// <summary>
   /// 获取导入模板
   /// </summary>
-  public Task<LeanApiResult<byte[]>> GetImportTemplateAsync()
+  public Task<byte[]> GetImportTemplateAsync()
   {
-    try
+    var template = new List<LeanLanguageImportTemplateDto>
     {
-      var template = new List<LeanLanguageImportTemplateDto>
-      {
-        new LeanLanguageImportTemplateDto()
-      };
+      new LeanLanguageImportTemplateDto()
+    };
 
-      var bytes = LeanExcelHelper.Export(template);
-      return Task.FromResult(LeanApiResult<byte[]>.Ok(bytes));
-    }
-    catch (Exception ex)
-    {
-      return Task.FromResult(LeanApiResult<byte[]>.Error($"获取导入模板失败: {ex.Message}"));
-    }
+    var bytes = LeanExcelHelper.Export(template);
+    return Task.FromResult(bytes);
   }
 
   /// <summary>

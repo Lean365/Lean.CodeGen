@@ -3,7 +3,7 @@ using Lean.CodeGen.Application.Services.Workflow;
 using Lean.CodeGen.Common.Models;
 using Lean.CodeGen.WebApi.Controllers;
 using Microsoft.AspNetCore.Mvc;
-
+using Lean.CodeGen.Common.Enums;
 namespace Lean.CodeGen.WebApi.Controllers.Workflow;
 
 /// <summary>
@@ -30,9 +30,10 @@ public class LeanWorkflowFormController : LeanBaseController
   /// <param name="id">表单定义ID</param>
   /// <returns>表单定义</returns>
   [HttpGet("definitions/{id}")]
-  public Task<LeanWorkflowFormDefinitionDto?> GetFormDefinitionAsync(long id)
+  public async Task<IActionResult> GetFormDefinitionAsync(long id)
   {
-    return _service.GetFormDefinitionAsync(id);
+    var result = await _service.GetFormDefinitionAsync(id);
+    return Success(result, LeanBusinessType.Query);
   }
 
   /// <summary>
@@ -41,9 +42,10 @@ public class LeanWorkflowFormController : LeanBaseController
   /// <param name="formCode">表单编码</param>
   /// <returns>表单定义</returns>
   [HttpGet("definitions/code/{formCode}")]
-  public Task<LeanWorkflowFormDefinitionDto?> GetFormDefinitionByCodeAsync(string formCode)
+  public async Task<IActionResult> GetFormDefinitionByCodeAsync(string formCode)
   {
-    return _service.GetFormDefinitionByCodeAsync(formCode);
+    var result = await _service.GetFormDefinitionByCodeAsync(formCode);
+    return Success(result, LeanBusinessType.Query);
   }
 
   /// <summary>
@@ -52,9 +54,10 @@ public class LeanWorkflowFormController : LeanBaseController
   /// <param name="dto">表单定义</param>
   /// <returns>表单定义ID</returns>
   [HttpPost("definitions")]
-  public Task<long> CreateFormDefinitionAsync(LeanWorkflowFormDefinitionDto dto)
+  public async Task<IActionResult> CreateFormDefinitionAsync(LeanWorkflowFormDefinitionDto dto)
   {
-    return _service.CreateFormDefinitionAsync(dto);
+    var result = await _service.CreateFormDefinitionAsync(dto);
+    return Success(result, LeanBusinessType.Create);
   }
 
   /// <summary>
@@ -64,13 +67,14 @@ public class LeanWorkflowFormController : LeanBaseController
   /// <param name="dto">表单定义</param>
   /// <returns>是否成功</returns>
   [HttpPut("definitions/{id}")]
-  public async Task<bool> UpdateFormDefinitionAsync(long id, LeanWorkflowFormDefinitionDto dto)
+  public async Task<IActionResult> UpdateFormDefinitionAsync(long id, LeanWorkflowFormDefinitionDto dto)
   {
     if (id != dto.Id)
     {
-      return false;
+      return Error("ID不匹配");
     }
-    return await _service.UpdateFormDefinitionAsync(dto);
+    var result = await _service.UpdateFormDefinitionAsync(dto);
+    return Success(result, LeanBusinessType.Update);
   }
 
   /// <summary>
@@ -79,9 +83,10 @@ public class LeanWorkflowFormController : LeanBaseController
   /// <param name="id">表单定义ID</param>
   /// <returns>是否成功</returns>
   [HttpDelete("definitions/{id}")]
-  public Task<bool> DeleteFormDefinitionAsync(long id)
+  public async Task<IActionResult> DeleteFormDefinitionAsync(long id)
   {
-    return _service.DeleteFormDefinitionAsync(id);
+    var result = await _service.DeleteFormDefinitionAsync(id);
+    return Success(result, LeanBusinessType.Delete);
   }
 
   /// <summary>
@@ -90,9 +95,10 @@ public class LeanWorkflowFormController : LeanBaseController
   /// <param name="id">表单字段ID</param>
   /// <returns>表单字段</returns>
   [HttpGet("fields/{id}")]
-  public Task<LeanWorkflowFormFieldDto?> GetFormFieldAsync(long id)
+  public async Task<IActionResult> GetFormFieldAsync(long id)
   {
-    return _service.GetFormFieldAsync(id);
+    var result = await _service.GetFormFieldAsync(id);
+    return Success(result, LeanBusinessType.Query);
   }
 
   /// <summary>
@@ -102,8 +108,9 @@ public class LeanWorkflowFormController : LeanBaseController
   /// <param name="fieldCode">字段编码</param>
   /// <returns>表单字段</returns>
   [HttpGet("fields/form/{formId}/field/{fieldCode}")]
-  public Task<LeanWorkflowFormFieldDto?> GetFormFieldByCodeAsync(long formId, string fieldCode)
+  public async Task<IActionResult> GetFormFieldByCodeAsync(long formId, string fieldCode)
   {
-    return _service.GetFormFieldByCodeAsync(formId, fieldCode);
+    var result = await _service.GetFormFieldByCodeAsync(formId, fieldCode);
+    return Success(result, LeanBusinessType.Query);
   }
 }

@@ -3,6 +3,7 @@ using Lean.CodeGen.Application.Services.Workflow;
 using Lean.CodeGen.Common.Models;
 using Lean.CodeGen.WebApi.Controllers;
 using Microsoft.AspNetCore.Mvc;
+using Lean.CodeGen.Common.Enums;
 
 namespace Lean.CodeGen.WebApi.Controllers.Workflow;
 
@@ -11,6 +12,7 @@ namespace Lean.CodeGen.WebApi.Controllers.Workflow;
 /// </summary>
 [ApiController]
 [Route("api/workflow/activity-types")]
+[ApiExplorerSettings(GroupName = "workflow")]
 public class LeanWorkflowActivityTypeController : LeanBaseController
 {
   private readonly ILeanWorkflowActivityTypeService _service;
@@ -29,10 +31,10 @@ public class LeanWorkflowActivityTypeController : LeanBaseController
   /// </summary>
   /// <returns>活动类型列表</returns>
   [HttpGet("list")]
-  public async Task<LeanApiResult<List<LeanWorkflowActivityTypeDto>>> GetListAsync()
+  public async Task<IActionResult> GetListAsync()
   {
     var result = await _service.GetListAsync();
-    return LeanApiResult<List<LeanWorkflowActivityTypeDto>>.Ok(result);
+    return Success(result, LeanBusinessType.Query);
   }
 
   /// <summary>
@@ -41,10 +43,10 @@ public class LeanWorkflowActivityTypeController : LeanBaseController
   /// <param name="typeName">活动类型名称</param>
   /// <returns>活动类型</returns>
   [HttpGet("{typeName}")]
-  public async Task<LeanApiResult<LeanWorkflowActivityTypeDto?>> GetAsync(string typeName)
+  public async Task<IActionResult> GetAsync(string typeName)
   {
     var result = await _service.GetAsync(typeName);
-    return LeanApiResult<LeanWorkflowActivityTypeDto?>.Ok(result);
+    return Success(result, LeanBusinessType.Query);
   }
 
   /// <summary>
@@ -53,10 +55,10 @@ public class LeanWorkflowActivityTypeController : LeanBaseController
   /// <param name="dto">活动类型</param>
   /// <returns>是否成功</returns>
   [HttpPost]
-  public async Task<LeanApiResult<bool>> CreateAsync(LeanWorkflowActivityTypeDto dto)
+  public async Task<IActionResult> CreateAsync(LeanWorkflowActivityTypeDto dto)
   {
     var result = await _service.CreateAsync(dto);
-    return LeanApiResult<bool>.Ok(result);
+    return Success(result, LeanBusinessType.Create);
   }
 
   /// <summary>

@@ -1,185 +1,148 @@
+using Microsoft.AspNetCore.Mvc;
 using Lean.CodeGen.Application.Dtos.Identity;
 using Lean.CodeGen.Application.Services.Identity;
 using Lean.CodeGen.Common.Models;
-using Microsoft.AspNetCore.Mvc;
-using Lean.CodeGen.WebApi.Controllers;
+using Lean.CodeGen.Common.Enums;
 
 namespace Lean.CodeGen.WebApi.Controllers.Identity;
 
 /// <summary>
-/// 角色管理
+/// 角色管理控制器
 /// </summary>
-[Route("api/identity/[controller]")]
-[Tags("身份认证")]
-[ApiController]
+/// <remarks>
+/// 提供角色管理相关的API接口，包括：
+/// 1. 角色的增删改查
+/// 2. 角色状态管理
+/// 3. 角色菜单管理
+/// 4. 角色数据权限管理
+/// </remarks>
+[Route("api/[controller]")]
 public class LeanRoleController : LeanBaseController
 {
-    private readonly ILeanRoleService _roleService;
+  private readonly ILeanRoleService _roleService;
 
-    public LeanRoleController(ILeanRoleService roleService)
-    {
-        _roleService = roleService;
-    }
+  /// <summary>
+  /// 构造函数
+  /// </summary>
+  /// <param name="roleService">角色服务</param>
+  public LeanRoleController(ILeanRoleService roleService)
+  {
+    _roleService = roleService;
+  }
 
-    /// <summary>
-    /// 创建角色
-    /// </summary>
-    [HttpPost]
-    public Task<LeanApiResult<long>> CreateAsync([FromBody] LeanCreateRoleDto input)
-    {
-        return _roleService.CreateAsync(input);
-    }
+  /// <summary>
+  /// 创建角色
+  /// </summary>
+  /// <param name="input">角色创建参数</param>
+  /// <returns>创建成功的角色信息</returns>
+  [HttpPost]
+  public async Task<IActionResult> CreateAsync([FromBody] LeanCreateRoleDto input)
+  {
+    var result = await _roleService.CreateAsync(input);
+    return Success(result, LeanBusinessType.Create);
+  }
 
-    /// <summary>
-    /// 更新角色
-    /// </summary>
-    [HttpPut]
-    public Task<LeanApiResult> UpdateAsync([FromBody] LeanUpdateRoleDto input)
-    {
-        return _roleService.UpdateAsync(input);
-    }
+  /// <summary>
+  /// 更新角色
+  /// </summary>
+  /// <param name="input">角色更新参数</param>
+  /// <returns>更新后的角色信息</returns>
+  [HttpPut]
+  public async Task<IActionResult> UpdateAsync([FromBody] LeanUpdateRoleDto input)
+  {
+    var result = await _roleService.UpdateAsync(input);
+    return Success(result, LeanBusinessType.Update);
+  }
 
-    /// <summary>
-    /// 删除角色
-    /// </summary>
-    [HttpDelete("{id}")]
-    public Task<LeanApiResult> DeleteAsync([FromRoute] long id)
-    {
-        return _roleService.DeleteAsync(id);
-    }
+  /// <summary>
+  /// 删除角色
+  /// </summary>
+  /// <param name="input">角色删除参数</param>
+  [HttpDelete]
+  public async Task<IActionResult> DeleteAsync([FromBody] LeanDeleteRoleDto input)
+  {
+    await _roleService.DeleteAsync(input);
+    return Success(LeanBusinessType.Delete);
+  }
 
-    /// <summary>
-    /// 批量删除角色
-    /// </summary>
-    [HttpDelete("batch")]
-    public Task<LeanApiResult> BatchDeleteAsync([FromBody] List<long> ids)
-    {
-        return _roleService.BatchDeleteAsync(ids);
-    }
+  /// <summary>
+  /// 获取角色信息
+  /// </summary>
+  /// <param name="id">角色ID</param>
+  /// <returns>角色详细信息</returns>
+  [HttpGet("{id}")]
+  public async Task<IActionResult> GetAsync(long id)
+  {
+    var result = await _roleService.GetAsync(id);
+    return Success(result, LeanBusinessType.Query);
+  }
 
-    /// <summary>
-    /// 获取角色信息
-    /// </summary>
-    [HttpGet("{id}")]
-    public Task<LeanApiResult<LeanRoleDto>> GetAsync([FromRoute] long id)
-    {
-        return _roleService.GetAsync(id);
-    }
+  /// <summary>
+  /// 分页查询角色
+  /// </summary>
+  /// <param name="input">查询参数</param>
+  /// <returns>分页查询结果</returns>
+  [HttpGet]
+  public async Task<IActionResult> QueryAsync([FromQuery] LeanQueryRoleDto input)
+  {
+    var result = await _roleService.QueryAsync(input);
+    return Success(result, LeanBusinessType.Query);
+  }
 
-    /// <summary>
-    /// 分页查询角色
-    /// </summary>
-    [HttpGet("page")]
-    public Task<LeanApiResult<LeanPageResult<LeanRoleDto>>> GetPageAsync([FromQuery] LeanQueryRoleDto input)
-    {
-        return _roleService.GetPageAsync(input);
-    }
+  /// <summary>
+  /// 修改角色状态
+  /// </summary>
+  /// <param name="input">状态修改参数</param>
+  [HttpPut("status")]
+  public async Task<IActionResult> ChangeStatusAsync([FromBody] LeanChangeRoleStatusDto input)
+  {
+    await _roleService.ChangeStatusAsync(input);
+    return Success(LeanBusinessType.Update);
+  }
 
-    /// <summary>
-    /// 修改角色状态
-    /// </summary>
-    [HttpPut("status")]
-    public Task<LeanApiResult> SetStatusAsync([FromBody] LeanChangeRoleStatusDto input)
-    {
-        return _roleService.SetStatusAsync(input);
-    }
+  /// <summary>
+  /// 分配角色菜单
+  /// </summary>
+  /// <param name="input">菜单分配参数</param>
+  [HttpPut("menus")]
+  public async Task<IActionResult> AssignMenusAsync([FromBody] LeanAssignRoleMenuDto input)
+  {
+    await _roleService.AssignMenusAsync(input);
+    return Success(LeanBusinessType.Update);
+  }
 
-    /// <summary>
-    /// 获取角色菜单列表
-    /// </summary>
-    [HttpGet("{roleId}/menus")]
-    public Task<LeanApiResult<List<long>>> GetRoleMenusAsync([FromRoute] long roleId)
-    {
-        return _roleService.GetRoleMenusAsync(roleId);
-    }
+  /// <summary>
+  /// 分配角色数据权限
+  /// </summary>
+  /// <param name="input">数据权限分配参数</param>
+  [HttpPut("data-scope")]
+  public async Task<IActionResult> AssignDataScopeAsync([FromBody] LeanAssignRoleDataScopeDto input)
+  {
+    await _roleService.AssignDataScopeAsync(input);
+    return Success(LeanBusinessType.Update);
+  }
 
-    /// <summary>
-    /// 获取角色API列表
-    /// </summary>
-    [HttpGet("{roleId}/apis")]
-    public Task<LeanApiResult<List<long>>> GetRoleApisAsync([FromRoute] long roleId)
-    {
-        return _roleService.GetRoleApisAsync(roleId);
-    }
+  /// <summary>
+  /// 获取角色菜单
+  /// </summary>
+  /// <param name="id">角色ID</param>
+  /// <returns>角色菜单ID列表</returns>
+  [HttpGet("{id}/menus")]
+  public async Task<IActionResult> GetMenusAsync(long id)
+  {
+    var result = await _roleService.GetMenusAsync(id);
+    return Success(result, LeanBusinessType.Query);
+  }
 
-    /// <summary>
-    /// 分配角色菜单
-    /// </summary>
-    [HttpPut("assign-menus")]
-    public Task<LeanApiResult> AssignMenusAsync([FromBody] LeanAssignRoleMenuDto input)
-    {
-        return _roleService.AssignMenusAsync(input);
-    }
-
-    /// <summary>
-    /// 分配角色API
-    /// </summary>
-    [HttpPut("assign-apis")]
-    public Task<LeanApiResult> AssignApisAsync([FromBody] LeanAssignRoleApiDto input)
-    {
-        return _roleService.AssignApisAsync(input);
-    }
-
-    /// <summary>
-    /// 获取角色数据范围
-    /// </summary>
-    [HttpGet("{roleId}/data-scope")]
-    public Task<LeanApiResult<List<long>>> GetRoleDataScopeAsync([FromRoute] long roleId)
-    {
-        return _roleService.GetRoleDataScopeAsync(roleId);
-    }
-
-    /// <summary>
-    /// 分配角色数据范围
-    /// </summary>
-    [HttpPut("assign-data-scope")]
-    public Task<LeanApiResult> AssignDataScopeAsync([FromBody] LeanAssignRoleDataScopeDto input)
-    {
-        return _roleService.AssignDataScopeAsync(input);
-    }
-
-    /// <summary>
-    /// 获取角色互斥列表
-    /// </summary>
-    [HttpGet("{roleId}/mutexes")]
-    public Task<LeanApiResult<List<long>>> GetRoleMutexesAsync([FromRoute] long roleId)
-    {
-        return _roleService.GetRoleMutexesAsync(roleId);
-    }
-
-    /// <summary>
-    /// 设置角色互斥关系
-    /// </summary>
-    [HttpPut("mutexes")]
-    public Task<LeanApiResult> SetRoleMutexesAsync([FromBody] LeanSetRoleMutexDto input)
-    {
-        return _roleService.SetRoleMutexesAsync(input);
-    }
-
-    /// <summary>
-    /// 获取角色前置条件列表
-    /// </summary>
-    [HttpGet("{roleId}/prerequisites")]
-    public Task<LeanApiResult<List<long>>> GetRolePrerequisitesAsync([FromRoute] long roleId)
-    {
-        return _roleService.GetRolePrerequisitesAsync(roleId);
-    }
-
-    /// <summary>
-    /// 设置角色前置条件
-    /// </summary>
-    [HttpPut("prerequisites")]
-    public Task<LeanApiResult> SetRolePrerequisitesAsync([FromBody] LeanSetRolePrerequisiteDto input)
-    {
-        return _roleService.SetRolePrerequisitesAsync(input);
-    }
-
-    /// <summary>
-    /// 验证用户是否可以分配指定角色
-    /// </summary>
-    [HttpGet("user/{userId}/validate-assignment/{roleId}")]
-    public Task<LeanApiResult<bool>> ValidateUserRoleAssignmentAsync([FromRoute] long userId, [FromRoute] long roleId)
-    {
-        return _roleService.ValidateUserRoleAssignmentAsync(userId, roleId);
-    }
+  /// <summary>
+  /// 获取角色数据权限
+  /// </summary>
+  /// <param name="id">角色ID</param>
+  /// <returns>角色数据权限信息</returns>
+  [HttpGet("{id}/data-scope")]
+  public async Task<IActionResult> GetDataScopeAsync(long id)
+  {
+    var result = await _roleService.GetDataScopeAsync(id);
+    return Success(result, LeanBusinessType.Query);
+  }
 }

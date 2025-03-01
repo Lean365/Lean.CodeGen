@@ -73,57 +73,64 @@ public abstract class LeanBaseController : ControllerBase
   /// <summary>
   /// 返回成功结果（带数据）
   /// </summary>
-  protected IActionResult Success<T>(T data)
+  protected IActionResult Success<T>(T data, LeanBusinessType businessType = LeanBusinessType.Other)
   {
-    return StatusCode((int)LeanHttpStatusCode.OK, data);
+    var result = LeanApiResult<T>.Ok(data, businessType);
+    return Ok(result);
   }
 
   /// <summary>
   /// 返回成功结果（无数据）
   /// </summary>
-  protected IActionResult Success()
+  protected IActionResult Success(LeanBusinessType businessType = LeanBusinessType.Other)
   {
-    return StatusCode((int)LeanHttpStatusCode.OK);
+    var result = LeanApiResult.Ok(businessType);
+    return Ok(result);
   }
 
   /// <summary>
   /// 返回错误结果
   /// </summary>
-  protected IActionResult Error(string message, LeanHttpStatusCode statusCode = LeanHttpStatusCode.BadRequest)
+  protected IActionResult Error(string message, LeanErrorCode code = LeanErrorCode.SystemError, LeanBusinessType businessType = LeanBusinessType.Other)
   {
-    return StatusCode((int)statusCode, message);
+    var result = LeanApiResult.Error(message, code, businessType);
+    return BadRequest(result);
   }
 
   /// <summary>
   /// 返回未找到结果
   /// </summary>
-  protected IActionResult NotFoundResult(string message = "未找到请求的资源")
+  protected IActionResult NotFound(string message = "未找到请求的资源", LeanBusinessType businessType = LeanBusinessType.Other)
   {
-    return StatusCode((int)LeanHttpStatusCode.NotFound, message);
+    var result = LeanApiResult.Error(message, LeanErrorCode.NotFound, businessType);
+    return NotFound(result);
   }
 
   /// <summary>
   /// 返回未授权结果
   /// </summary>
-  protected IActionResult UnauthorizedResult(string message = "未经授权的访问")
+  protected IActionResult Unauthorized(string message = "未经授权的访问", LeanBusinessType businessType = LeanBusinessType.Other)
   {
-    return StatusCode((int)LeanHttpStatusCode.Unauthorized, message);
+    var result = LeanApiResult.Error(message, LeanErrorCode.Unauthorized, businessType);
+    return StatusCode(401, result);
   }
 
   /// <summary>
   /// 返回禁止访问结果
   /// </summary>
-  protected IActionResult ForbiddenResult(string message = "禁止访问")
+  protected IActionResult Forbidden(string message = "禁止访问", LeanBusinessType businessType = LeanBusinessType.Other)
   {
-    return StatusCode((int)LeanHttpStatusCode.Forbidden, message);
+    var result = LeanApiResult.Error(message, LeanErrorCode.Forbidden, businessType);
+    return StatusCode(403, result);
   }
 
   /// <summary>
   /// 返回服务器错误结果
   /// </summary>
-  protected IActionResult ServerError(string message = "服务器内部错误")
+  protected IActionResult ServerError(string message = "服务器内部错误", LeanBusinessType businessType = LeanBusinessType.Other)
   {
-    return StatusCode((int)LeanHttpStatusCode.InternalServerError, message);
+    var result = LeanApiResult.Error(message, LeanErrorCode.SystemError, businessType);
+    return StatusCode(500, result);
   }
 
   /// <summary>
@@ -132,5 +139,17 @@ public abstract class LeanBaseController : ControllerBase
   protected IActionResult StatusResult(LeanHttpStatusCode statusCode, object? data = null)
   {
     return StatusCode((int)statusCode, data);
+  }
+
+  /// <summary>
+  /// 返回文件下载结果
+  /// </summary>
+  protected IActionResult FileDownload(byte[] fileBytes, string fileName, string contentType = "application/octet-stream")
+  {
+    if (fileBytes == null || fileBytes.Length == 0)
+    {
+      return NotFound("文件内容为空");
+    }
+    return File(fileBytes, contentType, fileName);
   }
 }

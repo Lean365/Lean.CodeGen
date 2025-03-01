@@ -2,7 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using Lean.CodeGen.Application.Dtos.Generator;
 using Lean.CodeGen.Application.Services.Generator;
 using Lean.CodeGen.Common.Models;
-using Lean.CodeGen.WebApi.Controllers;
+using Lean.CodeGen.Common.Enums;
+using System.IO;
 
 namespace Lean.CodeGen.WebApi.Controllers.Generator
 {
@@ -27,36 +28,42 @@ namespace Lean.CodeGen.WebApi.Controllers.Generator
     /// 获取代码生成历史列表（分页）
     /// </summary>
     [HttpGet]
-    public Task<LeanPageResult<LeanGenHistoryDto>> GetPageListAsync([FromQuery] LeanGenHistoryQueryDto queryDto)
+    public async Task<IActionResult> GetPageListAsync([FromQuery] LeanGenHistoryQueryDto queryDto)
     {
-      return _historyService.GetPageListAsync(queryDto);
+      var result = await _historyService.GetPageListAsync(queryDto);
+      return Success(result, LeanBusinessType.Query);
     }
 
     /// <summary>
     /// 获取代码生成历史详情
     /// </summary>
     [HttpGet("{id}")]
-    public Task<LeanGenHistoryDto> GetAsync(long id)
+    public async Task<IActionResult> GetAsync(long id)
     {
-      return _historyService.GetAsync(id);
+      var result = await _historyService.GetAsync(id);
+      return Success(result, LeanBusinessType.Query);
     }
 
     /// <summary>
     /// 导出代码生成历史
     /// </summary>
     [HttpGet("export")]
-    public Task<LeanFileResult> ExportAsync([FromQuery] LeanGenHistoryQueryDto queryDto)
+    public async Task<IActionResult> ExportAsync([FromQuery] LeanGenHistoryQueryDto queryDto)
     {
-      return _historyService.ExportAsync(queryDto);
+      var result = await _historyService.ExportAsync(queryDto);
+      var stream = new MemoryStream();
+      result.Stream.CopyTo(stream);
+      return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "gen-histories.xlsx");
     }
 
     /// <summary>
     /// 清空历史记录
     /// </summary>
     [HttpDelete("clear")]
-    public Task<bool> ClearAsync()
+    public async Task<IActionResult> ClearAsync()
     {
-      return _historyService.ClearAsync();
+      var result = await _historyService.ClearAsync();
+      return result ? Success(LeanBusinessType.Delete) : Error("清空失败");
     }
   }
 }

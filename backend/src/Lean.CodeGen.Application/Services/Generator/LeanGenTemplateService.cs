@@ -36,14 +36,12 @@ namespace Lean.CodeGen.Application.Services.Generator
     public LeanGenTemplateService(
         ILeanRepository<LeanGenTemplate> repository,
         ILeanRepository<LeanGenConfig> configRepository,
-        ILeanSqlSafeService sqlSafeService,
-        IOptions<LeanSecurityOptions> securityOptions,
-        ILogger<LeanGenTemplateService> logger)
-        : base(sqlSafeService, securityOptions, logger)
+        LeanBaseServiceContext context)
+        : base(context)
     {
-      _logger = logger;
       _repository = repository;
       _configRepository = configRepository;
+      _logger = (ILogger<LeanGenTemplateService>)context.Logger;
       _uniqueValidator = new LeanUniqueValidator<LeanGenTemplate>(_repository);
     }
 

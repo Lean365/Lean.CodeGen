@@ -3,6 +3,7 @@ using Lean.CodeGen.Application.Services.Workflow;
 using Lean.CodeGen.Common.Models;
 using Lean.CodeGen.WebApi.Controllers;
 using Microsoft.AspNetCore.Mvc;
+using Lean.CodeGen.Common.Enums;
 
 namespace Lean.CodeGen.WebApi.Controllers.Workflow;
 
@@ -11,6 +12,7 @@ namespace Lean.CodeGen.WebApi.Controllers.Workflow;
 /// </summary>
 [ApiController]
 [Route("api/workflow/variable-data")]
+[ApiExplorerSettings(GroupName = "workflow")]
 public class LeanWorkflowVariableDataController : LeanBaseController
 {
   private readonly ILeanWorkflowVariableDataService _service;
@@ -33,7 +35,7 @@ public class LeanWorkflowVariableDataController : LeanBaseController
   public async Task<IActionResult> GetAsync(long id)
   {
     var result = await _service.GetAsync(id);
-    return Success(result);
+    return Success(result, LeanBusinessType.Query);
   }
 
   /// <summary>
@@ -46,7 +48,7 @@ public class LeanWorkflowVariableDataController : LeanBaseController
   public async Task<IActionResult> GetByNameAsync(long instanceId, string variableName)
   {
     var result = await _service.GetByNameAsync(instanceId, variableName);
-    return Success(result);
+    return Success(result, LeanBusinessType.Query);
   }
 
   /// <summary>
@@ -58,7 +60,7 @@ public class LeanWorkflowVariableDataController : LeanBaseController
   public async Task<IActionResult> CreateAsync(LeanWorkflowVariableDataDto dto)
   {
     var result = await _service.CreateAsync(dto);
-    return Success(result);
+    return Success(result, LeanBusinessType.Create);
   }
 
   /// <summary>

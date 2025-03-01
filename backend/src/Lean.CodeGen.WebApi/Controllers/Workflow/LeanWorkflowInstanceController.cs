@@ -12,6 +12,7 @@ namespace Lean.CodeGen.WebApi.Controllers.Workflow;
 /// </summary>
 [ApiController]
 [Route("api/workflow/instances")]
+[ApiExplorerSettings(GroupName = "workflow")]
 public class LeanWorkflowInstanceController : LeanBaseController
 {
   private readonly ILeanWorkflowInstanceService _service;
@@ -31,10 +32,10 @@ public class LeanWorkflowInstanceController : LeanBaseController
   /// <param name="id">工作流实例ID</param>
   /// <returns>工作流实例</returns>
   [HttpGet("{id}")]
-  public async Task<LeanApiResult<LeanWorkflowInstanceDto>> GetAsync(long id)
+  public async Task<IActionResult> GetAsync(long id)
   {
     var result = await _service.GetAsync(id);
-    return LeanApiResult<LeanWorkflowInstanceDto>.Ok(result);
+    return Success(result, LeanBusinessType.Query);
   }
 
   /// <summary>
@@ -43,10 +44,10 @@ public class LeanWorkflowInstanceController : LeanBaseController
   /// <param name="businessKey">业务主键</param>
   /// <returns>工作流实例</returns>
   [HttpGet("business-key/{businessKey}")]
-  public async Task<LeanApiResult<LeanWorkflowInstanceDto>> GetByBusinessKeyAsync(string businessKey)
+  public async Task<IActionResult> GetByBusinessKeyAsync(string businessKey)
   {
     var result = await _service.GetByBusinessKeyAsync(businessKey);
-    return LeanApiResult<LeanWorkflowInstanceDto>.Ok(result);
+    return Success(result, LeanBusinessType.Query);
   }
 
   /// <summary>
@@ -55,10 +56,10 @@ public class LeanWorkflowInstanceController : LeanBaseController
   /// <param name="dto">工作流实例</param>
   /// <returns>工作流实例ID</returns>
   [HttpPost]
-  public async Task<LeanApiResult<long>> CreateAsync(LeanWorkflowInstanceDto dto)
+  public async Task<IActionResult> CreateAsync(LeanWorkflowInstanceDto dto)
   {
     var result = await _service.CreateAsync(dto);
-    return LeanApiResult<long>.Ok(result);
+    return Success(result, LeanBusinessType.Create);
   }
 
   /// <summary>
@@ -68,14 +69,14 @@ public class LeanWorkflowInstanceController : LeanBaseController
   /// <param name="dto">工作流实例</param>
   /// <returns>是否成功</returns>
   [HttpPut("{id}")]
-  public async Task<LeanApiResult> UpdateAsync(long id, LeanWorkflowInstanceDto dto)
+  public async Task<IActionResult> UpdateAsync(long id, LeanWorkflowInstanceDto dto)
   {
     if (id != dto.Id)
     {
-      return LeanApiResult.Error("ID不匹配");
+      return Error("ID不匹配");
     }
     var result = await _service.UpdateAsync(dto);
-    return result ? LeanApiResult.Ok() : LeanApiResult.Error("更新失败");
+    return Success(result, LeanBusinessType.Update);
   }
 
   /// <summary>
@@ -84,10 +85,10 @@ public class LeanWorkflowInstanceController : LeanBaseController
   /// <param name="id">工作流实例ID</param>
   /// <returns>是否成功</returns>
   [HttpDelete("{id}")]
-  public async Task<LeanApiResult> DeleteAsync(long id)
+  public async Task<IActionResult> DeleteAsync(long id)
   {
     var result = await _service.DeleteAsync(id);
-    return result ? LeanApiResult.Ok() : LeanApiResult.Error("删除失败");
+    return Success(result, LeanBusinessType.Delete);
   }
 
   /// <summary>
@@ -96,10 +97,10 @@ public class LeanWorkflowInstanceController : LeanBaseController
   /// <param name="id">工作流实例ID</param>
   /// <returns>是否成功</returns>
   [HttpPost("{id}/start")]
-  public async Task<LeanApiResult> StartAsync(long id)
+  public async Task<IActionResult> StartAsync(long id)
   {
     var result = await _service.StartAsync(id);
-    return result ? LeanApiResult.Ok() : LeanApiResult.Error("启动失败");
+    return Success(result, LeanBusinessType.Update);
   }
 
   /// <summary>
@@ -108,10 +109,10 @@ public class LeanWorkflowInstanceController : LeanBaseController
   /// <param name="id">工作流实例ID</param>
   /// <returns>是否成功</returns>
   [HttpPost("{id}/suspend")]
-  public async Task<LeanApiResult> SuspendAsync(long id)
+  public async Task<IActionResult> SuspendAsync(long id)
   {
     var result = await _service.SuspendAsync(id);
-    return result ? LeanApiResult.Ok() : LeanApiResult.Error("暂停失败");
+    return Success(result, LeanBusinessType.Update);
   }
 
   /// <summary>
@@ -120,10 +121,10 @@ public class LeanWorkflowInstanceController : LeanBaseController
   /// <param name="id">工作流实例ID</param>
   /// <returns>是否成功</returns>
   [HttpPost("{id}/resume")]
-  public async Task<LeanApiResult> ResumeAsync(long id)
+  public async Task<IActionResult> ResumeAsync(long id)
   {
     var result = await _service.ResumeAsync(id);
-    return result ? LeanApiResult.Ok() : LeanApiResult.Error("恢复失败");
+    return Success(result, LeanBusinessType.Update);
   }
 
   /// <summary>
@@ -132,10 +133,10 @@ public class LeanWorkflowInstanceController : LeanBaseController
   /// <param name="id">工作流实例ID</param>
   /// <returns>是否成功</returns>
   [HttpPost("{id}/terminate")]
-  public async Task<LeanApiResult> TerminateAsync(long id)
+  public async Task<IActionResult> TerminateAsync(long id)
   {
     var result = await _service.TerminateAsync(id);
-    return result ? LeanApiResult.Ok() : LeanApiResult.Error("终止失败");
+    return Success(result, LeanBusinessType.Update);
   }
 
   /// <summary>
@@ -144,10 +145,10 @@ public class LeanWorkflowInstanceController : LeanBaseController
   /// <param name="id">工作流实例ID</param>
   /// <returns>是否成功</returns>
   [HttpPost("{id}/archive")]
-  public async Task<LeanApiResult> ArchiveAsync(long id)
+  public async Task<IActionResult> ArchiveAsync(long id)
   {
     var result = await _service.ArchiveAsync(id);
-    return result ? LeanApiResult.Ok() : LeanApiResult.Error("归档失败");
+    return Success(result, LeanBusinessType.Update);
   }
 
   /// <summary>
@@ -163,7 +164,7 @@ public class LeanWorkflowInstanceController : LeanBaseController
   /// <param name="workflowStatus">工作流状态</param>
   /// <returns>分页结果</returns>
   [HttpGet]
-  public async Task<LeanApiResult<LeanPageResult<LeanWorkflowInstanceDto>>> GetPagedListAsync(
+  public async Task<IActionResult> GetPagedListAsync(
       [FromQuery] int pageIndex = 1,
       [FromQuery] int pageSize = 10,
       [FromQuery] long? definitionId = null,
@@ -174,6 +175,6 @@ public class LeanWorkflowInstanceController : LeanBaseController
       [FromQuery] LeanWorkflowInstanceStatus? workflowStatus = null)
   {
     var result = await _service.GetPagedListAsync(pageIndex, pageSize, definitionId, businessKey, businessType, title, initiatorId, workflowStatus);
-    return LeanApiResult<LeanPageResult<LeanWorkflowInstanceDto>>.Ok(result);
+    return Success(result, LeanBusinessType.Query);
   }
 }

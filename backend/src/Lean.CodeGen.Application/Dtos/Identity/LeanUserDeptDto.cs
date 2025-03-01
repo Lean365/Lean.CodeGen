@@ -1,8 +1,34 @@
 using System.ComponentModel.DataAnnotations;
-using Lean.CodeGen.Common.Enums;
 using Lean.CodeGen.Common.Models;
+using Lean.CodeGen.Common.Enums;
 
 namespace Lean.CodeGen.Application.Dtos.Identity;
+
+/// <summary>
+/// 用户部门关联基础信息
+/// </summary>
+public class LeanUserDeptDto : LeanBaseDto
+{
+  /// <summary>
+  /// 用户ID
+  /// </summary>
+  public long UserId { get; set; }
+
+  /// <summary>
+  /// 部门ID
+  /// </summary>
+  public long DeptId { get; set; }
+
+  /// <summary>
+  /// 关联的用户信息
+  /// </summary>
+  public LeanUserDto? User { get; set; }
+
+  /// <summary>
+  /// 关联的部门信息
+  /// </summary>
+  public LeanDeptDto? Dept { get; set; }
+}
 
 /// <summary>
 /// 用户部门关联查询参数
@@ -20,12 +46,12 @@ public class LeanQueryUserDeptDto : LeanPage
   public long? DeptId { get; set; }
 
   /// <summary>
-  /// 开始时间
+  /// 创建时间范围-开始
   /// </summary>
   public DateTime? StartTime { get; set; }
 
   /// <summary>
-  /// 结束时间
+  /// 创建时间范围-结束
   /// </summary>
   public DateTime? EndTime { get; set; }
 }
@@ -46,45 +72,67 @@ public class LeanCreateUserDeptDto
   /// </summary>
   [Required(ErrorMessage = "部门ID不能为空")]
   public long DeptId { get; set; }
-
-  /// <summary>
-  /// 是否主部门
-  /// </summary>
-  public LeanPrimaryStatus IsPrimary { get; set; }
 }
 
 /// <summary>
 /// 用户部门关联更新参数
 /// </summary>
-public class LeanUpdateUserDeptDto : LeanCreateUserDeptDto
+public class LeanUpdateUserDeptDto
 {
   /// <summary>
-  /// 关联ID
+  /// 用户部门关联ID
   /// </summary>
-  [Required(ErrorMessage = "关联ID不能为空")]
-  public long Id { get; set; }
-}
-
-/// <summary>
-/// 用户部门关联详情
-/// </summary>
-public class LeanUserDeptDetailDto
-{
-  /// <summary>
-  /// 关联ID
-  /// </summary>
+  [Required(ErrorMessage = "用户部门关联ID不能为空")]
   public long Id { get; set; }
 
   /// <summary>
   /// 用户ID
   /// </summary>
+  [Required(ErrorMessage = "用户ID不能为空")]
   public long UserId { get; set; }
 
   /// <summary>
-  /// 用户名称
+  /// 部门ID
   /// </summary>
-  public string UserName { get; set; } = default!;
+  [Required(ErrorMessage = "部门ID不能为空")]
+  public long DeptId { get; set; }
+}
 
+/// <summary>
+/// 用户部门关联删除参数
+/// </summary>
+public class LeanDeleteUserDeptDto
+{
+  /// <summary>
+  /// 用户部门关联ID
+  /// </summary>
+  [Required(ErrorMessage = "用户部门关联ID不能为空")]
+  public long Id { get; set; }
+}
+
+/// <summary>
+/// 用户部门关联批量创建参数
+/// </summary>
+public class LeanBatchCreateUserDeptDto
+{
+  /// <summary>
+  /// 用户ID
+  /// </summary>
+  [Required(ErrorMessage = "用户ID不能为空")]
+  public long UserId { get; set; }
+
+  /// <summary>
+  /// 部门ID列表
+  /// </summary>
+  [Required(ErrorMessage = "部门ID列表不能为空")]
+  public List<long> DeptIds { get; set; } = new();
+}
+
+/// <summary>
+/// 用户部门信息DTO
+/// </summary>
+public class LeanUserDeptInfoDto
+{
   /// <summary>
   /// 部门ID
   /// </summary>
@@ -93,63 +141,12 @@ public class LeanUserDeptDetailDto
   /// <summary>
   /// 部门名称
   /// </summary>
-  public string DeptName { get; set; } = default!;
+  public string DeptName { get; set; } = string.Empty;
 
   /// <summary>
-  /// 是否主部门
+  /// 部门编码
   /// </summary>
-  public LeanPrimaryStatus IsPrimary { get; set; }
-
-  /// <summary>
-  /// 创建时间
-  /// </summary>
-  public DateTime CreateTime { get; set; }
-
-  /// <summary>
-  /// 创建者
-  /// </summary>
-  public string? CreateUserName { get; set; }
-
-  /// <summary>
-  /// 更新时间
-  /// </summary>
-  public DateTime? UpdateTime { get; set; }
-
-  /// <summary>
-  /// 更新者
-  /// </summary>
-  public string? UpdateUserName { get; set; }
-}
-
-/// <summary>
-/// 用户部门关联 DTO
-/// </summary>
-public class LeanUserDeptDto
-{
-  /// <summary>
-  /// 关联ID
-  /// </summary>
-  public long Id { get; set; }
-
-  /// <summary>
-  /// 用户ID
-  /// </summary>
-  public long UserId { get; set; }
-
-  /// <summary>
-  /// 用户名称
-  /// </summary>
-  public string UserName { get; set; } = default!;
-
-  /// <summary>
-  /// 部门ID
-  /// </summary>
-  public long DeptId { get; set; }
-
-  /// <summary>
-  /// 部门名称
-  /// </summary>
-  public string DeptName { get; set; } = default!;
+  public string DeptCode { get; set; } = string.Empty;
 
   /// <summary>
   /// 是否主部门

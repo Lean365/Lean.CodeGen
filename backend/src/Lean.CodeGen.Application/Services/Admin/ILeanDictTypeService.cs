@@ -47,15 +47,15 @@ public interface ILeanDictTypeService
   /// <summary>
   /// 导出字典类型
   /// </summary>
-  Task<LeanApiResult<byte[]>> ExportAsync(LeanQueryDictTypeDto input);
+  Task<byte[]> ExportAsync(LeanQueryDictTypeDto input);
 
   /// <summary>
   /// 导入字典类型
   /// </summary>
-  Task<LeanApiResult<LeanExcelImportResult<LeanDictTypeImportDto>>> ImportAsync(LeanFileInfo file);
+  Task<LeanExcelImportResult<LeanDictTypeImportDto>> ImportAsync(LeanFileInfo file);
 
   /// <summary>
   /// 获取导入模板
   /// </summary>
-  Task<LeanApiResult<byte[]>> GetImportTemplateAsync();
+  Task<byte[]> GetImportTemplateAsync();
 }

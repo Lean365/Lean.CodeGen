@@ -3,6 +3,7 @@ using Lean.CodeGen.Application.Services.Workflow;
 using Lean.CodeGen.Common.Models;
 using Lean.CodeGen.WebApi.Controllers;
 using Microsoft.AspNetCore.Mvc;
+using Lean.CodeGen.Common.Enums;
 
 namespace Lean.CodeGen.WebApi.Controllers.Workflow;
 
@@ -11,6 +12,7 @@ namespace Lean.CodeGen.WebApi.Controllers.Workflow;
 /// </summary>
 [ApiController]
 [Route("api/workflow/outcomes")]
+[ApiExplorerSettings(GroupName = "workflow")]
 public class LeanWorkflowOutcomeController : LeanBaseController
 {
   private readonly ILeanWorkflowOutcomeService _service;
@@ -30,10 +32,10 @@ public class LeanWorkflowOutcomeController : LeanBaseController
   /// <param name="id">结果ID</param>
   /// <returns>结果记录</returns>
   [HttpGet("{id}")]
-  public async Task<LeanApiResult<LeanWorkflowOutcomeDto>> GetAsync(long id)
+  public async Task<IActionResult> GetAsync(long id)
   {
     var result = await _service.GetAsync(id);
-    return LeanApiResult<LeanWorkflowOutcomeDto>.Ok(result);
+    return Success(result, LeanBusinessType.Query);
   }
 
   /// <summary>
@@ -42,10 +44,10 @@ public class LeanWorkflowOutcomeController : LeanBaseController
   /// <param name="dto">结果记录</param>
   /// <returns>结果ID</returns>
   [HttpPost]
-  public async Task<LeanApiResult<long>> CreateAsync(LeanWorkflowOutcomeDto dto)
+  public async Task<IActionResult> CreateAsync(LeanWorkflowOutcomeDto dto)
   {
     var result = await _service.CreateAsync(dto);
-    return LeanApiResult<long>.Ok(result);
+    return Success(result, LeanBusinessType.Create);
   }
 
   /// <summary>
@@ -55,14 +57,14 @@ public class LeanWorkflowOutcomeController : LeanBaseController
   /// <param name="dto">结果记录</param>
   /// <returns>是否成功</returns>
   [HttpPut("{id}")]
-  public async Task<LeanApiResult> UpdateAsync(long id, LeanWorkflowOutcomeDto dto)
+  public async Task<IActionResult> UpdateAsync(long id, LeanWorkflowOutcomeDto dto)
   {
     if (id != dto.Id)
     {
-      return LeanApiResult.Error("ID不匹配");
+      return Error("ID不匹配");
     }
     var result = await _service.UpdateAsync(dto);
-    return result ? LeanApiResult.Ok() : LeanApiResult.Error("更新失败");
+    return Success(result, LeanBusinessType.Update);
   }
 
   /// <summary>
