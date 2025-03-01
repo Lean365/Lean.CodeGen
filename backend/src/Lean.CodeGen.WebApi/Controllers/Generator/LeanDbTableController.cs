@@ -4,6 +4,8 @@ using Lean.CodeGen.Application.Services.Generator;
 using Lean.CodeGen.Common.Models;
 using Lean.CodeGen.Common.Excel;
 using Lean.CodeGen.Common.Enums;
+using Microsoft.Extensions.Configuration;
+using Lean.CodeGen.Application.Services.Admin;
 using Lean.CodeGen.WebApi.Controllers;
 using System.IO;
 
@@ -22,7 +24,14 @@ namespace Lean.CodeGen.WebApi.Controllers.Generator
     /// <summary>
     /// 构造函数
     /// </summary>
-    public LeanDbTableController(ILeanDbTableService dbTableService)
+    /// <param name="dbTableService">数据库表服务</param>
+    /// <param name="localizationService">本地化服务</param>
+    /// <param name="configuration">配置</param>
+    public LeanDbTableController(
+        ILeanDbTableService dbTableService,
+        ILeanLocalizationService localizationService,
+        IConfiguration configuration)
+        : base(localizationService, configuration)
     {
       _dbTableService = dbTableService;
     }

@@ -5,6 +5,8 @@ using Lean.CodeGen.Common.Models;
 using Lean.CodeGen.Common.Excel;
 using Lean.CodeGen.Common.Enums;
 using System.IO;
+using Microsoft.Extensions.Configuration;
+using Lean.CodeGen.Application.Services.Admin;
 
 namespace Lean.CodeGen.WebApi.Controllers.Generator
 {
@@ -20,7 +22,10 @@ namespace Lean.CodeGen.WebApi.Controllers.Generator
     /// <summary>
     /// 构造函数
     /// </summary>
-    public LeanGenTaskController(ILeanGenTaskService genTaskService)
+    public LeanGenTaskController(
+        ILeanGenTaskService genTaskService,
+        ILeanLocalizationService localizationService,
+        IConfiguration configuration) : base(localizationService, configuration)
     {
       _genTaskService = genTaskService;
     }
@@ -72,7 +77,7 @@ namespace Lean.CodeGen.WebApi.Controllers.Generator
     public async Task<IActionResult> DeleteAsync(long id)
     {
       var result = await _genTaskService.DeleteAsync(id);
-      return result ? Success(LeanBusinessType.Delete) : Error("删除失败");
+      return result ? Success(LeanBusinessType.Delete) : await ErrorAsync("generator.error.delete_failed");
     }
 
     /// <summary>
@@ -116,7 +121,7 @@ namespace Lean.CodeGen.WebApi.Controllers.Generator
     public async Task<IActionResult> StartAsync(long id)
     {
       var result = await _genTaskService.StartAsync(id);
-      return result ? Success(LeanBusinessType.Other) : Error("启动失败");
+      return result ? Success(LeanBusinessType.Other) : await ErrorAsync("generator.error.start_failed");
     }
 
     /// <summary>
@@ -126,7 +131,7 @@ namespace Lean.CodeGen.WebApi.Controllers.Generator
     public async Task<IActionResult> StopAsync(long id)
     {
       var result = await _genTaskService.StopAsync(id);
-      return result ? Success(LeanBusinessType.Other) : Error("停止失败");
+      return result ? Success(LeanBusinessType.Other) : await ErrorAsync("generator.error.stop_failed");
     }
 
     /// <summary>
@@ -136,7 +141,7 @@ namespace Lean.CodeGen.WebApi.Controllers.Generator
     public async Task<IActionResult> RetryAsync(long id)
     {
       var result = await _genTaskService.RetryAsync(id);
-      return result ? Success(LeanBusinessType.Other) : Error("重试失败");
+      return result ? Success(LeanBusinessType.Other) : await ErrorAsync("generator.error.retry_failed");
     }
 
     /// <summary>

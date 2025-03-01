@@ -8,6 +8,8 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
+using Lean.CodeGen.WebApi.Controllers;
 
 namespace Lean.CodeGen.WebApi.Controllers.Admin;
 
@@ -23,7 +25,11 @@ public class LeanDictDataController : LeanBaseController
   /// <summary>
   /// 构造函数
   /// </summary>
-  public LeanDictDataController(ILeanDictDataService service)
+  public LeanDictDataController(
+      ILeanDictDataService service,
+      ILeanLocalizationService localizationService,
+      IConfiguration configuration)
+      : base(localizationService, configuration)
   {
     _service = service;
   }
@@ -126,7 +132,14 @@ public class LeanDictDataController : LeanBaseController
   {
     using var ms = new MemoryStream();
     await file.CopyToAsync(ms);
-    var result = await _service.ImportAsync(ms.ToArray());
+    ms.Position = 0;
+    var fileInfo = new LeanFileInfo
+    {
+      Stream = ms,
+      FileName = file.FileName,
+      ContentType = file.ContentType
+    };
+    var result = await _service.ImportAsync(fileInfo);
     return Success(result, LeanBusinessType.Import);
   }
 

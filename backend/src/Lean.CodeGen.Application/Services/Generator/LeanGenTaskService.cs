@@ -15,7 +15,6 @@ using Lean.CodeGen.Domain.Interfaces.Repositories;
 using Lean.CodeGen.Application.Services.Base;
 using Lean.CodeGen.Application.Services.Security;
 using Lean.CodeGen.Common.Extensions;
-using Microsoft.Extensions.Logging;
 using Lean.CodeGen.Domain.Validators;
 
 namespace Lean.CodeGen.Application.Services.Generator
@@ -25,7 +24,7 @@ namespace Lean.CodeGen.Application.Services.Generator
   /// </summary>
   public class LeanGenTaskService : LeanBaseService, ILeanGenTaskService
   {
-    private readonly ILogger<LeanGenTaskService> _logger;
+    private readonly ILogger _logger;
     private readonly ILeanRepository<LeanGenTask> _repository;
     private readonly ILeanRepository<LeanGenConfig> _configRepository;
     private readonly ILeanRepository<LeanDbTable> _tableRepository;
@@ -47,7 +46,7 @@ namespace Lean.CodeGen.Application.Services.Generator
       _configRepository = configRepository;
       _tableRepository = tableRepository;
       _historyRepository = historyRepository;
-      _logger = (ILogger<LeanGenTaskService>)context.Logger;
+      _logger = context.Logger;
       _uniqueValidator = new LeanUniqueValidator<LeanGenTask>(_repository);
     }
 

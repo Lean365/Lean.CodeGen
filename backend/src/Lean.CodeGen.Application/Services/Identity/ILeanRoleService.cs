@@ -1,5 +1,6 @@
 using Lean.CodeGen.Application.Dtos.Identity;
 using Lean.CodeGen.Common.Models;
+using Lean.CodeGen.Common.Excel;
 
 namespace Lean.CodeGen.Application.Services.Identity;
 
@@ -20,64 +21,76 @@ public interface ILeanRoleService
   /// </summary>
   /// <param name="input">角色创建参数</param>
   /// <returns>创建成功的角色信息</returns>
-  Task<LeanRoleDto> CreateAsync(LeanCreateRoleDto input);
+  Task<LeanApiResult<long>> CreateAsync(LeanCreateRoleDto input);
 
   /// <summary>
   /// 更新角色
   /// </summary>
   /// <param name="input">角色更新参数</param>
   /// <returns>更新后的角色信息</returns>
-  Task<LeanRoleDto> UpdateAsync(LeanUpdateRoleDto input);
+  Task<LeanApiResult> UpdateAsync(LeanUpdateRoleDto input);
 
   /// <summary>
   /// 删除角色
   /// </summary>
   /// <param name="input">角色删除参数</param>
-  Task DeleteAsync(LeanDeleteRoleDto input);
+  Task<LeanApiResult> DeleteAsync(long id);
+
+  /// <summary>
+  /// 批量删除角色
+  /// </summary>
+  Task<LeanApiResult> BatchDeleteAsync(List<long> ids);
 
   /// <summary>
   /// 获取角色信息
   /// </summary>
   /// <param name="id">角色ID</param>
   /// <returns>角色详细信息</returns>
-  Task<LeanRoleDto> GetAsync(long id);
+  Task<LeanApiResult<LeanRoleDto>> GetAsync(long id);
 
   /// <summary>
   /// 分页查询角色
   /// </summary>
   /// <param name="input">查询参数</param>
   /// <returns>分页查询结果</returns>
-  Task<LeanPageResult<LeanRoleDto>> QueryAsync(LeanQueryRoleDto input);
+  Task<LeanApiResult<LeanPageResult<LeanRoleDto>>> GetPageAsync(LeanQueryRoleDto input);
 
   /// <summary>
-  /// 修改角色状态
+  /// 设置角色状态
   /// </summary>
   /// <param name="input">状态修改参数</param>
-  Task ChangeStatusAsync(LeanChangeRoleStatusDto input);
+  Task<LeanApiResult> SetStatusAsync(LeanChangeRoleStatusDto input);
 
   /// <summary>
-  /// 分配角色菜单
+  /// 获取角色的菜单权限
+  /// </summary>
+  /// <param name="roleId">角色ID</param>
+  /// <returns>角色菜单ID列表</returns>
+  Task<List<long>> GetRoleMenusAsync(long roleId);
+
+  /// <summary>
+  /// 设置角色的菜单权限
   /// </summary>
   /// <param name="input">菜单分配参数</param>
-  Task AssignMenusAsync(LeanAssignRoleMenuDto input);
+  Task<LeanApiResult> SetRoleMenusAsync(LeanSetRoleMenusDto input);
 
   /// <summary>
-  /// 分配角色数据权限
+  /// 导出角色数据
   /// </summary>
-  /// <param name="input">数据权限分配参数</param>
-  Task AssignDataScopeAsync(LeanAssignRoleDataScopeDto input);
+  /// <param name="input">查询参数</param>
+  /// <returns>导出的角色数据</returns>
+  Task<byte[]> ExportAsync(LeanQueryRoleDto input);
 
   /// <summary>
-  /// 获取角色菜单
+  /// 导入角色数据
   /// </summary>
-  /// <param name="id">角色ID</param>
-  /// <returns>角色菜单ID列表</returns>
-  Task<List<long>> GetMenusAsync(long id);
+  /// <param name="file">导入的文件信息</param>
+  /// <returns>导入结果</returns>
+  Task<LeanImportRoleResultDto> ImportAsync(LeanFileInfo file);
 
   /// <summary>
-  /// 获取角色数据权限
+  /// 获取导入模板
   /// </summary>
-  /// <param name="id">角色ID</param>
-  /// <returns>角色数据权限信息</returns>
-  Task<LeanRoleDataScopeDto> GetDataScopeAsync(long id);
+  /// <returns>导入模板</returns>
+  Task<byte[]> GetImportTemplateAsync();
 }

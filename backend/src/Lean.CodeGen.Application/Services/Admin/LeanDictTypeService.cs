@@ -12,7 +12,6 @@ using Lean.CodeGen.Common.Options;
 using Lean.CodeGen.Common.Security;
 using Lean.CodeGen.Application.Services.Security;
 using Microsoft.Extensions.Options;
-using Microsoft.Extensions.Logging;
 using Mapster;
 using Lean.CodeGen.Domain.Validators;
 
@@ -23,7 +22,7 @@ namespace Lean.CodeGen.Application.Services.Admin;
 /// </summary>
 public class LeanDictTypeService : LeanBaseService, ILeanDictTypeService
 {
-  private readonly ILogger<LeanDictTypeService> _logger;
+  private readonly ILogger _logger;
   private readonly ILeanRepository<LeanDictType> _dictTypeRepository;
   private readonly ILeanRepository<LeanDictData> _dictDataRepository;
   private readonly LeanUniqueValidator<LeanDictType> _uniqueValidator;
@@ -39,7 +38,7 @@ public class LeanDictTypeService : LeanBaseService, ILeanDictTypeService
   {
     _dictTypeRepository = dictTypeRepository;
     _dictDataRepository = dictDataRepository;
-    _logger = (ILogger<LeanDictTypeService>)context.Logger;
+    _logger = context.Logger;
     _uniqueValidator = new LeanUniqueValidator<LeanDictType>(_dictTypeRepository);
   }
 
@@ -313,46 +312,56 @@ public class LeanDictTypeService : LeanBaseService, ILeanDictTypeService
   {
     var result = new LeanExcelImportResult<LeanDictTypeImportDto>();
 
-    // 导入Excel
-    var importResult = LeanExcelHelper.Import<LeanDictTypeImportDto>(File.ReadAllBytes(file.FilePath));
-    result.Data.AddRange(importResult.Data);
-    result.Errors.AddRange(importResult.Errors);
-
-    if (result.IsSuccess)
+    try
     {
-      foreach (var item in result.Data)
+      // 导入Excel
+      var bytes = new byte[file.Stream.Length];
+      await file.Stream.ReadAsync(bytes, 0, (int)file.Stream.Length);
+      var importResult = LeanExcelHelper.Import<LeanDictTypeImportDto>(bytes);
+      result.Data.AddRange(importResult.Data);
+      result.Errors.AddRange(importResult.Errors);
+
+      if (result.IsSuccess)
       {
-        try
+        foreach (var item in result.Data)
         {
-          // 检查字典类型编码是否存在
-          var exists = await _dictTypeRepository.AnyAsync(x => x.DictCode == item.DictCode);
-          if (exists)
+          try
+          {
+            // 检查字典类型编码是否存在
+            var exists = await _dictTypeRepository.AnyAsync(x => x.DictCode == item.DictCode);
+            if (exists)
+            {
+              result.Errors.Add(new LeanExcelImportError
+              {
+                RowIndex = importResult.Data.IndexOf(item) + 2,
+                ErrorMessage = $"字典类型编码 {item.DictCode} 已存在"
+              });
+              continue;
+            }
+
+            // 创建实体
+            var entity = item.Adapt<LeanDictType>();
+            entity.Status = LeanStatus.Normal;
+            await _dictTypeRepository.CreateAsync(entity);
+          }
+          catch (Exception ex)
           {
             result.Errors.Add(new LeanExcelImportError
             {
               RowIndex = importResult.Data.IndexOf(item) + 2,
-              ErrorMessage = $"字典类型编码 {item.DictCode} 已存在"
+              ErrorMessage = ex.Message
             });
-            continue;
           }
-
-          // 创建实体
-          var entity = item.Adapt<LeanDictType>();
-          entity.Status = LeanStatus.Normal;
-          await _dictTypeRepository.CreateAsync(entity);
-        }
-        catch (Exception ex)
-        {
-          result.Errors.Add(new LeanExcelImportError
-          {
-            RowIndex = importResult.Data.IndexOf(item) + 2,
-            ErrorMessage = ex.Message
-          });
         }
       }
-    }
 
-    return result;
+      return result;
+    }
+    catch (Exception ex)
+    {
+      result.ErrorMessage = $"导入失败：{ex.Message}";
+      return result;
+    }
   }
 
   /// <summary>

@@ -3,11 +3,13 @@ using Lean.CodeGen.Application.Dtos.Identity;
 using Lean.CodeGen.Application.Services.Identity;
 using Lean.CodeGen.Common.Models;
 using Lean.CodeGen.Common.Enums;
+using Microsoft.Extensions.Configuration;
+using Lean.CodeGen.Application.Services.Admin;
 
 namespace Lean.CodeGen.WebApi.Controllers.Identity;
 
 /// <summary>
-/// 菜单管理控制器
+/// 菜单控制器
 /// </summary>
 /// <remarks>
 /// 提供菜单管理相关的API接口，包括：
@@ -16,7 +18,8 @@ namespace Lean.CodeGen.WebApi.Controllers.Identity;
 /// 3. 菜单树形结构管理
 /// 4. 菜单权限管理
 /// </remarks>
-[Route("api/[controller]")]
+[Route("api/admin/menus")]
+[ApiController]
 public class LeanMenuController : LeanBaseController
 {
   private readonly ILeanMenuService _menuService;
@@ -25,7 +28,13 @@ public class LeanMenuController : LeanBaseController
   /// 构造函数
   /// </summary>
   /// <param name="menuService">菜单服务</param>
-  public LeanMenuController(ILeanMenuService menuService)
+  /// <param name="localizationService">本地化服务</param>
+  /// <param name="configuration">配置</param>
+  public LeanMenuController(
+      ILeanMenuService menuService,
+      ILeanLocalizationService localizationService,
+      IConfiguration configuration)
+      : base(localizationService, configuration)
   {
     _menuService = menuService;
   }
@@ -57,12 +66,25 @@ public class LeanMenuController : LeanBaseController
   /// <summary>
   /// 删除菜单
   /// </summary>
-  /// <param name="input">菜单删除参数</param>
-  [HttpDelete]
-  public async Task<IActionResult> DeleteAsync([FromBody] LeanDeleteMenuDto input)
+  /// <param name="id">菜单ID</param>
+  /// <returns>删除结果</returns>
+  [HttpDelete("{id}")]
+  public async Task<IActionResult> DeleteAsync(long id)
   {
-    await _menuService.DeleteAsync(input);
-    return Success(LeanBusinessType.Delete);
+    var result = await _menuService.DeleteAsync(id);
+    return Success(result, LeanBusinessType.Delete);
+  }
+
+  /// <summary>
+  /// 批量删除菜单
+  /// </summary>
+  /// <param name="ids">菜单ID列表</param>
+  /// <returns>删除结果</returns>
+  [HttpDelete]
+  public async Task<IActionResult> BatchDeleteAsync([FromBody] List<long> ids)
+  {
+    var result = await _menuService.BatchDeleteAsync(ids);
+    return Success(result, LeanBusinessType.Delete);
   }
 
   /// <summary>
@@ -83,10 +105,22 @@ public class LeanMenuController : LeanBaseController
   /// <param name="input">查询参数</param>
   /// <returns>菜单列表</returns>
   [HttpGet]
-  public async Task<IActionResult> QueryAsync([FromQuery] LeanQueryMenuDto input)
+  public async Task<IActionResult> GetPageAsync([FromQuery] LeanQueryMenuDto input)
   {
-    var result = await _menuService.QueryAsync(input);
+    var result = await _menuService.GetPageAsync(input);
     return Success(result, LeanBusinessType.Query);
+  }
+
+  /// <summary>
+  /// 设置菜单状态
+  /// </summary>
+  /// <param name="input">状态修改参数</param>
+  /// <returns>修改后的菜单状态</returns>
+  [HttpPut("status")]
+  public async Task<IActionResult> SetStatusAsync([FromBody] LeanChangeMenuStatusDto input)
+  {
+    var result = await _menuService.SetStatusAsync(input);
+    return Success(result, LeanBusinessType.Update);
   }
 
   /// <summary>
@@ -102,14 +136,47 @@ public class LeanMenuController : LeanBaseController
   }
 
   /// <summary>
-  /// 修改菜单状态
+  /// 导出菜单数据
   /// </summary>
-  /// <param name="input">状态修改参数</param>
-  [HttpPut("status")]
-  public async Task<IActionResult> ChangeStatusAsync([FromBody] LeanChangeMenuStatusDto input)
+  /// <param name="input">查询参数</param>
+  /// <returns>菜单数据导出结果</returns>
+  [HttpGet("export")]
+  public async Task<IActionResult> ExportAsync([FromQuery] LeanQueryMenuDto input)
   {
-    await _menuService.ChangeStatusAsync(input);
-    return Success(LeanBusinessType.Update);
+    var bytes = await _menuService.ExportAsync(input);
+    return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "menus.xlsx");
+  }
+
+  /// <summary>
+  /// 导入菜单数据
+  /// </summary>
+  /// <param name="file">菜单数据文件</param>
+  /// <returns>导入结果</returns>
+  [HttpPost("import")]
+  public async Task<IActionResult> ImportAsync([FromForm] IFormFile file)
+  {
+    using var ms = new MemoryStream();
+    await file.CopyToAsync(ms);
+    ms.Position = 0;
+    var fileInfo = new LeanFileInfo
+    {
+      Stream = ms,
+      FileName = file.FileName,
+      ContentType = file.ContentType
+    };
+    var result = await _menuService.ImportAsync(fileInfo);
+    return Success(result, LeanBusinessType.Import);
+  }
+
+  /// <summary>
+  /// 获取导入模板
+  /// </summary>
+  /// <returns>菜单导入模板文件</returns>
+  [HttpGet("template")]
+  public async Task<IActionResult> GetImportTemplateAsync()
+  {
+    var bytes = await _menuService.GetImportTemplateAsync();
+    return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "menu-template.xlsx");
   }
 
   /// <summary>

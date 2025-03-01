@@ -13,6 +13,7 @@ using Lean.CodeGen.Domain.Entities.Identity;
 using Lean.CodeGen.Domain.Interfaces.Repositories;
 using Lean.CodeGen.Domain.Validators;
 using Lean.CodeGen.Common.Extensions;
+using Lean.CodeGen.Common.Excel;
 
 namespace Lean.CodeGen.Application.Services.Identity;
 
@@ -58,7 +59,7 @@ public class LeanMenuService : LeanBaseService, ILeanMenuService
   /// </summary>
   /// <param name="input">菜单创建参数</param>
   /// <returns>创建成功的菜单信息</returns>
-  public async Task<LeanMenuDto> CreateAsync(LeanCreateMenuDto input)
+  public async Task<LeanApiResult<long>> CreateAsync(LeanCreateMenuDto input)
   {
     return await ExecuteInTransactionAsync(async () =>
     {
@@ -76,7 +77,7 @@ public class LeanMenuService : LeanBaseService, ILeanMenuService
       await _menuRepository.CreateAsync(menu);
 
       LogAudit("CreateMenu", $"创建菜单: {menu.MenuName}");
-      return await GetAsync(menu.Id);
+      return LeanApiResult<long>.Ok(menu.Id);
     }, "创建菜单");
   }
 
@@ -85,7 +86,7 @@ public class LeanMenuService : LeanBaseService, ILeanMenuService
   /// </summary>
   /// <param name="input">菜单更新参数</param>
   /// <returns>更新后的菜单信息</returns>
-  public async Task<LeanMenuDto> UpdateAsync(LeanUpdateMenuDto input)
+  public async Task<LeanApiResult> UpdateAsync(LeanUpdateMenuDto input)
   {
     return await ExecuteInTransactionAsync(async () =>
     {
@@ -114,19 +115,20 @@ public class LeanMenuService : LeanBaseService, ILeanMenuService
       await _menuRepository.UpdateAsync(menu);
 
       LogAudit("UpdateMenu", $"更新菜单: {menu.MenuName}");
-      return await GetAsync(menu.Id);
+      return LeanApiResult.Ok();
     }, "更新菜单");
   }
 
   /// <summary>
   /// 删除菜单
   /// </summary>
-  /// <param name="input">菜单删除参数</param>
-  public async Task DeleteAsync(LeanDeleteMenuDto input)
+  /// <param name="id">菜单ID</param>
+  /// <returns>操作结果</returns>
+  public async Task<LeanApiResult> DeleteAsync(long id)
   {
-    await ExecuteInTransactionAsync(async () =>
+    return await ExecuteInTransactionAsync(async () =>
     {
-      var menu = await _menuRepository.GetByIdAsync(input.Id);
+      var menu = await _menuRepository.GetByIdAsync(id);
       if (menu == null)
       {
         throw new LeanException("菜单不存在");
@@ -138,19 +140,20 @@ public class LeanMenuService : LeanBaseService, ILeanMenuService
       }
 
       // 检查是否存在子菜单
-      var hasChildren = await _menuRepository.AnyAsync(x => x.ParentId == input.Id);
+      var hasChildren = await _menuRepository.AnyAsync(x => x.ParentId == id);
       if (hasChildren)
       {
         throw new LeanException("存在子菜单，不能删除");
       }
 
       // 删除角色菜单关联
-      await _roleMenuRepository.DeleteAsync(x => x.MenuId == input.Id);
+      await _roleMenuRepository.DeleteAsync(x => x.MenuId == id);
 
       // 删除菜单
       await _menuRepository.DeleteAsync(menu);
 
       LogAudit("DeleteMenu", $"删除菜单: {menu.MenuName}");
+      return LeanApiResult.Ok();
     }, "删除菜单");
   }
 
@@ -159,7 +162,7 @@ public class LeanMenuService : LeanBaseService, ILeanMenuService
   /// </summary>
   /// <param name="id">菜单ID</param>
   /// <returns>菜单详细信息</returns>
-  public async Task<LeanMenuDto> GetAsync(long id)
+  public async Task<LeanApiResult<LeanMenuDto>> GetAsync(long id)
   {
     var menu = await _menuRepository.GetByIdAsync(id);
     if (menu == null)
@@ -167,7 +170,7 @@ public class LeanMenuService : LeanBaseService, ILeanMenuService
       throw new LeanException("菜单不存在");
     }
 
-    return menu.Adapt<LeanMenuDto>();
+    return LeanApiResult<LeanMenuDto>.Ok(menu.Adapt<LeanMenuDto>());
   }
 
   /// <summary>
@@ -366,5 +369,151 @@ public class LeanMenuService : LeanBaseService, ILeanMenuService
     }
 
     return result;
+  }
+
+  /// <summary>
+  /// 批量删除菜单
+  /// </summary>
+  /// <param name="ids">菜单ID列表</param>
+  /// <returns>操作结果</returns>
+  public async Task<LeanApiResult> BatchDeleteAsync(List<long> ids)
+  {
+    return await ExecuteInTransactionAsync(async () =>
+    {
+      foreach (var id in ids)
+      {
+        await DeleteAsync(id);
+      }
+      return LeanApiResult.Ok();
+    }, "批量删除菜单");
+  }
+
+  /// <summary>
+  /// 分页查询菜单
+  /// </summary>
+  public async Task<LeanApiResult<LeanPageResult<LeanMenuDto>>> GetPageAsync(LeanQueryMenuDto input)
+  {
+    Expression<Func<LeanMenu, bool>> predicate = x => true;
+
+    if (!string.IsNullOrEmpty(input.MenuName))
+    {
+      var menuName = CleanInput(input.MenuName);
+      predicate = predicate.And(x => x.MenuName.Contains(menuName));
+    }
+
+    if (input.MenuType.HasValue)
+    {
+      predicate = predicate.And(x => x.MenuType == input.MenuType);
+    }
+
+    if (input.MenuStatus.HasValue)
+    {
+      predicate = predicate.And(x => x.MenuStatus == input.MenuStatus);
+    }
+
+    var (total, items) = await _menuRepository.GetPageListAsync(predicate, input.PageSize, input.PageIndex);
+    var list = items.Adapt<List<LeanMenuDto>>();
+
+    var result = new LeanPageResult<LeanMenuDto>
+    {
+      Total = total,
+      Items = list,
+      PageIndex = input.PageIndex,
+      PageSize = input.PageSize
+    };
+
+    return LeanApiResult<LeanPageResult<LeanMenuDto>>.Ok(result);
+  }
+
+  /// <summary>
+  /// 设置菜单状态
+  /// </summary>
+  public async Task<LeanApiResult> SetStatusAsync(LeanChangeMenuStatusDto input)
+  {
+    await ChangeStatusAsync(input);
+    return LeanApiResult.Ok();
+  }
+
+  /// <summary>
+  /// 导出菜单数据
+  /// </summary>
+  public async Task<byte[]> ExportAsync(LeanQueryMenuDto input)
+  {
+    var menus = await QueryAsync(input);
+    var exportDtos = menus.Select(x => new LeanMenuExportDto
+    {
+      MenuName = x.MenuName,
+      MenuType = x.MenuType,
+      MenuStatus = x.MenuStatus,
+      ParentId = x.ParentId,
+      OrderNum = x.OrderNum,
+      Perms = x.Perms,
+      Path = x.Path,
+      Component = x.Component,
+      Icon = x.Icon,
+      IsBuiltin = x.IsBuiltin,
+      CreateTime = x.CreateTime
+    }).ToList();
+
+    return LeanExcelHelper.Export(exportDtos);
+  }
+
+  /// <summary>
+  /// 导入菜单数据
+  /// </summary>
+  public async Task<LeanImportMenuResultDto> ImportAsync(LeanFileInfo file)
+  {
+    var result = new LeanImportMenuResultDto();
+    try
+    {
+      var bytes = new byte[file.Stream.Length];
+      await file.Stream.ReadAsync(bytes, 0, (int)file.Stream.Length);
+      var importResult = LeanExcelHelper.Import<LeanMenuImportDto>(bytes);
+
+      foreach (var item in importResult.Data)
+      {
+        if (await _menuRepository.AnyAsync(x => x.MenuName == item.MenuName))
+        {
+          result.AddError(item.Perms, $"菜单名称 {item.MenuName} 已存在");
+          continue;
+        }
+        var menu = item.Adapt<LeanMenu>();
+        menu.MenuStatus = LeanMenuStatus.Normal;
+        menu.IsBuiltin = LeanBuiltinStatus.No;
+        await _menuRepository.CreateAsync(menu);
+        LogAudit("ImportMenu", $"导入菜单: {menu.MenuName}");
+        result.SuccessCount++;
+      }
+      return result;
+    }
+    catch (Exception ex)
+    {
+      result.ErrorMessage = $"导入失败：{ex.Message}";
+      return result;
+    }
+  }
+
+  /// <summary>
+  /// 获取导入模板
+  /// </summary>
+  public async Task<byte[]> GetImportTemplateAsync()
+  {
+    var template = new List<LeanMenuImportDto>
+    {
+      new LeanMenuImportDto
+      {
+        MenuName = "示例菜单",
+        MenuType = LeanMenuType.Menu,
+        MenuStatus = LeanMenuStatus.Normal,
+        ParentId = 0,
+        OrderNum = 1,
+        Perms = "system:menu:list",
+        Path = "/system/menu",
+        Component = "system/menu/index",
+        Icon = "menu"
+      }
+    };
+
+    return await Task.FromResult(LeanExcelHelper.Export(template));
   }
 }

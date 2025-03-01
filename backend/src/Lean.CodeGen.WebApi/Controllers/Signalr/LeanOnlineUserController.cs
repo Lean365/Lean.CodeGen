@@ -4,6 +4,8 @@ using Lean.CodeGen.Common.Models;
 using Lean.CodeGen.Application.Dtos.Signalr;
 using Swashbuckle.AspNetCore.Annotations;
 using Lean.CodeGen.Common.Enums;
+using Lean.CodeGen.Application.Services.Admin;
+using Microsoft.Extensions.Configuration;
 
 namespace Lean.CodeGen.WebApi.Controllers.Signalr;
 
@@ -17,7 +19,11 @@ public class LeanOnlineUserController : LeanBaseController
 {
   private readonly ILeanOnlineUserService _userService;
 
-  public LeanOnlineUserController(ILeanOnlineUserService userService)
+  public LeanOnlineUserController(
+      ILeanOnlineUserService userService,
+      ILeanLocalizationService localizationService,
+      IConfiguration configuration)
+      : base(localizationService, configuration)
   {
     _userService = userService;
   }

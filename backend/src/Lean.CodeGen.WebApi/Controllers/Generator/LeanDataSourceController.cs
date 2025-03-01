@@ -5,14 +5,17 @@ using Lean.CodeGen.Common.Models;
 using Lean.CodeGen.Common.Excel;
 using Lean.CodeGen.Common.Enums;
 using System.IO;
+using Microsoft.Extensions.Configuration;
+using Lean.CodeGen.Application.Services.Admin;
 
 namespace Lean.CodeGen.WebApi.Controllers.Generator
 {
   /// <summary>
-  /// 数据源管理控制器
+  /// 数据源控制器
   /// </summary>
-  [Route("api/generator/data-sources")]
+  [Route("api/generator/datasources")]
   [ApiController]
+  [ApiExplorerSettings(GroupName = "generator")]
   public class LeanDataSourceController : LeanBaseController
   {
     private readonly ILeanDataSourceService _dataSourceService;
@@ -20,7 +23,11 @@ namespace Lean.CodeGen.WebApi.Controllers.Generator
     /// <summary>
     /// 构造函数
     /// </summary>
-    public LeanDataSourceController(ILeanDataSourceService dataSourceService)
+    public LeanDataSourceController(
+        ILeanDataSourceService dataSourceService,
+        ILeanLocalizationService localizationService,
+        IConfiguration configuration)
+        : base(localizationService, configuration)
     {
       _dataSourceService = dataSourceService;
     }
@@ -72,7 +79,7 @@ namespace Lean.CodeGen.WebApi.Controllers.Generator
     public async Task<IActionResult> DeleteAsync(long id)
     {
       var result = await _dataSourceService.DeleteAsync(id);
-      return Success(result, LeanBusinessType.Delete);
+      return result ? Success(LeanBusinessType.Delete) : await ErrorAsync("generator.error.delete_failed");
     }
 
     /// <summary>
@@ -84,7 +91,7 @@ namespace Lean.CodeGen.WebApi.Controllers.Generator
       var result = await _dataSourceService.ExportAsync(queryDto);
       var stream = new MemoryStream();
       result.Stream.CopyTo(stream);
-      return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "data-sources.xlsx");
+      return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "datasources.xlsx");
     }
 
     /// <summary>
@@ -106,17 +113,17 @@ namespace Lean.CodeGen.WebApi.Controllers.Generator
       var result = await _dataSourceService.DownloadTemplateAsync();
       var stream = new MemoryStream();
       result.Stream.CopyTo(stream);
-      return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "data-source-template.xlsx");
+      return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "datasource-template.xlsx");
     }
 
     /// <summary>
-    /// 测试连接
+    /// 测试数据源连接
     /// </summary>
-    [HttpPost("{id}/test-connection")]
+    [HttpPost("{id}/test")]
     public async Task<IActionResult> TestConnectionAsync(long id)
     {
       var result = await _dataSourceService.TestConnectionAsync(id);
-      return Success(result, LeanBusinessType.Other);
+      return result ? Success(LeanBusinessType.Other) : await ErrorAsync("generator.error.connection_failed");
     }
   }
 }

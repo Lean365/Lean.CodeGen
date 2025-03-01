@@ -7,6 +7,7 @@ using Lean.CodeGen.Common.Models;
 using Lean.CodeGen.Domain.Entities;
 using Lean.CodeGen.Domain.Interfaces.Repositories;
 using Lean.CodeGen.Infrastructure.Data.Context;
+using Lean.CodeGen.Application.Services.Base;
 using SqlSugar;
 
 namespace Lean.CodeGen.Infrastructure.Repositories;
@@ -22,12 +23,43 @@ namespace Lean.CodeGen.Infrastructure.Repositories;
 public class LeanRepository<TEntity> : LeanRepository<TEntity, long>, ILeanRepository<TEntity>
   where TEntity : LeanBaseEntity, new()
 {
+  private readonly LeanBaseServiceContext _serviceContext;
+
   /// <summary>
   /// 初始化仓储实例
   /// </summary>
   /// <param name="dbContext">数据库上下文</param>
-  public LeanRepository(LeanDbContext dbContext) : base(dbContext)
+  /// <param name="serviceContext">服务上下文</param>
+  public LeanRepository(LeanDbContext dbContext, LeanBaseServiceContext serviceContext) : base(dbContext)
   {
+    _serviceContext = serviceContext;
+  }
+
+  /// <summary>
+  /// 创建实体前的处理
+  /// </summary>
+  protected override void BeforeCreate(TEntity entity)
+  {
+    base.BeforeCreate(entity);
+
+    // 设置创建信息
+    entity.CreateTime = DateTime.Now;
+    entity.CreateUserId = _serviceContext.CurrentUserId;
+    entity.CreateUserName = _serviceContext.CurrentUserName;
+    entity.TenantId = _serviceContext.CurrentTenantId;
+  }
+
+  /// <summary>
+  /// 更新实体前的处理
+  /// </summary>
+  protected override void BeforeUpdate(TEntity entity)
+  {
+    base.BeforeUpdate(entity);
+
+    // 设置更新信息
+    entity.UpdateTime = DateTime.Now;
+    entity.UpdateUserId = _serviceContext.CurrentUserId;
+    entity.UpdateUserName = _serviceContext.CurrentUserName;
   }
 }
 
@@ -59,6 +91,20 @@ public class LeanRepository<TEntity, TKey> : ILeanRepository<TEntity, TKey>
   public LeanRepository(LeanDbContext dbContext)
   {
     DbContext = dbContext;
+  }
+
+  /// <summary>
+  /// 创建实体前的处理
+  /// </summary>
+  protected virtual void BeforeCreate(TEntity entity)
+  {
+  }
+
+  /// <summary>
+  /// 更新实体前的处理
+  /// </summary>
+  protected virtual void BeforeUpdate(TEntity entity)
+  {
   }
 
   /// <summary>
@@ -108,6 +154,7 @@ public class LeanRepository<TEntity, TKey> : ILeanRepository<TEntity, TKey>
   /// </remarks>
   public virtual async Task<TKey> CreateAsync(TEntity entity)
   {
+    BeforeCreate(entity);
     var id = await DbContext.InsertReturnIdentityAsync(entity);
     return (TKey)Convert.ChangeType(id, typeof(TKey));
   }
@@ -126,6 +173,11 @@ public class LeanRepository<TEntity, TKey> : ILeanRepository<TEntity, TKey>
     if (entities == null || !entities.Any())
       return false;
 
+    foreach (var entity in entities)
+    {
+      BeforeCreate(entity);
+    }
+
     return await DbContext.InsertRangeAsync(entities);
   }
 
@@ -136,6 +188,7 @@ public class LeanRepository<TEntity, TKey> : ILeanRepository<TEntity, TKey>
   /// <returns>是否更新成功</returns>
   public virtual async Task<bool> UpdateAsync(TEntity entity)
   {
+    BeforeUpdate(entity);
     return await DbContext.UpdateAsync(entity);
   }
 
@@ -152,6 +205,11 @@ public class LeanRepository<TEntity, TKey> : ILeanRepository<TEntity, TKey>
   {
     if (entities == null || !entities.Any())
       return false;
+
+    foreach (var entity in entities)
+    {
+      BeforeUpdate(entity);
+    }
 
     return await DbContext.UpdateRangeAsync(entities);
   }

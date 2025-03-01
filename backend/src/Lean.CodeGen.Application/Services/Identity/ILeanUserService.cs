@@ -68,11 +68,11 @@ public interface ILeanUserService
   Task<byte[]> ExportAsync(LeanExportUserDto input);
 
   /// <summary>
-  /// 导入用户
+  /// 导入用户数据
   /// </summary>
   /// <param name="file">导入文件</param>
   /// <returns>导入结果</returns>
-  Task<LeanImportResult> ImportAsync(byte[] file);
+  Task<LeanImportUserResultDto> ImportAsync(LeanFileInfo file);
 
   /// <summary>
   /// 获取导入模板

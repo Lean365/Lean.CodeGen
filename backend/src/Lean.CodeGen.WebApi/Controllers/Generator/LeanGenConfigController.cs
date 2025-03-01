@@ -5,6 +5,8 @@ using Lean.CodeGen.Common.Models;
 using Lean.CodeGen.Common.Excel;
 using Lean.CodeGen.Common.Enums;
 using System.IO;
+using Lean.CodeGen.Application.Services.Admin;
+using Microsoft.Extensions.Configuration;
 
 namespace Lean.CodeGen.WebApi.Controllers.Generator
 {
@@ -20,7 +22,14 @@ namespace Lean.CodeGen.WebApi.Controllers.Generator
     /// <summary>
     /// 构造函数
     /// </summary>
-    public LeanGenConfigController(ILeanGenConfigService genConfigService)
+    /// <param name="genConfigService">代码生成配置服务</param>
+    /// <param name="localizationService">本地化服务</param>
+    /// <param name="configuration">配置</param>
+    public LeanGenConfigController(
+        ILeanGenConfigService genConfigService,
+        ILeanLocalizationService localizationService,
+        IConfiguration configuration)
+        : base(localizationService, configuration)
     {
       _genConfigService = genConfigService;
     }

@@ -56,5 +56,10 @@ namespace Lean.CodeGen.Common.Models
     /// 文件内容类型
     /// </summary>
     public string ContentType { get; set; }
+
+    /// <summary>
+    /// 文件流
+    /// </summary>
+    public Stream Stream { get; set; }
   }
 }

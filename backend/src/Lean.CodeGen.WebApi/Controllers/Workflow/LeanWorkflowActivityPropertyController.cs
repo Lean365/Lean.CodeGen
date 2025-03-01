@@ -4,6 +4,8 @@ using Lean.CodeGen.Common.Models;
 using Lean.CodeGen.WebApi.Controllers;
 using Microsoft.AspNetCore.Mvc;
 using Lean.CodeGen.Common.Enums;
+using Lean.CodeGen.Application.Services.Admin;
+using Microsoft.Extensions.Configuration;
 
 namespace Lean.CodeGen.WebApi.Controllers.Workflow;
 
@@ -21,7 +23,13 @@ public class LeanWorkflowActivityPropertyController : LeanBaseController
   /// 构造函数
   /// </summary>
   /// <param name="service">工作流活动属性服务</param>
-  public LeanWorkflowActivityPropertyController(ILeanWorkflowActivityPropertyService service)
+  /// <param name="localizationService">本地化服务</param>
+  /// <param name="configuration">配置</param>
+  public LeanWorkflowActivityPropertyController(
+      ILeanWorkflowActivityPropertyService service,
+      ILeanLocalizationService localizationService,
+      IConfiguration configuration)
+      : base(localizationService, configuration)
   {
     _service = service;
   }
@@ -70,13 +78,14 @@ public class LeanWorkflowActivityPropertyController : LeanBaseController
   /// <param name="dto">活动属性</param>
   /// <returns>是否成功</returns>
   [HttpPut("{id}")]
-  public async Task<bool> UpdateAsync(long id, LeanWorkflowActivityPropertyDto dto)
+  public async Task<IActionResult> UpdateAsync(long id, LeanWorkflowActivityPropertyDto dto)
   {
     if (id != dto.Id)
     {
-      return false;
+      return await ErrorAsync("workflow.activity.property.error.id_mismatch");
     }
-    return await _service.UpdateAsync(dto);
+    var result = await _service.UpdateAsync(dto);
+    return Success(result, LeanBusinessType.Update);
   }
 
   /// <summary>
@@ -85,8 +94,9 @@ public class LeanWorkflowActivityPropertyController : LeanBaseController
   /// <param name="id">属性ID</param>
   /// <returns>是否成功</returns>
   [HttpDelete("{id}")]
-  public Task<bool> DeleteAsync(long id)
+  public async Task<IActionResult> DeleteAsync(long id)
   {
-    return _service.DeleteAsync(id);
+    var result = await _service.DeleteAsync(id);
+    return Success(result, LeanBusinessType.Delete);
   }
 }

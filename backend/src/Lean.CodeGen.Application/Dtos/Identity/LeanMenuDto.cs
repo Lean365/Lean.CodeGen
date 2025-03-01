@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Lean.CodeGen.Common.Enums;
+using Lean.CodeGen.Common.Excel;
 using Lean.CodeGen.Common.Models;
 
 namespace Lean.CodeGen.Application.Dtos.Identity;
@@ -236,6 +237,68 @@ public class LeanChangeMenuStatusDto
 }
 
 /// <summary>
+/// 菜单导入DTO
+/// </summary>
+public class LeanMenuImportDto
+{
+  /// <summary>
+  /// 菜单名称
+  /// </summary>
+  [Required(ErrorMessage = "菜单名称不能为空")]
+  [LeanExcelColumn("菜单名称", DataType = LeanExcelDataType.String)]
+  public string MenuName { get; set; } = default!;
+
+  /// <summary>
+  /// 菜单类型
+  /// </summary>
+  [Required(ErrorMessage = "菜单类型不能为空")]
+  [LeanExcelColumn("菜单类型", DataType = LeanExcelDataType.Int)]
+  public LeanMenuType MenuType { get; set; }
+
+  /// <summary>
+  /// 菜单状态
+  /// </summary>
+  [LeanExcelColumn("菜单状态", DataType = LeanExcelDataType.Int)]
+  public LeanMenuStatus MenuStatus { get; set; }
+
+  /// <summary>
+  /// 父级菜单ID
+  /// </summary>
+  [LeanExcelColumn("父级菜单ID", DataType = LeanExcelDataType.Long)]
+  public long? ParentId { get; set; }
+
+  /// <summary>
+  /// 显示顺序
+  /// </summary>
+  [LeanExcelColumn("显示顺序", DataType = LeanExcelDataType.Int)]
+  public int OrderNum { get; set; }
+
+  /// <summary>
+  /// 权限标识
+  /// </summary>
+  [LeanExcelColumn("权限标识", DataType = LeanExcelDataType.String)]
+  public string? Perms { get; set; }
+
+  /// <summary>
+  /// 路由地址
+  /// </summary>
+  [LeanExcelColumn("路由地址", DataType = LeanExcelDataType.String)]
+  public string? Path { get; set; }
+
+  /// <summary>
+  /// 组件路径
+  /// </summary>
+  [LeanExcelColumn("组件路径", DataType = LeanExcelDataType.String)]
+  public string? Component { get; set; }
+
+  /// <summary>
+  /// 图标
+  /// </summary>
+  [LeanExcelColumn("图标", DataType = LeanExcelDataType.String)]
+  public string? Icon { get; set; }
+}
+
+/// <summary>
 /// 菜单导入模板
 /// </summary>
 public class LeanImportTemplateMenuDto
@@ -315,6 +378,11 @@ public class LeanImportMenuResultDto : LeanImportResult
   public new List<LeanImportMenuErrorDto> Errors { get; set; } = new();
 
   /// <summary>
+  /// 错误信息
+  /// </summary>
+  public string? ErrorMessage { get; set; }
+
+  /// <summary>
   /// 添加错误信息
   /// </summary>
   public override void AddError(string perms, string errorMessage)
@@ -354,4 +422,76 @@ public class LeanExportMenuDto : LeanQueryMenuDto
   /// 选中的ID列表
   /// </summary>
   public List<long> SelectedIds { get; set; } = new();
+}
+
+/// <summary>
+/// 菜单导出DTO
+/// </summary>
+public class LeanMenuExportDto
+{
+  /// <summary>
+  /// 菜单名称
+  /// </summary>
+  [LeanExcelColumn("菜单名称", DataType = LeanExcelDataType.String)]
+  public string MenuName { get; set; } = default!;
+
+  /// <summary>
+  /// 菜单类型
+  /// </summary>
+  [LeanExcelColumn("菜单类型", DataType = LeanExcelDataType.Int)]
+  public LeanMenuType MenuType { get; set; }
+
+  /// <summary>
+  /// 菜单状态
+  /// </summary>
+  [LeanExcelColumn("菜单状态", DataType = LeanExcelDataType.Int)]
+  public LeanMenuStatus MenuStatus { get; set; }
+
+  /// <summary>
+  /// 父级菜单ID
+  /// </summary>
+  [LeanExcelColumn("父级菜单ID", DataType = LeanExcelDataType.Long)]
+  public long? ParentId { get; set; }
+
+  /// <summary>
+  /// 显示顺序
+  /// </summary>
+  [LeanExcelColumn("显示顺序", DataType = LeanExcelDataType.Int)]
+  public int OrderNum { get; set; }
+
+  /// <summary>
+  /// 权限标识
+  /// </summary>
+  [LeanExcelColumn("权限标识", DataType = LeanExcelDataType.String)]
+  public string Perms { get; set; } = default!;
+
+  /// <summary>
+  /// 路由地址
+  /// </summary>
+  [LeanExcelColumn("路由地址", DataType = LeanExcelDataType.String)]
+  public string Path { get; set; } = default!;
+
+  /// <summary>
+  /// 组件路径
+  /// </summary>
+  [LeanExcelColumn("组件路径", DataType = LeanExcelDataType.String)]
+  public string Component { get; set; } = default!;
+
+  /// <summary>
+  /// 图标
+  /// </summary>
+  [LeanExcelColumn("图标", DataType = LeanExcelDataType.String)]
+  public string Icon { get; set; } = default!;
+
+  /// <summary>
+  /// 是否内置
+  /// </summary>
+  [LeanExcelColumn("是否内置", DataType = LeanExcelDataType.Int)]
+  public LeanBuiltinStatus IsBuiltin { get; set; }
+
+  /// <summary>
+  /// 创建时间
+  /// </summary>
+  [LeanExcelColumn("创建时间", DataType = LeanExcelDataType.DateTime)]
+  public DateTime CreateTime { get; set; }
 }

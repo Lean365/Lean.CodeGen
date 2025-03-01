@@ -12,7 +12,7 @@ using Lean.CodeGen.Common.Options;
 using Lean.CodeGen.Common.Security;
 using Lean.CodeGen.Application.Services.Security;
 using Microsoft.Extensions.Options;
-using Microsoft.Extensions.Logging;
+using NLog;
 using Mapster;
 using Lean.CodeGen.Domain.Validators;
 
@@ -25,7 +25,7 @@ public class LeanLanguageService : LeanBaseService, ILeanLanguageService
 {
   private readonly ILeanRepository<LeanLanguage> _languageRepository;
   private readonly LeanUniqueValidator<LeanLanguage> _uniqueValidator;
-  private readonly ILogger<LeanLanguageService> _logger;
+  private readonly ILogger _logger;
 
   /// <summary>
   /// 构造函数
@@ -36,7 +36,7 @@ public class LeanLanguageService : LeanBaseService, ILeanLanguageService
       : base(context)
   {
     _languageRepository = languageRepository;
-    _logger = (ILogger<LeanLanguageService>)context.Logger;
+    _logger = context.Logger;
     _uniqueValidator = new LeanUniqueValidator<LeanLanguage>(_languageRepository);
   }
 

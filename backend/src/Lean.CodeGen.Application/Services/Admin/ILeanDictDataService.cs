@@ -57,7 +57,7 @@ public interface ILeanDictDataService
   /// <summary>
   /// 导入字典数据
   /// </summary>
-  Task<LeanExcelImportResult<LeanDictDataImportDto>> ImportAsync(byte[] file);
+  Task<LeanExcelImportResult<LeanDictDataImportDto>> ImportAsync(LeanFileInfo file);
 
   /// <summary>
   /// 获取导入模板

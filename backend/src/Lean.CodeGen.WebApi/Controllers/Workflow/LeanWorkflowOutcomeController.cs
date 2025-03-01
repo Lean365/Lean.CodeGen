@@ -4,6 +4,8 @@ using Lean.CodeGen.Common.Models;
 using Lean.CodeGen.WebApi.Controllers;
 using Microsoft.AspNetCore.Mvc;
 using Lean.CodeGen.Common.Enums;
+using Microsoft.Extensions.Configuration;
+using Lean.CodeGen.Application.Services.Admin;
 
 namespace Lean.CodeGen.WebApi.Controllers.Workflow;
 
@@ -21,7 +23,13 @@ public class LeanWorkflowOutcomeController : LeanBaseController
   /// 构造函数
   /// </summary>
   /// <param name="service">工作流结果服务</param>
-  public LeanWorkflowOutcomeController(ILeanWorkflowOutcomeService service)
+  /// <param name="localizationService">本地化服务</param>
+  /// <param name="configuration">配置</param>
+  public LeanWorkflowOutcomeController(
+      ILeanWorkflowOutcomeService service,
+      ILeanLocalizationService localizationService,
+      IConfiguration configuration)
+      : base(localizationService, configuration)
   {
     _service = service;
   }
@@ -61,7 +69,7 @@ public class LeanWorkflowOutcomeController : LeanBaseController
   {
     if (id != dto.Id)
     {
-      return Error("ID不匹配");
+      return await ErrorAsync("workflow.error.id_mismatch");
     }
     var result = await _service.UpdateAsync(dto);
     return Success(result, LeanBusinessType.Update);
@@ -73,10 +81,10 @@ public class LeanWorkflowOutcomeController : LeanBaseController
   /// <param name="id">结果ID</param>
   /// <returns>是否成功</returns>
   [HttpDelete("{id}")]
-  public async Task<LeanApiResult> DeleteAsync(long id)
+  public async Task<IActionResult> DeleteAsync(long id)
   {
     var result = await _service.DeleteAsync(id);
-    return result ? LeanApiResult.Ok() : LeanApiResult.Error("删除失败");
+    return result ? Success(LeanBusinessType.Delete) : await ErrorAsync("workflow.error.delete_failed");
   }
 
   /// <summary>
@@ -89,7 +97,7 @@ public class LeanWorkflowOutcomeController : LeanBaseController
   /// <param name="outcomeType">结果类型</param>
   /// <returns>分页结果</returns>
   [HttpGet]
-  public async Task<LeanApiResult<LeanPageResult<LeanWorkflowOutcomeDto>>> GetPagedListAsync(
+  public async Task<IActionResult> GetPagedListAsync(
       [FromQuery] int pageIndex = 1,
       [FromQuery] int pageSize = 10,
       [FromQuery] long? activityInstanceId = null,
@@ -97,6 +105,6 @@ public class LeanWorkflowOutcomeController : LeanBaseController
       [FromQuery] string? outcomeType = null)
   {
     var result = await _service.GetPagedListAsync(pageIndex, pageSize, activityInstanceId, outcomeName, outcomeType);
-    return LeanApiResult<LeanPageResult<LeanWorkflowOutcomeDto>>.Ok(result);
+    return Success(result, LeanBusinessType.Query);
   }
 }

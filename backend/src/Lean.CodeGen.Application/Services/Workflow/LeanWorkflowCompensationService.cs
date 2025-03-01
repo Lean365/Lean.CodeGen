@@ -4,7 +4,7 @@ using Lean.CodeGen.Domain.Entities.Workflow;
 using Lean.CodeGen.Domain.Interfaces.Repositories;
 using System.Linq.Expressions;
 using Mapster;
-using Microsoft.Extensions.Logging;
+using NLog;
 using Lean.CodeGen.Application.Services.Base;
 
 namespace Lean.CodeGen.Application.Services.Workflow;
@@ -14,82 +14,82 @@ namespace Lean.CodeGen.Application.Services.Workflow;
 /// </summary>
 public class LeanWorkflowCompensationService : LeanBaseService, ILeanWorkflowCompensationService
 {
-  private readonly ILeanRepository<LeanWorkflowCompensation> _repository;
-  private readonly ILogger<LeanWorkflowCompensationService> _logger;
+    private readonly ILeanRepository<LeanWorkflowCompensation> _repository;
+    private readonly ILogger _logger;
 
-  public LeanWorkflowCompensationService(
-      ILeanRepository<LeanWorkflowCompensation> repository,
-      LeanBaseServiceContext context)
-      : base(context)
-  {
-    _repository = repository;
-    _logger = (ILogger<LeanWorkflowCompensationService>)context.Logger;
-  }
-
-  /// <inheritdoc/>
-  public async Task<LeanWorkflowCompensationDto?> GetAsync(long id)
-  {
-    var entity = await _repository.GetByIdAsync(id);
-    return entity?.Adapt<LeanWorkflowCompensationDto>();
-  }
-
-  /// <inheritdoc/>
-  public async Task<long> CreateAsync(LeanWorkflowCompensationDto dto)
-  {
-    var entity = dto.Adapt<LeanWorkflowCompensation>();
-    return await _repository.CreateAsync(entity);
-  }
-
-  /// <inheritdoc/>
-  public async Task<bool> UpdateAsync(LeanWorkflowCompensationDto dto)
-  {
-    var entity = dto.Adapt<LeanWorkflowCompensation>();
-    return await _repository.UpdateAsync(entity);
-  }
-
-  /// <inheritdoc/>
-  public async Task<bool> DeleteAsync(long id)
-  {
-    return await _repository.DeleteAsync(x => x.Id == id);
-  }
-
-  /// <inheritdoc/>
-  public async Task<LeanPageResult<LeanWorkflowCompensationDto>> GetPagedListAsync(
-      int pageIndex,
-      int pageSize,
-      long? activityInstanceId = null,
-      DateTime? startTime = null,
-      DateTime? endTime = null)
-  {
-    Expression<Func<LeanWorkflowCompensation, bool>> predicate = x => true;
-
-    if (activityInstanceId.HasValue)
+    public LeanWorkflowCompensationService(
+        ILeanRepository<LeanWorkflowCompensation> repository,
+        LeanBaseServiceContext context)
+        : base(context)
     {
-      var temp = predicate;
-      predicate = x => temp.Compile()(x) && x.ActivityInstanceId == activityInstanceId.Value;
+        _repository = repository;
+        _logger = context.Logger;
     }
 
-    if (startTime.HasValue)
+    /// <inheritdoc/>
+    public async Task<LeanWorkflowCompensationDto?> GetAsync(long id)
     {
-      var temp = predicate;
-      predicate = x => temp.Compile()(x) && x.CompensationTime >= startTime.Value;
+        var entity = await _repository.GetByIdAsync(id);
+        return entity?.Adapt<LeanWorkflowCompensationDto>();
     }
 
-    if (endTime.HasValue)
+    /// <inheritdoc/>
+    public async Task<long> CreateAsync(LeanWorkflowCompensationDto dto)
     {
-      var temp = predicate;
-      predicate = x => temp.Compile()(x) && x.CompensationTime <= endTime.Value;
+        var entity = dto.Adapt<LeanWorkflowCompensation>();
+        return await _repository.CreateAsync(entity);
     }
 
-    var result = await _repository.GetPageListAsync(predicate, pageSize, pageIndex);
-    var list = result.Items.Adapt<List<LeanWorkflowCompensationDto>>();
-
-    return new LeanPageResult<LeanWorkflowCompensationDto>
+    /// <inheritdoc/>
+    public async Task<bool> UpdateAsync(LeanWorkflowCompensationDto dto)
     {
-      Total = result.Total,
-      Items = list,
-      PageIndex = pageIndex,
-      PageSize = pageSize
-    };
-  }
+        var entity = dto.Adapt<LeanWorkflowCompensation>();
+        return await _repository.UpdateAsync(entity);
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> DeleteAsync(long id)
+    {
+        return await _repository.DeleteAsync(x => x.Id == id);
+    }
+
+    /// <inheritdoc/>
+    public async Task<LeanPageResult<LeanWorkflowCompensationDto>> GetPagedListAsync(
+        int pageIndex,
+        int pageSize,
+        long? activityInstanceId = null,
+        DateTime? startTime = null,
+        DateTime? endTime = null)
+    {
+        Expression<Func<LeanWorkflowCompensation, bool>> predicate = x => true;
+
+        if (activityInstanceId.HasValue)
+        {
+            var temp = predicate;
+            predicate = x => temp.Compile()(x) && x.ActivityInstanceId == activityInstanceId.Value;
+        }
+
+        if (startTime.HasValue)
+        {
+            var temp = predicate;
+            predicate = x => temp.Compile()(x) && x.CompensationTime >= startTime.Value;
+        }
+
+        if (endTime.HasValue)
+        {
+            var temp = predicate;
+            predicate = x => temp.Compile()(x) && x.CompensationTime <= endTime.Value;
+        }
+
+        var result = await _repository.GetPageListAsync(predicate, pageSize, pageIndex);
+        var list = result.Items.Adapt<List<LeanWorkflowCompensationDto>>();
+
+        return new LeanPageResult<LeanWorkflowCompensationDto>
+        {
+            Total = result.Total,
+            Items = list,
+            PageIndex = pageIndex,
+            PageSize = pageSize
+        };
+    }
 }

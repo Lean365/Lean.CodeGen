@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using Microsoft.Extensions.Logging;
+using NLog;
 using Microsoft.Extensions.Options;
 using Mapster;
 using Lean.CodeGen.Common.Options;
@@ -13,6 +13,8 @@ using Lean.CodeGen.Application.Services.Base;
 using Lean.CodeGen.Application.Services.Security;
 using Lean.CodeGen.Application.Dtos.Signalr;
 using System.Linq.Expressions;
+using System.IO;
+using Lean.CodeGen.Common.Extensions;
 
 namespace Lean.CodeGen.Application.Services.Signalr;
 
@@ -29,19 +31,19 @@ namespace Lean.CodeGen.Application.Services.Signalr;
 /// </remarks>
 public class LeanOnlineMessageService : LeanBaseService, ILeanOnlineMessageService
 {
-  private readonly ILeanRepository<LeanOnlineMessage> _repository;
-  private readonly ILogger<LeanOnlineMessageService> _logger;
+  private readonly ILeanRepository<LeanOnlineMessage> _messageRepository;
+  private readonly ILogger _logger;
 
   /// <summary>
   /// 构造函数
   /// </summary>
   public LeanOnlineMessageService(
-      ILeanRepository<LeanOnlineMessage> repository,
+      ILeanRepository<LeanOnlineMessage> messageRepository,
       LeanBaseServiceContext context)
       : base(context)
   {
-    _repository = repository;
-    _logger = (ILogger<LeanOnlineMessageService>)context.Logger;
+    _messageRepository = messageRepository;
+    _logger = context.Logger;
   }
 
   /// <summary>
@@ -62,7 +64,7 @@ public class LeanOnlineMessageService : LeanBaseService, ILeanOnlineMessageServi
       IsRead = false
     };
 
-    var messageId = await _repository.CreateAsync(message);
+    var messageId = await _messageRepository.CreateAsync(message);
     message.Id = messageId;
     return message.Adapt<LeanOnlineMessageDto>();
   }
@@ -74,7 +76,7 @@ public class LeanOnlineMessageService : LeanBaseService, ILeanOnlineMessageServi
   /// <returns>未读消息列表</returns>
   public async Task<List<LeanOnlineMessageDto>> GetUnreadMessagesAsync(string userId)
   {
-    var messages = await _repository.GetListAsync(m =>
+    var messages = await _messageRepository.GetListAsync(m =>
         m.ReceiverId == userId &&
         !m.IsRead);
     return messages.Adapt<List<LeanOnlineMessageDto>>();
@@ -92,7 +94,7 @@ public class LeanOnlineMessageService : LeanBaseService, ILeanOnlineMessageServi
     Expression<Func<LeanOnlineMessage, bool>> predicate = m =>
         m.ReceiverId == userId || m.SenderId == userId;
 
-    var result = await _repository.GetPageListAsync(
+    var result = await _messageRepository.GetPageListAsync(
         predicate,
         pageSize,
         pageIndex,
@@ -112,12 +114,12 @@ public class LeanOnlineMessageService : LeanBaseService, ILeanOnlineMessageServi
   /// <param name="messageId">消息ID</param>
   public async Task MarkMessageAsReadAsync(long messageId)
   {
-    var message = await _repository.GetByIdAsync(messageId);
+    var message = await _messageRepository.GetByIdAsync(messageId);
     if (message != null && !message.IsRead)
     {
       message.IsRead = true;
       message.UpdateTime = DateTime.Now;
-      await _repository.UpdateAsync(message);
+      await _messageRepository.UpdateAsync(message);
     }
   }
 
@@ -127,7 +129,7 @@ public class LeanOnlineMessageService : LeanBaseService, ILeanOnlineMessageServi
   /// <param name="input">批量标记参数</param>
   public async Task MarkMessagesAsReadAsync(LeanMarkMessagesAsReadDto input)
   {
-    var messages = await _repository.GetListAsync(m =>
+    var messages = await _messageRepository.GetListAsync(m =>
         m.ReceiverId == input.UserId &&
         m.SenderId == input.SenderId &&
         !m.IsRead);
@@ -140,7 +142,7 @@ public class LeanOnlineMessageService : LeanBaseService, ILeanOnlineMessageServi
 
     if (messages.Any())
     {
-      await _repository.UpdateRangeAsync(messages);
+      await _messageRepository.UpdateRangeAsync(messages);
     }
   }
 
@@ -150,7 +152,7 @@ public class LeanOnlineMessageService : LeanBaseService, ILeanOnlineMessageServi
   /// <param name="messageId">消息ID</param>
   public async Task DeleteMessageAsync(long messageId)
   {
-    await _repository.DeleteAsync(m => m.Id == messageId);
+    await _messageRepository.DeleteAsync(m => m.Id == messageId);
   }
 
   /// <summary>
@@ -160,6 +162,87 @@ public class LeanOnlineMessageService : LeanBaseService, ILeanOnlineMessageServi
   public async Task CleanExpiredMessagesAsync(int days = 30)
   {
     var cutoffTime = DateTime.Now.AddDays(-days);
-    await _repository.DeleteAsync(m => m.SendTime < cutoffTime);
+    await _messageRepository.DeleteAsync(m => m.SendTime < cutoffTime);
+  }
+
+  /// <summary>
+  /// 获取在线消息列表（分页）
+  /// </summary>
+  public async Task<LeanPageResult<LeanOnlineMessageDto>> GetPageListAsync(LeanQueryOnlineMessageDto queryDto)
+  {
+    Expression<Func<LeanOnlineMessage, bool>> predicate = m => true;
+
+    if (!string.IsNullOrEmpty(queryDto.SenderId))
+    {
+      predicate = predicate.And(m => m.SenderId == queryDto.SenderId);
+    }
+
+    if (!string.IsNullOrEmpty(queryDto.ReceiverId))
+    {
+      predicate = predicate.And(m => m.ReceiverId == queryDto.ReceiverId);
+    }
+
+    if (queryDto.IsRead.HasValue)
+    {
+      predicate = predicate.And(m => m.IsRead == queryDto.IsRead.Value);
+    }
+
+    if (!string.IsNullOrEmpty(queryDto.MessageType))
+    {
+      predicate = predicate.And(m => m.MessageType == queryDto.MessageType);
+    }
+
+    if (queryDto.StartTime.HasValue)
+    {
+      predicate = predicate.And(m => m.SendTime >= queryDto.StartTime.Value);
+    }
+
+    if (queryDto.EndTime.HasValue)
+    {
+      predicate = predicate.And(m => m.SendTime <= queryDto.EndTime.Value);
+    }
+
+    var result = await _messageRepository.GetPageListAsync(
+        predicate,
+        queryDto.PageSize,
+        queryDto.PageIndex,
+        m => m.SendTime,
+        false);
+
+    return new LeanPageResult<LeanOnlineMessageDto>
+    {
+      Total = result.Total,
+      Items = result.Items.Adapt<List<LeanOnlineMessageDto>>()
+    };
+  }
+
+  /// <summary>
+  /// 获取在线消息详情
+  /// </summary>
+  public async Task<LeanOnlineMessageDto> GetAsync(long id)
+  {
+    var message = await _messageRepository.GetByIdAsync(id);
+    return message?.Adapt<LeanOnlineMessageDto>();
+  }
+
+  /// <summary>
+  /// 导出在线消息
+  /// </summary>
+  public async Task<LeanFileResult> ExportAsync(LeanQueryOnlineMessageDto queryDto)
+  {
+    var messages = await GetPageListAsync(queryDto);
+    var stream = new MemoryStream();
+    var fileName = $"online-messages-{DateTime.Now:yyyyMMddHHmmss}.xlsx";
+
+    // TODO: 实现导出到Excel的逻辑
+    // 这里需要根据实际需求实现Excel导出功能
+    // 可以使用EPPlus、NPOI等库来实现
+
+    return new LeanFileResult
+    {
+      FileName = fileName,
+      ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      Stream = stream
+    };
   }
 }

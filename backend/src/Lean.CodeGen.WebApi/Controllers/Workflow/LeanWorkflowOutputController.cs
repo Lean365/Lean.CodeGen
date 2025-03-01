@@ -4,6 +4,8 @@ using Lean.CodeGen.Common.Models;
 using Lean.CodeGen.WebApi.Controllers;
 using Microsoft.AspNetCore.Mvc;
 using Lean.CodeGen.Common.Enums;
+using Lean.CodeGen.Application.Services.Admin;
+using Microsoft.Extensions.Configuration;
 
 namespace Lean.CodeGen.WebApi.Controllers.Workflow;
 
@@ -21,7 +23,13 @@ public class LeanWorkflowOutputController : LeanBaseController
   /// 构造函数
   /// </summary>
   /// <param name="service">工作流输出服务</param>
-  public LeanWorkflowOutputController(ILeanWorkflowOutputService service)
+  /// <param name="localizationService">本地化服务</param>
+  /// <param name="configuration">配置</param>
+  public LeanWorkflowOutputController(
+      ILeanWorkflowOutputService service,
+      ILeanLocalizationService localizationService,
+      IConfiguration configuration)
+      : base(localizationService, configuration)
   {
     _service = service;
   }
@@ -61,7 +69,7 @@ public class LeanWorkflowOutputController : LeanBaseController
   {
     if (id != dto.Id)
     {
-      return Error("ID不匹配");
+      return await ErrorAsync("workflow.output.error.id_mismatch");
     }
     var result = await _service.UpdateAsync(dto);
     return Success(result, LeanBusinessType.Update);

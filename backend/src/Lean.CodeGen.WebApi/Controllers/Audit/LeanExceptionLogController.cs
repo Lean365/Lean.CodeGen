@@ -3,6 +3,8 @@ using Lean.CodeGen.Application.Dtos.Audit;
 using Lean.CodeGen.Application.Services.Audit;
 using Lean.CodeGen.Common.Models;
 using Lean.CodeGen.Common.Enums;
+using Microsoft.Extensions.Configuration;
+using Lean.CodeGen.Application.Services.Admin;
 
 namespace Lean.CodeGen.WebApi.Controllers.Audit
 {
@@ -19,7 +21,14 @@ namespace Lean.CodeGen.WebApi.Controllers.Audit
     /// <summary>
     /// 构造函数
     /// </summary>
-    public LeanExceptionLogController(ILeanExceptionLogService exceptionLogService)
+    /// <param name="exceptionLogService">异常日志服务</param>
+    /// <param name="localizationService">本地化服务</param>
+    /// <param name="configuration">配置</param>
+    public LeanExceptionLogController(
+        ILeanExceptionLogService exceptionLogService,
+        ILeanLocalizationService localizationService,
+        IConfiguration configuration)
+        : base(localizationService, configuration)
     {
       _exceptionLogService = exceptionLogService;
     }

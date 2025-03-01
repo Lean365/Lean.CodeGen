@@ -44,6 +44,19 @@ public static class LeanPassword
   }
 
   /// <summary>
+  /// 生成密码和盐值
+  /// </summary>
+  /// <param name="password">原始密码</param>
+  /// <param name="salt">输出的盐值</param>
+  /// <returns>哈希后的密码</returns>
+  public static (string HashedPassword, string Salt) CreatePassword(string password)
+  {
+    var salt = GenerateSalt();
+    var hashedPassword = HashPassword(password, salt);
+    return (hashedPassword, salt);
+  }
+
+  /// <summary>
   /// 验证密码强度
   /// </summary>
   public static (bool IsValid, string Message) ValidatePasswordStrength(string password)

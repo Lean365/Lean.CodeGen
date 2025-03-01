@@ -4,7 +4,7 @@ using Lean.CodeGen.Domain.Entities.Workflow;
 using Lean.CodeGen.Domain.Interfaces.Repositories;
 using System.Linq.Expressions;
 using Mapster;
-using Microsoft.Extensions.Logging;
+using NLog;
 using Lean.CodeGen.Application.Services.Base;
 
 namespace Lean.CodeGen.Application.Services.Workflow;
@@ -14,110 +14,110 @@ namespace Lean.CodeGen.Application.Services.Workflow;
 /// </summary>
 public class LeanWorkflowCorrelationService : LeanBaseService, ILeanWorkflowCorrelationService
 {
-  private readonly ILeanRepository<LeanWorkflowCorrelation> _repository;
-  private readonly ILogger<LeanWorkflowCorrelationService> _logger;
+    private readonly ILeanRepository<LeanWorkflowCorrelation> _repository;
+    private readonly ILogger _logger;
 
-  public LeanWorkflowCorrelationService(
-      ILeanRepository<LeanWorkflowCorrelation> repository,
-      LeanBaseServiceContext context)
-      : base(context)
-  {
-    _repository = repository;
-    _logger = (ILogger<LeanWorkflowCorrelationService>)context.Logger;
-  }
-
-  /// <inheritdoc/>
-  public async Task<LeanWorkflowCorrelationDto?> GetAsync(long id)
-  {
-    var entity = await _repository.GetByIdAsync(id);
-    return entity?.Adapt<LeanWorkflowCorrelationDto>();
-  }
-
-  /// <inheritdoc/>
-  public async Task<LeanWorkflowCorrelationDto?> GetByCorrelationIdAsync(string correlationId)
-  {
-    var entity = await _repository.FirstOrDefaultAsync(x => x.CorrelationId == correlationId);
-    return entity?.Adapt<LeanWorkflowCorrelationDto>();
-  }
-
-  /// <inheritdoc/>
-  public async Task<long> CreateAsync(LeanWorkflowCorrelationDto dto)
-  {
-    var entity = dto.Adapt<LeanWorkflowCorrelation>();
-    return await _repository.CreateAsync(entity);
-  }
-
-  /// <inheritdoc/>
-  public async Task<bool> UpdateAsync(LeanWorkflowCorrelationDto dto)
-  {
-    var entity = dto.Adapt<LeanWorkflowCorrelation>();
-    return await _repository.UpdateAsync(entity);
-  }
-
-  /// <inheritdoc/>
-  public async Task<bool> DeleteAsync(long id)
-  {
-    return await _repository.DeleteAsync(x => x.Id == id);
-  }
-
-  /// <inheritdoc/>
-  public async Task<LeanPageResult<LeanWorkflowCorrelationDto>> GetPagedListAsync(
-      int pageIndex,
-      int pageSize,
-      long? instanceId = null,
-      string? correlationId = null,
-      string? correlationType = null,
-      bool? status = null,
-      DateTime? startTime = null,
-      DateTime? endTime = null)
-  {
-    Expression<Func<LeanWorkflowCorrelation, bool>> predicate = x => true;
-
-    if (instanceId.HasValue)
+    public LeanWorkflowCorrelationService(
+        ILeanRepository<LeanWorkflowCorrelation> repository,
+        LeanBaseServiceContext context)
+        : base(context)
     {
-      var temp = predicate;
-      predicate = x => temp.Compile()(x) && x.InstanceId == instanceId.Value;
+        _repository = repository;
+        _logger = context.Logger;
     }
 
-    if (!string.IsNullOrEmpty(correlationId))
+    /// <inheritdoc/>
+    public async Task<LeanWorkflowCorrelationDto?> GetAsync(long id)
     {
-      var temp = predicate;
-      predicate = x => temp.Compile()(x) && x.CorrelationId.Contains(correlationId);
+        var entity = await _repository.GetByIdAsync(id);
+        return entity?.Adapt<LeanWorkflowCorrelationDto>();
     }
 
-    if (!string.IsNullOrEmpty(correlationType))
+    /// <inheritdoc/>
+    public async Task<LeanWorkflowCorrelationDto?> GetByCorrelationIdAsync(string correlationId)
     {
-      var temp = predicate;
-      predicate = x => temp.Compile()(x) && x.CorrelationType == correlationType;
+        var entity = await _repository.FirstOrDefaultAsync(x => x.CorrelationId == correlationId);
+        return entity?.Adapt<LeanWorkflowCorrelationDto>();
     }
 
-    if (status.HasValue)
+    /// <inheritdoc/>
+    public async Task<long> CreateAsync(LeanWorkflowCorrelationDto dto)
     {
-      var temp = predicate;
-      predicate = x => temp.Compile()(x) && x.Status == status.Value;
+        var entity = dto.Adapt<LeanWorkflowCorrelation>();
+        return await _repository.CreateAsync(entity);
     }
 
-    if (startTime.HasValue)
+    /// <inheritdoc/>
+    public async Task<bool> UpdateAsync(LeanWorkflowCorrelationDto dto)
     {
-      var temp = predicate;
-      predicate = x => temp.Compile()(x) && x.CreateTime >= startTime.Value;
+        var entity = dto.Adapt<LeanWorkflowCorrelation>();
+        return await _repository.UpdateAsync(entity);
     }
 
-    if (endTime.HasValue)
+    /// <inheritdoc/>
+    public async Task<bool> DeleteAsync(long id)
     {
-      var temp = predicate;
-      predicate = x => temp.Compile()(x) && x.CreateTime <= endTime.Value;
+        return await _repository.DeleteAsync(x => x.Id == id);
     }
 
-    var result = await _repository.GetPageListAsync(predicate, pageSize, pageIndex);
-    var list = result.Items.Adapt<List<LeanWorkflowCorrelationDto>>();
-
-    return new LeanPageResult<LeanWorkflowCorrelationDto>
+    /// <inheritdoc/>
+    public async Task<LeanPageResult<LeanWorkflowCorrelationDto>> GetPagedListAsync(
+        int pageIndex,
+        int pageSize,
+        long? instanceId = null,
+        string? correlationId = null,
+        string? correlationType = null,
+        bool? status = null,
+        DateTime? startTime = null,
+        DateTime? endTime = null)
     {
-      Total = result.Total,
-      Items = list,
-      PageIndex = pageIndex,
-      PageSize = pageSize
-    };
-  }
+        Expression<Func<LeanWorkflowCorrelation, bool>> predicate = x => true;
+
+        if (instanceId.HasValue)
+        {
+            var temp = predicate;
+            predicate = x => temp.Compile()(x) && x.InstanceId == instanceId.Value;
+        }
+
+        if (!string.IsNullOrEmpty(correlationId))
+        {
+            var temp = predicate;
+            predicate = x => temp.Compile()(x) && x.CorrelationId.Contains(correlationId);
+        }
+
+        if (!string.IsNullOrEmpty(correlationType))
+        {
+            var temp = predicate;
+            predicate = x => temp.Compile()(x) && x.CorrelationType == correlationType;
+        }
+
+        if (status.HasValue)
+        {
+            var temp = predicate;
+            predicate = x => temp.Compile()(x) && x.Status == status.Value;
+        }
+
+        if (startTime.HasValue)
+        {
+            var temp = predicate;
+            predicate = x => temp.Compile()(x) && x.CreateTime >= startTime.Value;
+        }
+
+        if (endTime.HasValue)
+        {
+            var temp = predicate;
+            predicate = x => temp.Compile()(x) && x.CreateTime <= endTime.Value;
+        }
+
+        var result = await _repository.GetPageListAsync(predicate, pageSize, pageIndex);
+        var list = result.Items.Adapt<List<LeanWorkflowCorrelationDto>>();
+
+        return new LeanPageResult<LeanWorkflowCorrelationDto>
+        {
+            Total = result.Total,
+            Items = list,
+            PageIndex = pageIndex,
+            PageSize = pageSize
+        };
+    }
 }

@@ -4,7 +4,7 @@ using Lean.CodeGen.Domain.Entities.Workflow;
 using Lean.CodeGen.Domain.Interfaces.Repositories;
 using System.Linq.Expressions;
 using Mapster;
-using Microsoft.Extensions.Logging;
+using NLog;
 using Lean.CodeGen.Application.Services.Base;
 
 namespace Lean.CodeGen.Application.Services.Workflow;
@@ -14,132 +14,132 @@ namespace Lean.CodeGen.Application.Services.Workflow;
 /// </summary>
 public class LeanWorkflowDefinitionService : LeanBaseService, ILeanWorkflowDefinitionService
 {
-  private readonly ILeanRepository<LeanWorkflowDefinition> _repository;
-  private readonly ILogger<LeanWorkflowDefinitionService> _logger;
+    private readonly ILeanRepository<LeanWorkflowDefinition> _repository;
+    private readonly ILogger _logger;
 
-  public LeanWorkflowDefinitionService(
-      ILeanRepository<LeanWorkflowDefinition> repository,
-      LeanBaseServiceContext context)
-      : base(context)
-  {
-    _repository = repository;
-    _logger = (ILogger<LeanWorkflowDefinitionService>)context.Logger;
-  }
-
-  /// <inheritdoc/>
-  public async Task<List<LeanWorkflowDefinitionDto>> GetListAsync()
-  {
-    var list = await _repository.GetListAsync(x => true);
-    return list.Adapt<List<LeanWorkflowDefinitionDto>>();
-  }
-
-  /// <inheritdoc/>
-  public async Task<LeanWorkflowDefinitionDto?> GetAsync(long id)
-  {
-    var entity = await _repository.GetByIdAsync(id);
-    return entity?.Adapt<LeanWorkflowDefinitionDto>();
-  }
-
-  /// <inheritdoc/>
-  public async Task<LeanWorkflowDefinitionDto?> GetByCodeAsync(string code)
-  {
-    var entity = await _repository.FirstOrDefaultAsync(x => x.WorkflowCode == code);
-    return entity?.Adapt<LeanWorkflowDefinitionDto>();
-  }
-
-  /// <inheritdoc/>
-  public async Task<long> CreateAsync(LeanWorkflowDefinitionDto dto)
-  {
-    // 检查编码是否已存在
-    var exists = await _repository.AnyAsync(x => x.WorkflowCode == dto.WorkflowCode);
-    if (exists)
+    public LeanWorkflowDefinitionService(
+        ILeanRepository<LeanWorkflowDefinition> repository,
+        LeanBaseServiceContext context)
+        : base(context)
     {
-      throw new Exception($"工作流编码[{dto.WorkflowCode}]已存在");
+        _repository = repository;
+        _logger = context.Logger;
     }
 
-    var entity = dto.Adapt<LeanWorkflowDefinition>();
-    return await _repository.CreateAsync(entity);
-  }
-
-  /// <inheritdoc/>
-  public async Task<bool> UpdateAsync(LeanWorkflowDefinitionDto dto)
-  {
-    // 检查编码是否已存在
-    var exists = await _repository.AnyAsync(x => x.WorkflowCode == dto.WorkflowCode && x.Id != dto.Id);
-    if (exists)
+    /// <inheritdoc/>
+    public async Task<List<LeanWorkflowDefinitionDto>> GetListAsync()
     {
-      throw new Exception($"工作流编码[{dto.WorkflowCode}]已存在");
+        var list = await _repository.GetListAsync(x => true);
+        return list.Adapt<List<LeanWorkflowDefinitionDto>>();
     }
 
-    var entity = dto.Adapt<LeanWorkflowDefinition>();
-    return await _repository.UpdateAsync(entity);
-  }
-
-  /// <inheritdoc/>
-  public async Task<bool> DeleteAsync(long id)
-  {
-    return await _repository.DeleteAsync(x => x.Id == id);
-  }
-
-  /// <inheritdoc/>
-  public async Task<bool> PublishAsync(long id)
-  {
-    var entity = await _repository.GetByIdAsync(id);
-    if (entity == null)
+    /// <inheritdoc/>
+    public async Task<LeanWorkflowDefinitionDto?> GetAsync(long id)
     {
-      throw new Exception($"工作流定义[{id}]不存在");
+        var entity = await _repository.GetByIdAsync(id);
+        return entity?.Adapt<LeanWorkflowDefinitionDto>();
     }
 
-    entity.IsPublished = 1;
-    entity.WorkflowStatus = Common.Enums.LeanWorkflowStatus.Published;
-    return await _repository.UpdateAsync(entity);
-  }
-
-  /// <inheritdoc/>
-  public async Task<bool> DisableAsync(long id)
-  {
-    var entity = await _repository.GetByIdAsync(id);
-    if (entity == null)
+    /// <inheritdoc/>
+    public async Task<LeanWorkflowDefinitionDto?> GetByCodeAsync(string code)
     {
-      throw new Exception($"工作流定义[{id}]不存在");
+        var entity = await _repository.FirstOrDefaultAsync(x => x.WorkflowCode == code);
+        return entity?.Adapt<LeanWorkflowDefinitionDto>();
     }
 
-    entity.Status = 0;
-    return await _repository.UpdateAsync(entity);
-  }
-
-  /// <inheritdoc/>
-  public async Task<LeanPageResult<LeanWorkflowDefinitionDto>> GetPagedListAsync(int pageIndex, int pageSize, string? workflowName = null, string? workflowCode = null, int? status = null)
-  {
-    Expression<Func<LeanWorkflowDefinition, bool>> predicate = x => true;
-
-    if (!string.IsNullOrEmpty(workflowName))
+    /// <inheritdoc/>
+    public async Task<long> CreateAsync(LeanWorkflowDefinitionDto dto)
     {
-      var temp = predicate;
-      predicate = x => temp.Compile()(x) && x.WorkflowName.Contains(workflowName);
+        // 检查编码是否已存在
+        var exists = await _repository.AnyAsync(x => x.WorkflowCode == dto.WorkflowCode);
+        if (exists)
+        {
+            throw new Exception($"工作流编码[{dto.WorkflowCode}]已存在");
+        }
+
+        var entity = dto.Adapt<LeanWorkflowDefinition>();
+        return await _repository.CreateAsync(entity);
     }
 
-    if (!string.IsNullOrEmpty(workflowCode))
+    /// <inheritdoc/>
+    public async Task<bool> UpdateAsync(LeanWorkflowDefinitionDto dto)
     {
-      var temp = predicate;
-      predicate = x => temp.Compile()(x) && x.WorkflowCode.Contains(workflowCode);
+        // 检查编码是否已存在
+        var exists = await _repository.AnyAsync(x => x.WorkflowCode == dto.WorkflowCode && x.Id != dto.Id);
+        if (exists)
+        {
+            throw new Exception($"工作流编码[{dto.WorkflowCode}]已存在");
+        }
+
+        var entity = dto.Adapt<LeanWorkflowDefinition>();
+        return await _repository.UpdateAsync(entity);
     }
 
-    if (status.HasValue)
+    /// <inheritdoc/>
+    public async Task<bool> DeleteAsync(long id)
     {
-      var temp = predicate;
-      predicate = x => temp.Compile()(x) && x.Status == status.Value;
+        return await _repository.DeleteAsync(x => x.Id == id);
     }
 
-    var result = await _repository.GetPageListAsync(predicate, pageSize, pageIndex);
-    var list = result.Items.Adapt<List<LeanWorkflowDefinitionDto>>();
-
-    return new LeanPageResult<LeanWorkflowDefinitionDto>
+    /// <inheritdoc/>
+    public async Task<bool> PublishAsync(long id)
     {
-      Total = result.Total,
-      Items = list,
-      PageIndex = pageIndex,
-      PageSize = pageSize
-    };
-  }
+        var entity = await _repository.GetByIdAsync(id);
+        if (entity == null)
+        {
+            throw new Exception($"工作流定义[{id}]不存在");
+        }
+
+        entity.IsPublished = 1;
+        entity.WorkflowStatus = Common.Enums.LeanWorkflowStatus.Published;
+        return await _repository.UpdateAsync(entity);
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> DisableAsync(long id)
+    {
+        var entity = await _repository.GetByIdAsync(id);
+        if (entity == null)
+        {
+            throw new Exception($"工作流定义[{id}]不存在");
+        }
+
+        entity.Status = 0;
+        return await _repository.UpdateAsync(entity);
+    }
+
+    /// <inheritdoc/>
+    public async Task<LeanPageResult<LeanWorkflowDefinitionDto>> GetPagedListAsync(int pageIndex, int pageSize, string? workflowName = null, string? workflowCode = null, int? status = null)
+    {
+        Expression<Func<LeanWorkflowDefinition, bool>> predicate = x => true;
+
+        if (!string.IsNullOrEmpty(workflowName))
+        {
+            var temp = predicate;
+            predicate = x => temp.Compile()(x) && x.WorkflowName.Contains(workflowName);
+        }
+
+        if (!string.IsNullOrEmpty(workflowCode))
+        {
+            var temp = predicate;
+            predicate = x => temp.Compile()(x) && x.WorkflowCode.Contains(workflowCode);
+        }
+
+        if (status.HasValue)
+        {
+            var temp = predicate;
+            predicate = x => temp.Compile()(x) && x.Status == status.Value;
+        }
+
+        var result = await _repository.GetPageListAsync(predicate, pageSize, pageIndex);
+        var list = result.Items.Adapt<List<LeanWorkflowDefinitionDto>>();
+
+        return new LeanPageResult<LeanWorkflowDefinitionDto>
+        {
+            Total = result.Total,
+            Items = list,
+            PageIndex = pageIndex,
+            PageSize = pageSize
+        };
+    }
 }

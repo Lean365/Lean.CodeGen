@@ -7,7 +7,6 @@
 // 版本: 1.0
 //===================================================
 
-using Microsoft.Extensions.Logging;
 using System.Net.WebSockets;
 using Microsoft.AspNetCore.Http;
 using Lean.CodeGen.WebApi.Middlewares;
@@ -25,6 +24,14 @@ using Lean.CodeGen.Infrastructure.Data.Context;
 using Lean.CodeGen.Infrastructure.Data.Initializer;
 using Lean.CodeGen.Infrastructure.Services.Logging;
 using StackExchange.Redis;
+using Lean.CodeGen.Application.Services.Base;
+using Lean.CodeGen.Domain.Interfaces.Repositories;
+using Lean.CodeGen.Infrastructure.Repositories;
+using Lean.CodeGen.Domain.Entities.Admin;
+using NLog;
+using NLog.Web;
+using ILogger = NLog.ILogger;
+using Microsoft.Extensions.Options;
 
 // 创建Web应用程序构建器
 var builder = WebApplication.CreateBuilder(args);
@@ -33,14 +40,15 @@ var builder = WebApplication.CreateBuilder(args);
 Console.OutputEncoding = System.Text.Encoding.UTF8;
 
 // 添加 NLog 日志支持
-builder.AddLeanNLog();
-
-// 添加日志服务
-builder.Services.AddScoped<ILeanLogService, LeanLogService>();
+builder.Host.UseNLog();
 
 // 配置安全选项
 builder.Services.Configure<LeanSecurityOptions>(
     builder.Configuration.GetSection(LeanSecurityOptions.Position));
+
+// 配置本地化选项
+builder.Services.Configure<LeanLocalizationOptions>(
+    builder.Configuration.GetSection(LeanLocalizationOptions.Position));
 
 // 配置数据库选项
 builder.Services.Configure<LeanDatabaseOptions>(
@@ -103,9 +111,6 @@ builder.Services.AddAntiforgery(options =>
   options.Cookie.Name = securityOptions?.Antiforgery.CookieName ?? "XSRF-TOKEN";
 });
 
-// 添加SQL注入防护服务
-builder.Services.AddScoped<ILeanSqlSafeService, LeanSqlSafeService>();
-
 // 添加SignalR实时通信服务
 builder.Services.AddSignalR();
 
@@ -126,7 +131,9 @@ var app = builder.Build();
 if (builder.Configuration.GetSection("Database:EnableInitData").Get<bool>())
 {
   using var scope = app.Services.CreateScope();
-  var initializer = scope.ServiceProvider.GetRequiredService<LeanDbInitializer>();
+  var initializer = new LeanDbInitializer(
+      scope.ServiceProvider.GetRequiredService<LeanDbContext>(),
+      scope.ServiceProvider.GetRequiredService<IOptions<LeanSecurityOptions>>());
   await initializer.InitializeAsync();
 }
 

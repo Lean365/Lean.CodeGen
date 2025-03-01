@@ -13,6 +13,7 @@ using Lean.CodeGen.Domain.Entities.Identity;
 using Lean.CodeGen.Domain.Interfaces.Repositories;
 using Lean.CodeGen.Domain.Validators;
 using Lean.CodeGen.Common.Extensions;
+using Lean.CodeGen.Common.Excel;
 
 namespace Lean.CodeGen.Application.Services.Identity;
 
@@ -58,7 +59,7 @@ public class LeanRoleService : LeanBaseService, ILeanRoleService
   /// </summary>
   /// <param name="input">角色创建参数</param>
   /// <returns>创建成功的角色信息</returns>
-  public async Task<LeanRoleDto> CreateAsync(LeanCreateRoleDto input)
+  public async Task<LeanApiResult<long>> CreateAsync(LeanCreateRoleDto input)
   {
     return await ExecuteInTransactionAsync(async () =>
     {
@@ -76,7 +77,7 @@ public class LeanRoleService : LeanBaseService, ILeanRoleService
       await _roleRepository.CreateAsync(role);
 
       LogAudit("CreateRole", $"创建角色: {role.RoleName}");
-      return await GetAsync(role.Id);
+      return LeanApiResult<long>.Ok(role.Id);
     }, "创建角色");
   }
 
@@ -85,7 +86,7 @@ public class LeanRoleService : LeanBaseService, ILeanRoleService
   /// </summary>
   /// <param name="input">角色更新参数</param>
   /// <returns>更新后的角色信息</returns>
-  public async Task<LeanRoleDto> UpdateAsync(LeanUpdateRoleDto input)
+  public async Task<LeanApiResult> UpdateAsync(LeanUpdateRoleDto input)
   {
     return await ExecuteInTransactionAsync(async () =>
     {
@@ -114,7 +115,7 @@ public class LeanRoleService : LeanBaseService, ILeanRoleService
       await _roleRepository.UpdateAsync(role);
 
       LogAudit("UpdateRole", $"更新角色: {role.RoleName}");
-      return await GetAsync(role.Id);
+      return LeanApiResult.Ok();
     }, "更新角色");
   }
 
@@ -122,11 +123,11 @@ public class LeanRoleService : LeanBaseService, ILeanRoleService
   /// 删除角色
   /// </summary>
   /// <param name="input">角色删除参数</param>
-  public async Task DeleteAsync(LeanDeleteRoleDto input)
+  public async Task<LeanApiResult> DeleteAsync(long id)
   {
-    await ExecuteInTransactionAsync(async () =>
+    return await ExecuteInTransactionAsync(async () =>
     {
-      var role = await _roleRepository.GetByIdAsync(input.Id);
+      var role = await _roleRepository.GetByIdAsync(id);
       if (role == null)
       {
         throw new LeanException("角色不存在");
@@ -138,16 +139,29 @@ public class LeanRoleService : LeanBaseService, ILeanRoleService
       }
 
       // 删除角色菜单关联
-      await _roleMenuRepository.DeleteAsync(x => x.RoleId == input.Id);
+      await _roleMenuRepository.DeleteAsync(x => x.RoleId == id);
 
       // 删除角色部门关联
-      await _roleDeptRepository.DeleteAsync(x => x.RoleId == input.Id);
+      await _roleDeptRepository.DeleteAsync(x => x.RoleId == id);
 
       // 删除角色
       await _roleRepository.DeleteAsync(role);
 
       LogAudit("DeleteRole", $"删除角色: {role.RoleName}");
+      return LeanApiResult.Ok();
     }, "删除角色");
+  }
+
+  /// <summary>
+  /// 批量删除角色
+  /// </summary>
+  public async Task<LeanApiResult> BatchDeleteAsync(List<long> ids)
+  {
+    foreach (var id in ids)
+    {
+      await DeleteAsync(id);
+    }
+    return LeanApiResult.Ok();
   }
 
   /// <summary>
@@ -155,7 +169,7 @@ public class LeanRoleService : LeanBaseService, ILeanRoleService
   /// </summary>
   /// <param name="id">角色ID</param>
   /// <returns>角色详细信息</returns>
-  public async Task<LeanRoleDto> GetAsync(long id)
+  public async Task<LeanApiResult<LeanRoleDto>> GetAsync(long id)
   {
     var role = await _roleRepository.GetByIdAsync(id);
     if (role == null)
@@ -173,7 +187,7 @@ public class LeanRoleService : LeanBaseService, ILeanRoleService
     var roleDepts = await _roleDeptRepository.GetListAsync(x => x.RoleId == id);
     result.DataScopeDeptIds = roleDepts.Select(x => x.DeptId).ToList();
 
-    return result;
+    return LeanApiResult<LeanRoleDto>.Ok(result);
   }
 
   /// <summary>
@@ -181,7 +195,7 @@ public class LeanRoleService : LeanBaseService, ILeanRoleService
   /// </summary>
   /// <param name="input">查询参数</param>
   /// <returns>分页查询结果</returns>
-  public async Task<LeanPageResult<LeanRoleDto>> QueryAsync(LeanQueryRoleDto input)
+  public async Task<LeanApiResult<LeanPageResult<LeanRoleDto>>> GetPageAsync(LeanQueryRoleDto input)
   {
     using (LogPerformance("查询角色列表"))
     {
@@ -224,14 +238,124 @@ public class LeanRoleService : LeanBaseService, ILeanRoleService
           false);
 
       var list = result.Items.Adapt<List<LeanRoleDto>>();
-      return new LeanPageResult<LeanRoleDto>
+      var pageResult = new LeanPageResult<LeanRoleDto>
       {
         Total = result.Total,
         Items = list,
         PageIndex = input.PageIndex,
         PageSize = input.PageSize
       };
+
+      return LeanApiResult<LeanPageResult<LeanRoleDto>>.Ok(pageResult);
     }
+  }
+
+  /// <summary>
+  /// 修改角色状态
+  /// </summary>
+  /// <param name="input">状态修改参数</param>
+  public async Task<LeanApiResult> SetStatusAsync(LeanChangeRoleStatusDto input)
+  {
+    await ChangeStatusAsync(input);
+    return LeanApiResult.Ok();
+  }
+
+  /// <summary>
+  /// 获取角色菜单
+  /// </summary>
+  /// <param name="id">角色ID</param>
+  /// <returns>角色菜单ID列表</returns>
+  public async Task<List<long>> GetRoleMenusAsync(long id)
+  {
+    var roleMenus = await _roleMenuRepository.GetListAsync(x => x.RoleId == id);
+    return roleMenus.Select(x => x.MenuId).ToList();
+  }
+
+  /// <summary>
+  /// 设置角色菜单
+  /// </summary>
+  /// <param name="input">菜单分配参数</param>
+  public async Task<LeanApiResult> SetRoleMenusAsync(LeanSetRoleMenusDto input)
+  {
+    await AssignMenusAsync(input.Adapt<LeanAssignRoleMenuDto>());
+    return LeanApiResult.Ok();
+  }
+
+  /// <summary>
+  /// 导出角色数据
+  /// </summary>
+  /// <param name="input">查询参数</param>
+  /// <returns>导出的角色数据</returns>
+  public async Task<byte[]> ExportAsync(LeanQueryRoleDto input)
+  {
+    var roles = await QueryAsync(input);
+    var exportDtos = roles.Select(x => new LeanRoleExportDto
+    {
+      RoleName = x.RoleName,
+      RoleCode = x.RoleCode,
+      RoleStatus = x.RoleStatus,
+      OrderNum = x.OrderNum,
+      IsBuiltin = x.IsBuiltin,
+      CreateTime = x.CreateTime,
+      DataScope = x.DataScope,
+      Description = x.Remark
+    }).ToList();
+    return LeanExcelHelper.Export(exportDtos);
+  }
+
+  /// <summary>
+  /// 导入角色数据
+  /// </summary>
+  /// <param name="file">角色数据文件信息</param>
+  /// <returns>导入结果</returns>
+  public async Task<LeanImportRoleResultDto> ImportAsync(LeanFileInfo file)
+  {
+    var result = new LeanImportRoleResultDto();
+    try
+    {
+      var bytes = new byte[file.Stream.Length];
+      await file.Stream.ReadAsync(bytes, 0, (int)file.Stream.Length);
+      var importResult = LeanExcelHelper.Import<LeanRoleImportDto>(bytes);
+
+      foreach (var item in importResult.Data)
+      {
+        if (await _roleRepository.AnyAsync(x => x.RoleCode == item.RoleCode))
+        {
+          result.AddError(item.RoleCode, $"角色编码 {item.RoleCode} 已存在");
+          continue;
+        }
+        var role = item.Adapt<LeanRole>();
+        role.RoleStatus = LeanRoleStatus.Normal;
+        role.IsBuiltin = LeanBuiltinStatus.No;
+        await _roleRepository.CreateAsync(role);
+        result.SuccessCount++;
+      }
+      return result;
+    }
+    catch (Exception ex)
+    {
+      result.ErrorMessage = $"导入失败：{ex.Message}";
+      return result;
+    }
+  }
+
+  /// <summary>
+  /// 获取导入模板
+  /// </summary>
+  /// <returns>导入模板数据</returns>
+  public async Task<byte[]> GetImportTemplateAsync()
+  {
+    var template = new List<LeanRoleImportDto>
+    {
+      new LeanRoleImportDto
+      {
+        RoleName = "示例角色",
+        RoleCode = "ROLE001",
+        OrderNum = 1
+      }
+    };
+
+    return await Task.FromResult(LeanExcelHelper.Export(template));
   }
 
   /// <summary>
@@ -343,17 +467,6 @@ public class LeanRoleService : LeanBaseService, ILeanRoleService
   }
 
   /// <summary>
-  /// 获取角色菜单
-  /// </summary>
-  /// <param name="id">角色ID</param>
-  /// <returns>角色菜单ID列表</returns>
-  public async Task<List<long>> GetMenusAsync(long id)
-  {
-    var roleMenus = await _roleMenuRepository.GetListAsync(x => x.RoleId == id);
-    return roleMenus.Select(x => x.MenuId).ToList();
-  }
-
-  /// <summary>
   /// 获取角色数据权限
   /// </summary>
   /// <param name="id">角色ID</param>
@@ -374,5 +487,22 @@ public class LeanRoleService : LeanBaseService, ILeanRoleService
       DataScope = role.DataScope,
       DeptIds = roleDepts.Select(x => x.DeptId).ToList()
     };
+  }
+
+  /// <summary>
+  /// 查询角色列表
+  /// </summary>
+  public async Task<List<LeanRoleDto>> QueryAsync(LeanQueryRoleDto input)
+  {
+    var roles = await _roleRepository.GetListAsync(x =>
+        (string.IsNullOrEmpty(input.RoleName) || x.RoleName.Contains(input.RoleName)) &&
+        (string.IsNullOrEmpty(input.RoleCode) || x.RoleCode.Contains(input.RoleCode)) &&
+        (!input.RoleStatus.HasValue || x.RoleStatus == input.RoleStatus) &&
+        (!input.StartTime.HasValue || x.CreateTime >= input.StartTime) &&
+        (!input.EndTime.HasValue || x.CreateTime <= input.EndTime));
+
+    return roles.OrderBy(x => x.OrderNum)
+               .Select(x => x.Adapt<LeanRoleDto>())
+               .ToList();
   }
 }

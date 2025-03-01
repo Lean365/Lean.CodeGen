@@ -3,6 +3,8 @@ using Lean.CodeGen.Application.Dtos.Audit;
 using Lean.CodeGen.Application.Services.Audit;
 using Lean.CodeGen.Common.Models;
 using Lean.CodeGen.Common.Enums;
+using Microsoft.Extensions.Configuration;
+using Lean.CodeGen.Application.Services.Admin;
 
 namespace Lean.CodeGen.WebApi.Controllers.Audit
 {
@@ -19,7 +21,11 @@ namespace Lean.CodeGen.WebApi.Controllers.Audit
     /// <summary>
     /// 构造函数
     /// </summary>
-    public LeanLoginLogController(ILeanLoginLogService loginLogService)
+    public LeanLoginLogController(
+        ILeanLoginLogService loginLogService,
+        ILeanLocalizationService localizationService,
+        IConfiguration configuration)
+        : base(localizationService, configuration)
     {
       _loginLogService = loginLogService;
     }
@@ -61,7 +67,7 @@ namespace Lean.CodeGen.WebApi.Controllers.Audit
     public async Task<IActionResult> ClearAsync()
     {
       var result = await _loginLogService.ClearAsync();
-      return Success(result, LeanBusinessType.Delete);
+      return result ? Success(LeanBusinessType.Delete) : await ErrorAsync("audit.error.clear_failed");
     }
   }
 }

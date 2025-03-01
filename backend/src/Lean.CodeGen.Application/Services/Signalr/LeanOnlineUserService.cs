@@ -3,7 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq.Expressions;
-using Microsoft.Extensions.Logging;
+using NLog;
 using Microsoft.Extensions.Options;
 using Mapster;
 using Lean.CodeGen.Common.Options;
@@ -30,19 +30,19 @@ namespace Lean.CodeGen.Application.Services.Signalr;
 /// </remarks>
 public class LeanOnlineUserService : LeanBaseService, ILeanOnlineUserService
 {
-  private readonly ILeanRepository<LeanOnlineUser> _repository;
-  private readonly ILogger<LeanOnlineUserService> _logger;
+  private readonly ILeanRepository<LeanOnlineUser> _userRepository;
+  private readonly ILogger _logger;
 
   /// <summary>
   /// 构造函数
   /// </summary>
   public LeanOnlineUserService(
-      ILeanRepository<LeanOnlineUser> repository,
+      ILeanRepository<LeanOnlineUser> userRepository,
       LeanBaseServiceContext context)
       : base(context)
   {
-    _repository = repository;
-    _logger = (ILogger<LeanOnlineUserService>)context.Logger;
+    _userRepository = userRepository;
+    _logger = context.Logger;
   }
 
   /// <summary>
@@ -50,7 +50,7 @@ public class LeanOnlineUserService : LeanBaseService, ILeanOnlineUserService
   /// </summary>
   public async Task<List<LeanOnlineUserDto>> GetOnlineUsersAsync()
   {
-    var users = await _repository.GetListAsync(u => u.IsOnline);
+    var users = await _userRepository.GetListAsync(u => u.IsOnline);
     return users.Adapt<List<LeanOnlineUserDto>>();
   }
 
@@ -61,7 +61,7 @@ public class LeanOnlineUserService : LeanBaseService, ILeanOnlineUserService
   /// <returns>用户是否在线</returns>
   public async Task<bool> IsUserOnlineAsync(string userId)
   {
-    var user = await _repository.FirstOrDefaultAsync(u => u.UserId == userId);
+    var user = await _userRepository.FirstOrDefaultAsync(u => u.UserId == userId);
     return user?.IsOnline ?? false;
   }
 
@@ -74,7 +74,7 @@ public class LeanOnlineUserService : LeanBaseService, ILeanOnlineUserService
   /// <param name="avatar">头像</param>
   public async Task UpdateUserInfoAsync(string connectionId, string userId, string userName, string? avatar)
   {
-    var user = await _repository.FirstOrDefaultAsync(u => u.ConnectionId == connectionId);
+    var user = await _userRepository.FirstOrDefaultAsync(u => u.ConnectionId == connectionId);
     if (user == null)
     {
       user = new LeanOnlineUser
@@ -88,7 +88,7 @@ public class LeanOnlineUserService : LeanBaseService, ILeanOnlineUserService
         CreateTime = DateTime.Now,
         UpdateTime = DateTime.Now
       };
-      await _repository.CreateAsync(user);
+      await _userRepository.CreateAsync(user);
     }
     else
     {
@@ -96,7 +96,7 @@ public class LeanOnlineUserService : LeanBaseService, ILeanOnlineUserService
       user.UserName = userName;
       user.Avatar = avatar;
       user.UpdateTime = DateTime.Now;
-      await _repository.UpdateAsync(user);
+      await _userRepository.UpdateAsync(user);
     }
   }
 
@@ -106,13 +106,13 @@ public class LeanOnlineUserService : LeanBaseService, ILeanOnlineUserService
   /// <param name="userId">用户ID</param>
   public async Task ForceLogoutAsync(string userId)
   {
-    var user = await _repository.FirstOrDefaultAsync(u => u.UserId == userId);
+    var user = await _userRepository.FirstOrDefaultAsync(u => u.UserId == userId);
     if (user != null)
     {
       user.IsOnline = false;
       user.LastActiveTime = DateTime.Now;
       user.UpdateTime = DateTime.Now;
-      await _repository.UpdateAsync(user);
+      await _userRepository.UpdateAsync(user);
     }
   }
 
@@ -123,7 +123,7 @@ public class LeanOnlineUserService : LeanBaseService, ILeanOnlineUserService
   public async Task CleanOfflineUsersAsync(int minutes = 30)
   {
     var cutoffTime = DateTime.Now.AddMinutes(-minutes);
-    await _repository.DeleteAsync(u => !u.IsOnline && u.LastActiveTime < cutoffTime);
+    await _userRepository.DeleteAsync(u => !u.IsOnline && u.LastActiveTime < cutoffTime);
   }
 
   /// <summary>
@@ -132,7 +132,7 @@ public class LeanOnlineUserService : LeanBaseService, ILeanOnlineUserService
   public async Task<LeanPageResult<LeanOnlineUserDto>> GetPageListAsync(LeanQueryOnlineUserDto input)
   {
     Expression<Func<LeanOnlineUser, bool>> predicate = BuildQueryPredicate(input);
-    var result = await _repository.GetPageListAsync(
+    var result = await _userRepository.GetPageListAsync(
         predicate,
         input.PageSize,
         input.PageIndex,
@@ -180,13 +180,13 @@ public class LeanOnlineUserService : LeanBaseService, ILeanOnlineUserService
 
   public async Task<string?> GetUserConnectionIdAsync(string userId)
   {
-    var user = await _repository.FirstOrDefaultAsync(u => u.UserId == userId && u.IsOnline);
+    var user = await _userRepository.FirstOrDefaultAsync(u => u.UserId == userId && u.IsOnline);
     return user?.ConnectionId;
   }
 
   public async Task UpdateUserStatusAsync(string connectionId, bool isOnline)
   {
-    var user = await _repository.FirstOrDefaultAsync(u => u.ConnectionId == connectionId);
+    var user = await _userRepository.FirstOrDefaultAsync(u => u.ConnectionId == connectionId);
     if (user != null)
     {
       user.IsOnline = isOnline;
@@ -195,18 +195,18 @@ public class LeanOnlineUserService : LeanBaseService, ILeanOnlineUserService
       {
         user.LastActiveTime = DateTime.Now;
       }
-      await _repository.UpdateAsync(user);
+      await _userRepository.UpdateAsync(user);
     }
   }
 
   public async Task UpdateLastActiveTimeAsync(string connectionId)
   {
-    var user = await _repository.FirstOrDefaultAsync(u => u.ConnectionId == connectionId);
+    var user = await _userRepository.FirstOrDefaultAsync(u => u.ConnectionId == connectionId);
     if (user != null)
     {
       user.LastActiveTime = DateTime.Now;
       user.UpdateTime = DateTime.Now;
-      await _repository.UpdateAsync(user);
+      await _userRepository.UpdateAsync(user);
     }
   }
 }

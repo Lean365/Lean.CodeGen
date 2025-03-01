@@ -12,7 +12,6 @@ using Lean.CodeGen.Common.Options;
 using Lean.CodeGen.Common.Security;
 using Lean.CodeGen.Application.Services.Security;
 using Microsoft.Extensions.Options;
-using Microsoft.Extensions.Logging;
 using Mapster;
 using Lean.CodeGen.Domain.Validators;
 
@@ -23,7 +22,7 @@ namespace Lean.CodeGen.Application.Services.Admin;
 /// </summary>
 public class LeanConfigService : LeanBaseService, ILeanConfigService
 {
-  private readonly ILogger<LeanConfigService> _logger;
+  private readonly ILogger _logger;
   private readonly ILeanRepository<LeanConfig> _repository;
   private readonly LeanUniqueValidator<LeanConfig> _uniqueValidator;
 
@@ -36,7 +35,7 @@ public class LeanConfigService : LeanBaseService, ILeanConfigService
       : base(context)
   {
     _repository = repository;
-    _logger = (ILogger<LeanConfigService>)context.Logger;
+    _logger = context.Logger;
     _uniqueValidator = new LeanUniqueValidator<LeanConfig>(_repository);
   }
 
@@ -51,7 +50,8 @@ public class LeanConfigService : LeanBaseService, ILeanConfigService
       var exists = await _repository.AnyAsync(x => x.ConfigKey == input.ConfigKey);
       if (exists)
       {
-        return LeanApiResult<long>.Error($"配置键 {input.ConfigKey} 已存在");
+        var message = await GetSystemTranslationAsync("config.error.key_exists", new { key = input.ConfigKey });
+        return LeanApiResult<long>.Error(message);
       }
 
       // 创建实体
@@ -64,7 +64,9 @@ public class LeanConfigService : LeanBaseService, ILeanConfigService
     }
     catch (Exception ex)
     {
-      return LeanApiResult<long>.Error($"创建系统配置失败: {ex.Message}");
+      _logger.Error(ex, "创建系统配置失败");
+      var message = await GetSystemTranslationAsync("config.error.create_failed");
+      return LeanApiResult<long>.Error(message);
     }
   }
 
@@ -79,20 +81,23 @@ public class LeanConfigService : LeanBaseService, ILeanConfigService
       var entity = await _repository.FirstOrDefaultAsync(x => x.Id == input.Id);
       if (entity == null)
       {
-        return LeanApiResult.Error($"系统配置 {input.Id} 不存在");
+        var message = await GetSystemTranslationAsync("config.error.not_found", new { id = input.Id });
+        return LeanApiResult.Error(message);
       }
 
       // 检查是否为系统内置
       if (entity.IsBuiltin == LeanBuiltinStatus.Yes)
       {
-        return LeanApiResult.Error("系统内置配置不允许修改");
+        var message = await GetSystemTranslationAsync("config.error.builtin_modify");
+        return LeanApiResult.Error(message);
       }
 
       // 检查配置键是否已存在
       var exists = await _repository.AnyAsync(x => x.ConfigKey == input.ConfigKey && x.Id != input.Id);
       if (exists)
       {
-        return LeanApiResult.Error($"配置键 {input.ConfigKey} 已存在");
+        var message = await GetSystemTranslationAsync("config.error.key_exists", new { key = input.ConfigKey });
+        return LeanApiResult.Error(message);
       }
 
       // 更新数据
@@ -103,7 +108,9 @@ public class LeanConfigService : LeanBaseService, ILeanConfigService
     }
     catch (Exception ex)
     {
-      return LeanApiResult.Error($"更新系统配置失败: {ex.Message}");
+      _logger.Error(ex, "更新系统配置失败");
+      var message = await GetSystemTranslationAsync("config.error.update_failed");
+      return LeanApiResult.Error(message);
     }
   }
 
@@ -116,14 +123,16 @@ public class LeanConfigService : LeanBaseService, ILeanConfigService
     {
       if (ids == null || !ids.Any())
       {
-        return LeanApiResult.Error("请选择要删除的数据");
+        var message = await GetSystemTranslationAsync("config.error.select_delete");
+        return LeanApiResult.Error(message);
       }
 
       // 检查是否包含系统内置配置
       var entities = await _repository.GetListAsync(x => ids.Contains(x.Id));
       if (entities.Any(x => x.IsBuiltin == LeanBuiltinStatus.Yes))
       {
-        return LeanApiResult.Error("系统内置配置不允许删除");
+        var message = await GetSystemTranslationAsync("config.error.builtin_delete");
+        return LeanApiResult.Error(message);
       }
 
       // 删除数据
@@ -133,7 +142,9 @@ public class LeanConfigService : LeanBaseService, ILeanConfigService
     }
     catch (Exception ex)
     {
-      return LeanApiResult.Error($"删除系统配置失败: {ex.Message}");
+      _logger.Error(ex, "删除系统配置失败");
+      var message = await GetSystemTranslationAsync("config.error.delete_failed");
+      return LeanApiResult.Error(message);
     }
   }
 
@@ -147,7 +158,8 @@ public class LeanConfigService : LeanBaseService, ILeanConfigService
       var entity = await _repository.FirstOrDefaultAsync(x => x.Id == id);
       if (entity == null)
       {
-        return LeanApiResult<LeanConfigDto>.Error($"系统配置 {id} 不存在");
+        var message = await GetSystemTranslationAsync("config.error.not_found", new { id });
+        return LeanApiResult<LeanConfigDto>.Error(message);
       }
 
       var dto = entity.Adapt<LeanConfigDto>();
@@ -155,7 +167,9 @@ public class LeanConfigService : LeanBaseService, ILeanConfigService
     }
     catch (Exception ex)
     {
-      return LeanApiResult<LeanConfigDto>.Error($"获取系统配置详情失败: {ex.Message}");
+      _logger.Error(ex, "获取系统配置详情失败");
+      var message = await GetSystemTranslationAsync("config.error.get_failed");
+      return LeanApiResult<LeanConfigDto>.Error(message);
     }
   }
 
@@ -216,7 +230,9 @@ public class LeanConfigService : LeanBaseService, ILeanConfigService
     }
     catch (Exception ex)
     {
-      return LeanApiResult<LeanPageResult<LeanConfigDto>>.Error($"分页查询系统配置失败: {ex.Message}");
+      _logger.Error(ex, "分页查询系统配置失败");
+      var message = await GetSystemTranslationAsync("config.error.query_failed");
+      return LeanApiResult<LeanPageResult<LeanConfigDto>>.Error(message);
     }
   }
 
@@ -234,41 +250,58 @@ public class LeanConfigService : LeanBaseService, ILeanConfigService
   /// <summary>
   /// 导入系统配置
   /// </summary>
-  public async Task<LeanExcelImportResult<LeanConfigImportDto>> ImportAsync(byte[] file)
+  public async Task<LeanExcelImportResult<LeanConfigImportDto>> ImportAsync(LeanFileInfo file)
   {
     var result = new LeanExcelImportResult<LeanConfigImportDto>();
 
     try
     {
       // 读取Excel文件
-      var importDtos = LeanExcelHelper.Import<LeanConfigImportDto>(file);
+      var bytes = new byte[file.Stream.Length];
+      await file.Stream.ReadAsync(bytes, 0, (int)file.Stream.Length);
+      var importDtos = LeanExcelHelper.Import<LeanConfigImportDto>(bytes);
+      result.Data.AddRange(importDtos.Data);
+      result.Errors.AddRange(importDtos.Errors);
 
-      // 验证导入数据
-      foreach (var dto in importDtos.Data)
+      if (result.IsSuccess)
       {
-        // 验证配置键是否已存在
-        var existingConfig = await _repository.FirstOrDefaultAsync(x => x.ConfigKey == dto.ConfigKey);
-        if (existingConfig != null)
+        foreach (var dto in result.Data)
         {
-          result.Errors.Add(new LeanExcelImportError
+          try
           {
-            RowIndex = importDtos.Data.IndexOf(dto) + 2,
-            ErrorMessage = $"配置键 {dto.ConfigKey} 已存在"
-          });
-          continue;
-        }
+            // 检查配置键是否存在
+            var exists = await _repository.AnyAsync(x => x.ConfigKey == dto.ConfigKey);
+            if (exists)
+            {
+              result.Errors.Add(new LeanExcelImportError
+              {
+                RowIndex = importDtos.Data.IndexOf(dto) + 2,
+                ErrorMessage = $"配置键 {dto.ConfigKey} 已存在"
+              });
+              continue;
+            }
 
-        // 创建新的配置
-        var config = dto.Adapt<LeanConfig>();
-        await _repository.CreateAsync(config);
-        result.Data.Add(dto);
+            // 创建实体
+            var entity = dto.Adapt<LeanConfig>();
+            entity.Status = LeanStatus.Normal;
+            await _repository.CreateAsync(entity);
+          }
+          catch (Exception ex)
+          {
+            result.Errors.Add(new LeanExcelImportError
+            {
+              RowIndex = importDtos.Data.IndexOf(dto) + 2,
+              ErrorMessage = ex.Message
+            });
+          }
+        }
       }
 
       return result;
     }
     catch (Exception ex)
     {
-      _logger.LogError(ex, "导入系统配置失败");
+      _logger.Error(ex, "导入系统配置失败");
       result.ErrorMessage = $"导入失败：{ex.Message}";
       return result;
     }

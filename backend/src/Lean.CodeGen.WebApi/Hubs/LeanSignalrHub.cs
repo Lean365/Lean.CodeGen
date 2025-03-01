@@ -15,7 +15,7 @@ using Lean.CodeGen.Domain.Entities.Signalr;
 using Lean.CodeGen.Common.Enums;
 using Lean.CodeGen.Application.Services.Signalr;
 using Lean.CodeGen.Application.Dtos.Signalr;
-using Microsoft.Extensions.Logging;
+ using NLog;
 
 namespace Lean.CodeGen.WebApi.Hubs;
 

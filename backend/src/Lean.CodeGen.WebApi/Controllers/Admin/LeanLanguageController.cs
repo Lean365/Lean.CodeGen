@@ -4,6 +4,7 @@ using Lean.CodeGen.Common.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.IO;
 using Lean.CodeGen.Common.Enums;
+using Microsoft.Extensions.Configuration;
 namespace Lean.CodeGen.WebApi.Controllers.Admin;
 
 /// <summary>
@@ -18,7 +19,11 @@ public class LeanLanguageController : LeanBaseController
   /// <summary>
   /// 构造函数
   /// </summary>
-  public LeanLanguageController(ILeanLanguageService languageService)
+  public LeanLanguageController(
+      ILeanLanguageService languageService,
+      ILeanLocalizationService localizationService,
+      IConfiguration configuration)
+      : base(localizationService, configuration)
   {
     _languageService = languageService;
   }
@@ -131,10 +136,14 @@ public class LeanLanguageController : LeanBaseController
   {
     using var ms = new MemoryStream();
     await file.CopyToAsync(ms);
-    var fileInfo = new LeanFileInfo { FilePath = Path.GetTempFileName() };
-    await System.IO.File.WriteAllBytesAsync(fileInfo.FilePath, ms.ToArray());
+    ms.Position = 0;
+    var fileInfo = new LeanFileInfo
+    {
+      Stream = ms,
+      FileName = file.FileName,
+      ContentType = file.ContentType
+    };
     var result = await _languageService.ImportAsync(fileInfo);
-    System.IO.File.Delete(fileInfo.FilePath);
     return Success(result, LeanBusinessType.Import);
   }
 

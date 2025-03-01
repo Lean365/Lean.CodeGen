@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Lean.CodeGen.Common.Enums;
+using Lean.CodeGen.Common.Excel;
 using Lean.CodeGen.Common.Models;
 
 namespace Lean.CodeGen.Application.Dtos.Identity;
@@ -185,6 +186,38 @@ public class LeanChangePostStatusDto
 }
 
 /// <summary>
+/// 岗位导入DTO
+/// </summary>
+public class LeanPostImportDto
+{
+  /// <summary>
+  /// 岗位名称
+  /// </summary>
+  [LeanExcelColumn("岗位名称")]
+  [Required]
+  public string PostName { get; set; }
+
+  /// <summary>
+  /// 岗位编码
+  /// </summary>
+  [LeanExcelColumn("岗位编码")]
+  [Required]
+  public string PostCode { get; set; }
+
+  /// <summary>
+  /// 显示顺序
+  /// </summary>
+  [LeanExcelColumn("显示顺序")]
+  public int OrderNum { get; set; }
+
+  /// <summary>
+  /// 备注
+  /// </summary>
+  [LeanExcelColumn("备注")]
+  public string Remark { get; set; }
+}
+
+/// <summary>
 /// 岗位导入模板
 /// </summary>
 public class LeanImportTemplatePostDto
@@ -280,4 +313,46 @@ public class LeanExportPostDto : LeanQueryPostDto
   /// 选中的ID列表
   /// </summary>
   public List<long> SelectedIds { get; set; } = new();
+}
+
+/// <summary>
+/// 岗位导出数据
+/// </summary>
+public class LeanPostExportDto
+{
+  /// <summary>
+  /// 岗位名称
+  /// </summary>
+  [LeanExcelColumn("岗位名称", DataType = LeanExcelDataType.String)]
+  public string PostName { get; set; } = default!;
+
+  /// <summary>
+  /// 岗位编码
+  /// </summary>
+  [LeanExcelColumn("岗位编码", DataType = LeanExcelDataType.String)]
+  public string PostCode { get; set; } = default!;
+
+  /// <summary>
+  /// 岗位状态
+  /// </summary>
+  [LeanExcelColumn("岗位状态", DataType = LeanExcelDataType.Int)]
+  public LeanPostStatus PostStatus { get; set; }
+
+  /// <summary>
+  /// 显示顺序
+  /// </summary>
+  [LeanExcelColumn("显示顺序", DataType = LeanExcelDataType.Int)]
+  public int OrderNum { get; set; }
+
+  /// <summary>
+  /// 是否内置
+  /// </summary>
+  [LeanExcelColumn("是否内置", DataType = LeanExcelDataType.Int)]
+  public LeanBuiltinStatus IsBuiltin { get; set; }
+
+  /// <summary>
+  /// 创建时间
+  /// </summary>
+  [LeanExcelColumn("创建时间", DataType = LeanExcelDataType.DateTime)]
+  public DateTime CreateTime { get; set; }
 }

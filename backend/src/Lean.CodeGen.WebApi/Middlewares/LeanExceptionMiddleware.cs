@@ -4,7 +4,7 @@ using Lean.CodeGen.Common.Enums;
 using Lean.CodeGen.Common.Exceptions;
 using Lean.CodeGen.Common.Models;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
+ using NLog;
 
 namespace Lean.CodeGen.WebApi.Middlewares;
 

@@ -4,7 +4,7 @@ using Lean.CodeGen.Domain.Entities.Workflow;
 using Lean.CodeGen.Domain.Interfaces.Repositories;
 using System.Linq.Expressions;
 using Mapster;
-using Microsoft.Extensions.Logging;
+using NLog;
 using Lean.CodeGen.Application.Services.Base;
 
 namespace Lean.CodeGen.Application.Services.Workflow;
@@ -14,82 +14,82 @@ namespace Lean.CodeGen.Application.Services.Workflow;
 /// </summary>
 public class LeanWorkflowOutcomeService : LeanBaseService, ILeanWorkflowOutcomeService
 {
-  private readonly ILeanRepository<LeanWorkflowOutcome> _repository;
-  private readonly ILogger<LeanWorkflowOutcomeService> _logger;
+    private readonly ILeanRepository<LeanWorkflowOutcome> _repository;
+    private readonly ILogger _logger;
 
-  public LeanWorkflowOutcomeService(
-      ILeanRepository<LeanWorkflowOutcome> repository,
-      LeanBaseServiceContext context)
-      : base(context)
-  {
-    _repository = repository;
-    _logger = (ILogger<LeanWorkflowOutcomeService>)context.Logger;
-  }
-
-  /// <inheritdoc/>
-  public async Task<LeanWorkflowOutcomeDto?> GetAsync(long id)
-  {
-    var entity = await _repository.GetByIdAsync(id);
-    return entity?.Adapt<LeanWorkflowOutcomeDto>();
-  }
-
-  /// <inheritdoc/>
-  public async Task<long> CreateAsync(LeanWorkflowOutcomeDto dto)
-  {
-    var entity = dto.Adapt<LeanWorkflowOutcome>();
-    return await _repository.CreateAsync(entity);
-  }
-
-  /// <inheritdoc/>
-  public async Task<bool> UpdateAsync(LeanWorkflowOutcomeDto dto)
-  {
-    var entity = dto.Adapt<LeanWorkflowOutcome>();
-    return await _repository.UpdateAsync(entity);
-  }
-
-  /// <inheritdoc/>
-  public async Task<bool> DeleteAsync(long id)
-  {
-    return await _repository.DeleteAsync(x => x.Id == id);
-  }
-
-  /// <inheritdoc/>
-  public async Task<LeanPageResult<LeanWorkflowOutcomeDto>> GetPagedListAsync(
-      int pageIndex,
-      int pageSize,
-      long? activityInstanceId = null,
-      string? outcomeName = null,
-      string? outcomeType = null)
-  {
-    Expression<Func<LeanWorkflowOutcome, bool>> predicate = x => true;
-
-    if (activityInstanceId.HasValue)
+    public LeanWorkflowOutcomeService(
+        ILeanRepository<LeanWorkflowOutcome> repository,
+        LeanBaseServiceContext context)
+        : base(context)
     {
-      var temp = predicate;
-      predicate = x => temp.Compile()(x) && x.ActivityInstanceId == activityInstanceId.Value;
+        _repository = repository;
+        _logger = context.Logger;
     }
 
-    if (!string.IsNullOrEmpty(outcomeName))
+    /// <inheritdoc/>
+    public async Task<LeanWorkflowOutcomeDto?> GetAsync(long id)
     {
-      var temp = predicate;
-      predicate = x => temp.Compile()(x) && x.OutcomeName.Contains(outcomeName);
+        var entity = await _repository.GetByIdAsync(id);
+        return entity?.Adapt<LeanWorkflowOutcomeDto>();
     }
 
-    if (!string.IsNullOrEmpty(outcomeType))
+    /// <inheritdoc/>
+    public async Task<long> CreateAsync(LeanWorkflowOutcomeDto dto)
     {
-      var temp = predicate;
-      predicate = x => temp.Compile()(x) && x.OutcomeType == outcomeType;
+        var entity = dto.Adapt<LeanWorkflowOutcome>();
+        return await _repository.CreateAsync(entity);
     }
 
-    var result = await _repository.GetPageListAsync(predicate, pageSize, pageIndex);
-    var list = result.Items.Adapt<List<LeanWorkflowOutcomeDto>>();
-
-    return new LeanPageResult<LeanWorkflowOutcomeDto>
+    /// <inheritdoc/>
+    public async Task<bool> UpdateAsync(LeanWorkflowOutcomeDto dto)
     {
-      Total = result.Total,
-      Items = list,
-      PageIndex = pageIndex,
-      PageSize = pageSize
-    };
-  }
+        var entity = dto.Adapt<LeanWorkflowOutcome>();
+        return await _repository.UpdateAsync(entity);
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> DeleteAsync(long id)
+    {
+        return await _repository.DeleteAsync(x => x.Id == id);
+    }
+
+    /// <inheritdoc/>
+    public async Task<LeanPageResult<LeanWorkflowOutcomeDto>> GetPagedListAsync(
+        int pageIndex,
+        int pageSize,
+        long? activityInstanceId = null,
+        string? outcomeName = null,
+        string? outcomeType = null)
+    {
+        Expression<Func<LeanWorkflowOutcome, bool>> predicate = x => true;
+
+        if (activityInstanceId.HasValue)
+        {
+            var temp = predicate;
+            predicate = x => temp.Compile()(x) && x.ActivityInstanceId == activityInstanceId.Value;
+        }
+
+        if (!string.IsNullOrEmpty(outcomeName))
+        {
+            var temp = predicate;
+            predicate = x => temp.Compile()(x) && x.OutcomeName.Contains(outcomeName);
+        }
+
+        if (!string.IsNullOrEmpty(outcomeType))
+        {
+            var temp = predicate;
+            predicate = x => temp.Compile()(x) && x.OutcomeType == outcomeType;
+        }
+
+        var result = await _repository.GetPageListAsync(predicate, pageSize, pageIndex);
+        var list = result.Items.Adapt<List<LeanWorkflowOutcomeDto>>();
+
+        return new LeanPageResult<LeanWorkflowOutcomeDto>
+        {
+            Total = result.Total,
+            Items = list,
+            PageIndex = pageIndex,
+            PageSize = pageSize
+        };
+    }
 }

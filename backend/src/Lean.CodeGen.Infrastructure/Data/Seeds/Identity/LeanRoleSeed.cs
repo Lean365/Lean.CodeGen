@@ -1,46 +1,72 @@
 using Lean.CodeGen.Common.Enums;
 using Lean.CodeGen.Domain.Entities.Identity;
-using Lean.CodeGen.Infrastructure.Data.Context;
 using SqlSugar;
 using System.Threading.Tasks;
+using NLog;
+using ILogger = NLog.ILogger;
 
 namespace Lean.CodeGen.Infrastructure.Data.Seeds.Identity;
 
 /// <summary>
 /// 角色种子数据
 /// </summary>
-public class LeanRoleSeed : ILeanDataSeed
+public class LeanRoleSeed
 {
-  public int Order => 1;
+  private readonly ISqlSugarClient _db;
+  private readonly ILogger _logger;
 
-  public async Task SeedAsync(LeanDbContext dbContext)
+  public LeanRoleSeed(ISqlSugarClient db)
   {
-    var db = dbContext.GetDatabase();
-    if (await db.Queryable<LeanRole>().AnyAsync())
-    {
-      return;
-    }
+    _db = db;
+    _logger = LogManager.GetCurrentClassLogger();
+  }
 
-    await db.Insertable(new[]
-    {
-            new LeanRole
+  public async Task InitializeAsync()
+  {
+    _logger.Info("开始初始化角色数据...");
+
+    var defaultRoles = new List<LeanRole>
+        {
+            new()
             {
-                RoleName = "超级管理员",
                 RoleCode = "admin",
-                RoleDescription = "系统内置超级管理员角色",
+                RoleName = "超级管理员",
+                RoleDescription = "系统超级管理员，拥有所有权限",
                 OrderNum = 1,
                 RoleStatus = LeanRoleStatus.Normal,
+                DataScope = LeanDataScopeType.All,
                 IsBuiltin = LeanBuiltinStatus.Yes
             },
-            new LeanRole
+            new()
             {
-                RoleName = "普通用户",
                 RoleCode = "user",
-                RoleDescription = "系统内置普通用户角色",
+                RoleName = "普通用户",
+                RoleDescription = "普通用户，拥有基本权限",
                 OrderNum = 2,
                 RoleStatus = LeanRoleStatus.Normal,
+                DataScope = LeanDataScopeType.Self,
                 IsBuiltin = LeanBuiltinStatus.Yes
             }
-        }).ExecuteCommandAsync();
+        };
+
+    foreach (var role in defaultRoles)
+    {
+      var exists = await _db.Queryable<LeanRole>()
+          .FirstAsync(x => x.RoleCode == role.RoleCode);
+
+      if (exists != null)
+      {
+        role.Id = exists.Id;
+        await _db.Updateable(role).ExecuteCommandAsync();
+        _logger.Info($"更新角色: {role.RoleName}");
+      }
+      else
+      {
+        await _db.Insertable(role).ExecuteCommandAsync();
+        _logger.Info($"新增角色: {role.RoleName}");
+      }
+    }
+
+    _logger.Info("角色数据初始化完成");
   }
 }

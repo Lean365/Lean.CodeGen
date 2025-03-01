@@ -9,23 +9,30 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
+using System.Linq;
 
 namespace Lean.CodeGen.WebApi.Controllers.Admin;
 
 /// <summary>
 /// 系统配置控制器
 /// </summary>
-[Route("api/[controller]")]
+[Route("api/admin/config")]
+[ApiController]
 public class LeanConfigController : LeanBaseController
 {
-  private readonly ILeanConfigService _service;
+  private readonly ILeanConfigService _configService;
 
   /// <summary>
   /// 构造函数
   /// </summary>
-  public LeanConfigController(ILeanConfigService service)
+  public LeanConfigController(
+      ILeanConfigService configService,
+      ILeanLocalizationService localizationService,
+      IConfiguration configuration)
+      : base(localizationService, configuration)
   {
-    _service = service;
+    _configService = configService;
   }
 
   /// <summary>
@@ -34,8 +41,12 @@ public class LeanConfigController : LeanBaseController
   [HttpPost]
   public async Task<IActionResult> CreateAsync([FromBody] LeanCreateConfigDto input)
   {
-    var result = await _service.CreateAsync(input);
-    return Success(result, LeanBusinessType.Create);
+    var result = await _configService.CreateAsync(input);
+    if (!result.Success)
+    {
+      return await ErrorAsync(result.Message ?? "common.error.create_failed");
+    }
+    return Success(result.Data, LeanBusinessType.Create);
   }
 
   /// <summary>
@@ -44,8 +55,12 @@ public class LeanConfigController : LeanBaseController
   [HttpPut]
   public async Task<IActionResult> UpdateAsync([FromBody] LeanUpdateConfigDto input)
   {
-    var result = await _service.UpdateAsync(input);
-    return Success(result, LeanBusinessType.Update);
+    var result = await _configService.UpdateAsync(input);
+    if (!result.Success)
+    {
+      return await ErrorAsync(result.Message ?? "common.error.update_failed");
+    }
+    return Success<object?>(null, LeanBusinessType.Update);
   }
 
   /// <summary>
@@ -54,8 +69,12 @@ public class LeanConfigController : LeanBaseController
   [HttpDelete]
   public async Task<IActionResult> DeleteAsync([FromBody] List<long> ids)
   {
-    var result = await _service.DeleteAsync(ids);
-    return Success(result, LeanBusinessType.Delete);
+    var result = await _configService.DeleteAsync(ids);
+    if (!result.Success)
+    {
+      return await ErrorAsync(result.Message ?? "common.error.delete_failed");
+    }
+    return Success<object?>(null, LeanBusinessType.Delete);
   }
 
   /// <summary>
@@ -64,8 +83,12 @@ public class LeanConfigController : LeanBaseController
   [HttpGet("{id}")]
   public async Task<IActionResult> GetAsync(long id)
   {
-    var result = await _service.GetAsync(id);
-    return Success(result, LeanBusinessType.Query);
+    var result = await _configService.GetAsync(id);
+    if (!result.Success)
+    {
+      return await ErrorAsync(result.Message ?? "common.error.get_failed");
+    }
+    return Success(result.Data, LeanBusinessType.Query);
   }
 
   /// <summary>
@@ -74,8 +97,12 @@ public class LeanConfigController : LeanBaseController
   [HttpGet]
   public async Task<IActionResult> GetPagedListAsync([FromQuery] LeanQueryConfigDto input)
   {
-    var result = await _service.GetPagedListAsync(input);
-    return Success(result, LeanBusinessType.Query);
+    var result = await _configService.GetPagedListAsync(input);
+    if (!result.Success)
+    {
+      return await ErrorAsync(result.Message ?? "common.error.query_failed");
+    }
+    return Success(result.Data, LeanBusinessType.Query);
   }
 
   /// <summary>
@@ -84,8 +111,9 @@ public class LeanConfigController : LeanBaseController
   [HttpGet("export")]
   public async Task<IActionResult> ExportAsync([FromQuery] LeanQueryConfigDto input)
   {
-    var bytes = await _service.ExportAsync(input);
-    return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "configs.xlsx", true);
+    var bytes = await _configService.ExportAsync(input);
+    var fileName = $"configs_{DateTime.Now:yyyyMMddHHmmss}.xlsx";
+    return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
   }
 
   /// <summary>
@@ -96,7 +124,14 @@ public class LeanConfigController : LeanBaseController
   {
     using var ms = new MemoryStream();
     await file.CopyToAsync(ms);
-    var result = await _service.ImportAsync(ms.ToArray());
+    ms.Position = 0;
+    var fileInfo = new LeanFileInfo
+    {
+      Stream = ms,
+      FileName = file.FileName,
+      ContentType = file.ContentType
+    };
+    var result = await _configService.ImportAsync(fileInfo);
     return Success(result, LeanBusinessType.Import);
   }
 
@@ -106,7 +141,8 @@ public class LeanConfigController : LeanBaseController
   [HttpGet("template")]
   public async Task<IActionResult> GetImportTemplateAsync()
   {
-    var bytes = await _service.GetImportTemplateAsync();
-    return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "config-template.xlsx", true);
+    var bytes = await _configService.GetImportTemplateAsync();
+    var fileName = $"config_template_{DateTime.Now:yyyyMMddHHmmss}.xlsx";
+    return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
   }
 }

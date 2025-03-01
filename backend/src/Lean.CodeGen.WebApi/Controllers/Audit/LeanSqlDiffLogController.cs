@@ -3,6 +3,8 @@ using Lean.CodeGen.Application.Dtos.Audit;
 using Lean.CodeGen.Application.Services.Audit;
 using Lean.CodeGen.Common.Models;
 using Lean.CodeGen.Common.Enums;
+using Microsoft.Extensions.Configuration;
+using Lean.CodeGen.Application.Services.Admin;
 
 namespace Lean.CodeGen.WebApi.Controllers.Audit
 {
@@ -19,7 +21,11 @@ namespace Lean.CodeGen.WebApi.Controllers.Audit
     /// <summary>
     /// 构造函数
     /// </summary>
-    public LeanSqlDiffLogController(ILeanSqlDiffLogService sqlDiffLogService)
+    public LeanSqlDiffLogController(
+        ILeanSqlDiffLogService sqlDiffLogService,
+        ILeanLocalizationService localizationService,
+        IConfiguration configuration)
+        : base(localizationService, configuration)
     {
       _sqlDiffLogService = sqlDiffLogService;
     }

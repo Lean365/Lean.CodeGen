@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using Lean.CodeGen.Common.Enums;
 using Lean.CodeGen.Common.Models;
 using Lean.CodeGen.Application.Dtos;
+using Lean.CodeGen.Common.Excel;
 
 namespace Lean.CodeGen.Application.Dtos.Identity;
 
@@ -20,11 +21,15 @@ public class LeanDeptDto : LeanBaseDto
   /// <summary>
   /// 部门名称
   /// </summary>
+  [LeanExcelColumn("部门名称")]
+  [Required]
   public string DeptName { get; set; } = string.Empty;
 
   /// <summary>
   /// 部门编码
   /// </summary>
+  [LeanExcelColumn("部门编码")]
+  [Required]
   public string DeptCode { get; set; } = string.Empty;
 
   /// <summary>
@@ -538,6 +543,11 @@ public class LeanImportDeptResultDto : LeanImportResult
   public new List<LeanImportDeptErrorDto> Errors { get; set; } = new();
 
   /// <summary>
+  /// 错误信息
+  /// </summary>
+  public string? ErrorMessage { get; set; }
+
+  /// <summary>
   /// 添加错误信息
   /// </summary>
   public override void AddError(string deptCode, string errorMessage)
@@ -590,5 +600,146 @@ public class LeanDeptTreeDto : LeanDeptDto
   /// <summary>
   /// 子部门列表
   /// </summary>
-  public List<LeanDeptTreeDto> Children { get; set; } = new();
+  public new List<LeanDeptTreeDto> Children { get; set; } = new();
+}
+
+/// <summary>
+/// 部门导入DTO
+/// </summary>
+public class LeanDeptImportDto
+{
+  /// <summary>
+  /// 部门编码
+  /// </summary>
+  [Required(ErrorMessage = "部门编码不能为空")]
+  [StringLength(50, MinimumLength = 2, ErrorMessage = "部门编码长度必须在2-50个字符之间")]
+  [LeanExcelColumn("部门编码", DataType = LeanExcelDataType.String)]
+  public string DeptCode { get; set; } = default!;
+
+  /// <summary>
+  /// 部门名称
+  /// </summary>
+  [Required(ErrorMessage = "部门名称不能为空")]
+  [StringLength(50, MinimumLength = 2, ErrorMessage = "部门名称长度必须在2-50个字符之间")]
+  [LeanExcelColumn("部门名称", DataType = LeanExcelDataType.String)]
+  public string DeptName { get; set; } = default!;
+
+  /// <summary>
+  /// 父级部门ID
+  /// </summary>
+  [LeanExcelColumn("父级部门ID", DataType = LeanExcelDataType.Long)]
+  public long? ParentId { get; set; }
+
+  /// <summary>
+  /// 显示顺序
+  /// </summary>
+  [LeanExcelColumn("显示顺序", DataType = LeanExcelDataType.Int)]
+  public int OrderNum { get; set; }
+
+  /// <summary>
+  /// 负责人
+  /// </summary>
+  [LeanExcelColumn("负责人", DataType = LeanExcelDataType.String)]
+  public string? Leader { get; set; }
+
+  /// <summary>
+  /// 联系电话
+  /// </summary>
+  [LeanExcelColumn("联系电话", DataType = LeanExcelDataType.String)]
+  public string? Phone { get; set; }
+
+  /// <summary>
+  /// 邮箱
+  /// </summary>
+  [LeanExcelColumn("邮箱", DataType = LeanExcelDataType.String)]
+  [EmailAddress(ErrorMessage = "邮箱格式不正确")]
+  public string? Email { get; set; }
+}
+
+/// <summary>
+/// 设置角色菜单DTO
+/// </summary>
+public class LeanSetRoleMenusDto
+{
+  /// <summary>
+  /// 角色ID
+  /// </summary>
+  public long RoleId { get; set; }
+
+  /// <summary>
+  /// 菜单ID列表
+  /// </summary>
+  public List<long> MenuIds { get; set; }
+}
+
+/// <summary>
+/// 部门导出DTO
+/// </summary>
+public class LeanDeptExportDto
+{
+  /// <summary>
+  /// 部门编码
+  /// </summary>
+  [LeanExcelColumn("部门编码", DataType = LeanExcelDataType.String)]
+  public string DeptCode { get; set; } = default!;
+
+  /// <summary>
+  /// 部门名称
+  /// </summary>
+  [LeanExcelColumn("部门名称", DataType = LeanExcelDataType.String)]
+  public string DeptName { get; set; } = default!;
+
+  /// <summary>
+  /// 父级部门ID
+  /// </summary>
+  [LeanExcelColumn("父级部门ID", DataType = LeanExcelDataType.Long)]
+  public long? ParentId { get; set; }
+
+  /// <summary>
+  /// 部门描述
+  /// </summary>
+  [LeanExcelColumn("部门描述", DataType = LeanExcelDataType.String)]
+  public string? DeptDescription { get; set; }
+
+  /// <summary>
+  /// 负责人
+  /// </summary>
+  [LeanExcelColumn("负责人", DataType = LeanExcelDataType.String)]
+  public string? Leader { get; set; }
+
+  /// <summary>
+  /// 联系电话
+  /// </summary>
+  [LeanExcelColumn("联系电话", DataType = LeanExcelDataType.String)]
+  public string? Phone { get; set; }
+
+  /// <summary>
+  /// 邮箱
+  /// </summary>
+  [LeanExcelColumn("邮箱", DataType = LeanExcelDataType.String)]
+  public string? Email { get; set; }
+
+  /// <summary>
+  /// 排序号
+  /// </summary>
+  [LeanExcelColumn("排序号", DataType = LeanExcelDataType.Int)]
+  public int OrderNum { get; set; }
+
+  /// <summary>
+  /// 部门状态
+  /// </summary>
+  [LeanExcelColumn("部门状态", DataType = LeanExcelDataType.Int)]
+  public LeanDeptStatus DeptStatus { get; set; }
+
+  /// <summary>
+  /// 是否内置
+  /// </summary>
+  [LeanExcelColumn("是否内置", DataType = LeanExcelDataType.Int)]
+  public LeanBuiltinStatus IsBuiltin { get; set; }
+
+  /// <summary>
+  /// 创建时间
+  /// </summary>
+  [LeanExcelColumn("创建时间", DataType = LeanExcelDataType.DateTime, Format = "yyyy-MM-dd HH:mm:ss")]
+  public DateTime CreateTime { get; set; }
 }

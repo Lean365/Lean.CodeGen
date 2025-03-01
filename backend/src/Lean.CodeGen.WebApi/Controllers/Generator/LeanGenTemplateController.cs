@@ -5,6 +5,8 @@ using Lean.CodeGen.Common.Models;
 using Lean.CodeGen.Common.Excel;
 using Lean.CodeGen.Common.Enums;
 using System.IO;
+using Microsoft.Extensions.Configuration;
+using Lean.CodeGen.Application.Services.Admin;
 
 namespace Lean.CodeGen.WebApi.Controllers.Generator
 {
@@ -13,6 +15,7 @@ namespace Lean.CodeGen.WebApi.Controllers.Generator
   /// </summary>
   [Route("api/generator/templates")]
   [ApiController]
+  [ApiExplorerSettings(GroupName = "generator")]
   public class LeanGenTemplateController : LeanBaseController
   {
     private readonly ILeanGenTemplateService _genTemplateService;
@@ -20,7 +23,11 @@ namespace Lean.CodeGen.WebApi.Controllers.Generator
     /// <summary>
     /// 构造函数
     /// </summary>
-    public LeanGenTemplateController(ILeanGenTemplateService genTemplateService)
+    public LeanGenTemplateController(
+        ILeanGenTemplateService genTemplateService,
+        ILeanLocalizationService localizationService,
+        IConfiguration configuration)
+        : base(localizationService, configuration)
     {
       _genTemplateService = genTemplateService;
     }
@@ -72,7 +79,7 @@ namespace Lean.CodeGen.WebApi.Controllers.Generator
     public async Task<IActionResult> DeleteAsync(long id)
     {
       var result = await _genTemplateService.DeleteAsync(id);
-      return result ? Success(LeanBusinessType.Delete) : Error("删除失败");
+      return result ? Success(LeanBusinessType.Delete) : await ErrorAsync("generator.error.delete_failed");
     }
 
     /// <summary>

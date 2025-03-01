@@ -5,7 +5,7 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Mapster;
 using Microsoft.Extensions.Options;
-using Microsoft.Extensions.Logging;
+using NLog;
 using Lean.CodeGen.Application.Dtos.Audit;
 using Lean.CodeGen.Common.Excel;
 using Lean.CodeGen.Common.Models;
@@ -24,7 +24,7 @@ namespace Lean.CodeGen.Application.Services.Audit;
 public class LeanSqlDiffLogService : LeanBaseService, ILeanSqlDiffLogService
 {
   private readonly ILeanRepository<LeanSqlDiffLog> _sqlDiffLogRepository;
-  private readonly ILogger<LeanSqlDiffLogService> _logger;
+  private readonly ILogger _logger;
 
   /// <summary>
   /// 构造函数
@@ -35,7 +35,7 @@ public class LeanSqlDiffLogService : LeanBaseService, ILeanSqlDiffLogService
       : base(context)
   {
     _sqlDiffLogRepository = sqlDiffLogRepository;
-    _logger = (ILogger<LeanSqlDiffLogService>)context.Logger;
+    _logger = context.Logger;
   }
 
   /// <summary>

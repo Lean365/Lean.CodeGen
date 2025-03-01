@@ -12,6 +12,21 @@ namespace Lean.CodeGen.Application.Services.Signalr;
 public interface ILeanOnlineMessageService
 {
   /// <summary>
+  /// 获取在线消息列表（分页）
+  /// </summary>
+  Task<LeanPageResult<LeanOnlineMessageDto>> GetPageListAsync(LeanQueryOnlineMessageDto queryDto);
+
+  /// <summary>
+  /// 获取在线消息详情
+  /// </summary>
+  Task<LeanOnlineMessageDto> GetAsync(long id);
+
+  /// <summary>
+  /// 导出在线消息
+  /// </summary>
+  Task<LeanFileResult> ExportAsync(LeanQueryOnlineMessageDto queryDto);
+
+  /// <summary>
   /// 发送消息
   /// </summary>
   Task<LeanOnlineMessageDto> SendMessageAsync(LeanSendMessageDto input);

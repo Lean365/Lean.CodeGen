@@ -3,6 +3,8 @@ using Lean.CodeGen.Application.Dtos.Identity;
 using Lean.CodeGen.Application.Services.Identity;
 using Lean.CodeGen.Common.Models;
 using Lean.CodeGen.Common.Enums;
+using Microsoft.Extensions.Configuration;
+using Lean.CodeGen.Application.Services.Admin;
 
 namespace Lean.CodeGen.WebApi.Controllers.Identity;
 
@@ -25,7 +27,13 @@ public class LeanUserController : LeanBaseController
   /// 构造函数
   /// </summary>
   /// <param name="userService">用户服务</param>
-  public LeanUserController(ILeanUserService userService)
+  /// <param name="localizationService">本地化服务</param>
+  /// <param name="configuration">配置</param>
+  public LeanUserController(
+      ILeanUserService userService,
+      ILeanLocalizationService localizationService,
+      IConfiguration configuration)
+      : base(localizationService, configuration)
   {
     _userService = userService;
   }
@@ -139,11 +147,18 @@ public class LeanUserController : LeanBaseController
   /// </summary>
   /// <returns>导入结果</returns>
   [HttpPost("import")]
-  public async Task<IActionResult> ImportAsync(IFormFile file)
+  public async Task<IActionResult> ImportAsync([FromForm] IFormFile file)
   {
     using var ms = new MemoryStream();
     await file.CopyToAsync(ms);
-    var result = await _userService.ImportAsync(ms.ToArray());
+    ms.Position = 0;
+    var fileInfo = new LeanFileInfo
+    {
+      Stream = ms,
+      FileName = file.FileName,
+      ContentType = file.ContentType
+    };
+    var result = await _userService.ImportAsync(fileInfo);
     return Success(result, LeanBusinessType.Import);
   }
 

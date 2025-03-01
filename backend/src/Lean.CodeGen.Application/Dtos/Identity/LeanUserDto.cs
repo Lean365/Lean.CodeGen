@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using Lean.CodeGen.Common.Enums;
 using Lean.CodeGen.Common.Models;
 using Lean.CodeGen.Application.Dtos;
+using Lean.CodeGen.Common.Excel;
 
 namespace Lean.CodeGen.Application.Dtos.Identity;
 
@@ -634,4 +635,108 @@ public class LeanDeleteUserDto
   /// </summary>
   [Required(ErrorMessage = "用户ID不能为空")]
   public long Id { get; set; }
+}
+
+/// <summary>
+/// 用户导出数据
+/// </summary>
+public class LeanUserExportDto
+{
+  /// <summary>
+  /// 用户名
+  /// </summary>
+  [LeanExcelColumn("用户名", DataType = LeanExcelDataType.String)]
+  public string UserName { get; set; } = default!;
+
+  /// <summary>
+  /// 真实姓名
+  /// </summary>
+  [LeanExcelColumn("真实姓名", DataType = LeanExcelDataType.String)]
+  public string RealName { get; set; } = default!;
+
+  /// <summary>
+  /// 英文名称
+  /// </summary>
+  [LeanExcelColumn("英文名称", DataType = LeanExcelDataType.String)]
+  public string? EnglishName { get; set; }
+
+  /// <summary>
+  /// 昵称
+  /// </summary>
+  [LeanExcelColumn("昵称", DataType = LeanExcelDataType.String)]
+  public string? Nickname { get; set; }
+
+  /// <summary>
+  /// 邮箱
+  /// </summary>
+  [LeanExcelColumn("邮箱", DataType = LeanExcelDataType.String)]
+  public string? Email { get; set; }
+
+  /// <summary>
+  /// 手机号
+  /// </summary>
+  [LeanExcelColumn("手机号", DataType = LeanExcelDataType.String)]
+  public string? PhoneNumber { get; set; }
+
+  /// <summary>
+  /// 用户状态
+  /// </summary>
+  [LeanExcelColumn("用户状态", DataType = LeanExcelDataType.Int)]
+  public LeanUserStatus UserStatus { get; set; }
+
+  /// <summary>
+  /// 是否内置
+  /// </summary>
+  [LeanExcelColumn("是否内置", DataType = LeanExcelDataType.Int)]
+  public LeanBuiltinStatus IsBuiltin { get; set; }
+
+  /// <summary>
+  /// 创建时间
+  /// </summary>
+  [LeanExcelColumn("创建时间", DataType = LeanExcelDataType.DateTime)]
+  public DateTime CreateTime { get; set; }
+}
+
+/// <summary>
+/// 用户导入DTO
+/// </summary>
+public class LeanUserImportDto
+{
+  /// <summary>
+  /// 用户名
+  /// </summary>
+  [LeanExcelColumn("用户名")]
+  [Required]
+  public string UserName { get; set; }
+
+  /// <summary>
+  /// 真实姓名
+  /// </summary>
+  [LeanExcelColumn("真实姓名")]
+  [Required]
+  public string RealName { get; set; }
+
+  /// <summary>
+  /// 英文名称
+  /// </summary>
+  [LeanExcelColumn("英文名称")]
+  public string? EnglishName { get; set; }
+
+  /// <summary>
+  /// 昵称
+  /// </summary>
+  [LeanExcelColumn("昵称")]
+  public string? Nickname { get; set; }
+
+  /// <summary>
+  /// 邮箱
+  /// </summary>
+  [LeanExcelColumn("邮箱")]
+  public string? Email { get; set; }
+
+  /// <summary>
+  /// 手机号
+  /// </summary>
+  [LeanExcelColumn("手机号")]
+  public string? PhoneNumber { get; set; }
 }

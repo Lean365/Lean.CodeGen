@@ -7,13 +7,14 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Lean.CodeGen.Common.Enums;
+using Microsoft.Extensions.Configuration;
 
 namespace Lean.CodeGen.WebApi.Controllers.Admin;
 
 /// <summary>
 /// 字典类型控制器
 /// </summary>
-[Route("api/admin/dict-type")]
+[Route("api/admin/dict-types")]
 [ApiController]
 public class LeanDictTypeController : LeanBaseController
 {
@@ -22,7 +23,11 @@ public class LeanDictTypeController : LeanBaseController
   /// <summary>
   /// 构造函数
   /// </summary>
-  public LeanDictTypeController(ILeanDictTypeService service)
+  public LeanDictTypeController(
+      ILeanDictTypeService service,
+      ILeanLocalizationService localizationService,
+      IConfiguration configuration)
+      : base(localizationService, configuration)
   {
     _service = service;
   }
@@ -58,6 +63,16 @@ public class LeanDictTypeController : LeanBaseController
   }
 
   /// <summary>
+  /// 批量删除字典类型
+  /// </summary>
+  [HttpDelete]
+  public async Task<IActionResult> BatchDeleteAsync([FromBody] List<long> ids)
+  {
+    var result = await _service.BatchDeleteAsync(ids);
+    return Success(result, LeanBusinessType.Delete);
+  }
+
+  /// <summary>
   /// 获取字典类型详情
   /// </summary>
   [HttpGet("{id}")]
@@ -70,8 +85,8 @@ public class LeanDictTypeController : LeanBaseController
   /// <summary>
   /// 分页查询字典类型
   /// </summary>
-  [HttpGet]
-  public async Task<IActionResult> GetPageAsync([FromQuery] LeanQueryDictTypeDto input)
+  [HttpGet("page")]
+  public async Task<IActionResult> GetPagedListAsync([FromQuery] LeanQueryDictTypeDto input)
   {
     var result = await _service.GetPageAsync(input);
     return Success(result, LeanBusinessType.Query);
@@ -105,10 +120,14 @@ public class LeanDictTypeController : LeanBaseController
   {
     using var ms = new MemoryStream();
     await file.CopyToAsync(ms);
-    var fileInfo = new LeanFileInfo { FilePath = System.IO.Path.GetTempFileName() };
-    await System.IO.File.WriteAllBytesAsync(fileInfo.FilePath, ms.ToArray());
+    ms.Position = 0;
+    var fileInfo = new LeanFileInfo
+    {
+      Stream = ms,
+      FileName = file.FileName,
+      ContentType = file.ContentType
+    };
     var result = await _service.ImportAsync(fileInfo);
-    System.IO.File.Delete(fileInfo.FilePath);
     return Success(result, LeanBusinessType.Import);
   }
 

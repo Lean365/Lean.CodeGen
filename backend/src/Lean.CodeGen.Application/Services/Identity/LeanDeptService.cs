@@ -13,6 +13,7 @@ using Lean.CodeGen.Domain.Entities.Identity;
 using Lean.CodeGen.Domain.Interfaces.Repositories;
 using Lean.CodeGen.Domain.Validators;
 using Lean.CodeGen.Common.Extensions;
+using Lean.CodeGen.Common.Excel;
 
 namespace Lean.CodeGen.Application.Services.Identity;
 
@@ -57,8 +58,8 @@ public class LeanDeptService : LeanBaseService, ILeanDeptService
   /// 创建部门
   /// </summary>
   /// <param name="input">部门创建参数</param>
-  /// <returns>创建成功的部门信息</returns>
-  public async Task<LeanDeptDto> CreateAsync(LeanCreateDeptDto input)
+  /// <returns>创建成功的部门ID</returns>
+  public async Task<LeanApiResult<long>> CreateAsync(LeanCreateDeptDto input)
   {
     return await ExecuteInTransactionAsync(async () =>
     {
@@ -70,7 +71,7 @@ public class LeanDeptService : LeanBaseService, ILeanDeptService
       await _deptRepository.CreateAsync(dept);
 
       LogAudit("CreateDept", $"创建部门: {dept.DeptName}");
-      return await GetAsync(dept.Id);
+      return LeanApiResult<long>.Ok(dept.Id);
     }, "创建部门");
   }
 
@@ -79,7 +80,7 @@ public class LeanDeptService : LeanBaseService, ILeanDeptService
   /// </summary>
   /// <param name="input">部门更新参数</param>
   /// <returns>更新后的部门信息</returns>
-  public async Task<LeanDeptDto> UpdateAsync(LeanUpdateDeptDto input)
+  public async Task<LeanApiResult> UpdateAsync(LeanUpdateDeptDto input)
   {
     return await ExecuteInTransactionAsync(async () =>
     {
@@ -95,26 +96,29 @@ public class LeanDeptService : LeanBaseService, ILeanDeptService
       }
 
       // 验证部门名称唯一性
-      await _uniqueValidator.ValidateAsync(x => x.DeptName, input.DeptName, input.Id);
+      if (dept.DeptName != input.DeptName)
+      {
+        await _uniqueValidator.ValidateAsync(x => x.DeptName, input.DeptName, dept.Id);
+      }
 
-      // 更新部门信息
+      // 更新部门实体
       input.Adapt(dept);
       await _deptRepository.UpdateAsync(dept);
 
       LogAudit("UpdateDept", $"更新部门: {dept.DeptName}");
-      return await GetAsync(dept.Id);
+      return new LeanApiResult();
     }, "更新部门");
   }
 
   /// <summary>
   /// 删除部门
   /// </summary>
-  /// <param name="input">部门删除参数</param>
-  public async Task DeleteAsync(LeanDeleteDeptDto input)
+  /// <param name="id">部门ID</param>
+  public async Task<LeanApiResult> DeleteAsync(long id)
   {
-    await ExecuteInTransactionAsync(async () =>
+    return await ExecuteInTransactionAsync(async () =>
     {
-      var dept = await _deptRepository.GetByIdAsync(input.Id);
+      var dept = await _deptRepository.GetByIdAsync(id);
       if (dept == null)
       {
         throw new LeanException("部门不存在");
@@ -125,23 +129,32 @@ public class LeanDeptService : LeanBaseService, ILeanDeptService
         throw new LeanException("内置部门不能删除");
       }
 
-      // 检查是否存在子部门
-      var hasChildren = await _deptRepository.AnyAsync(x => x.ParentId == input.Id);
+      // 检查是否有子部门
+      var hasChildren = await _deptRepository.AnyAsync(x => x.ParentId == id);
       if (hasChildren)
       {
         throw new LeanException("存在子部门，不能删除");
       }
 
-      // 删除角色部门关联
-      await _roleDeptRepository.DeleteAsync(x => x.DeptId == input.Id);
+      // 检查是否有关联的角色
+      var hasRoles = await _roleDeptRepository.AnyAsync(x => x.DeptId == id);
+      if (hasRoles)
+      {
+        throw new LeanException("部门已被角色使用，不能删除");
+      }
 
-      // 删除用户部门关联
-      await _userDeptRepository.DeleteAsync(x => x.DeptId == input.Id);
+      // 检查是否有关联的用户
+      var hasUsers = await _userDeptRepository.AnyAsync(x => x.DeptId == id);
+      if (hasUsers)
+      {
+        throw new LeanException("部门已被用户使用，不能删除");
+      }
 
       // 删除部门
       await _deptRepository.DeleteAsync(dept);
 
       LogAudit("DeleteDept", $"删除部门: {dept.DeptName}");
+      return new LeanApiResult();
     }, "删除部门");
   }
 
@@ -150,7 +163,7 @@ public class LeanDeptService : LeanBaseService, ILeanDeptService
   /// </summary>
   /// <param name="id">部门ID</param>
   /// <returns>部门详细信息</returns>
-  public async Task<LeanDeptDto> GetAsync(long id)
+  public async Task<LeanApiResult<LeanDeptDto>> GetAsync(long id)
   {
     var dept = await _deptRepository.GetByIdAsync(id);
     if (dept == null)
@@ -158,7 +171,7 @@ public class LeanDeptService : LeanBaseService, ILeanDeptService
       throw new LeanException("部门不存在");
     }
 
-    return dept.Adapt<LeanDeptDto>();
+    return LeanApiResult<LeanDeptDto>.Ok(dept.Adapt<LeanDeptDto>());
   }
 
   /// <summary>
@@ -317,5 +330,194 @@ public class LeanDeptService : LeanBaseService, ILeanDeptService
     }
 
     return result;
+  }
+
+  /// <summary>
+  /// 批量删除部门
+  /// </summary>
+  public async Task<LeanApiResult> BatchDeleteAsync(List<long> ids)
+  {
+    return await ExecuteInTransactionAsync(async () =>
+    {
+      foreach (var id in ids)
+      {
+        await DeleteAsync(id);
+      }
+      return LeanApiResult.Ok();
+    }, "批量删除部门");
+  }
+
+  /// <summary>
+  /// 分页查询部门
+  /// </summary>
+  public async Task<LeanApiResult<LeanPageResult<LeanDeptDto>>> GetPageAsync(LeanQueryDeptDto input)
+  {
+    // 构建查询条件
+    Expression<Func<LeanDept, bool>> predicate = x => true;
+
+    if (!string.IsNullOrEmpty(input.DeptName))
+    {
+      var deptName = CleanInput(input.DeptName);
+      predicate = predicate.And(x => x.DeptName.Contains(deptName));
+    }
+
+    if (input.DeptStatus.HasValue)
+    {
+      predicate = predicate.And(x => x.DeptStatus == input.DeptStatus);
+    }
+
+    if (input.ParentId.HasValue)
+    {
+      predicate = predicate.And(x => x.ParentId == input.ParentId);
+    }
+
+    // 执行分页查询
+    var (total, items) = await _deptRepository.GetPageListAsync(predicate, input.PageSize, input.PageIndex);
+    var list = items.Adapt<List<LeanDeptDto>>();
+
+    var result = new LeanPageResult<LeanDeptDto>
+    {
+      Total = total,
+      Items = list,
+      PageIndex = input.PageIndex,
+      PageSize = input.PageSize
+    };
+
+    return LeanApiResult<LeanPageResult<LeanDeptDto>>.Ok(result);
+  }
+
+  /// <summary>
+  /// 设置部门状态
+  /// </summary>
+  public async Task<LeanApiResult> SetStatusAsync(LeanChangeDeptStatusDto input)
+  {
+    return await ExecuteInTransactionAsync(async () =>
+    {
+      var dept = await _deptRepository.GetByIdAsync(input.Id);
+      if (dept == null)
+      {
+        throw new LeanException("部门不存在");
+      }
+
+      if (dept.IsBuiltin == LeanBuiltinStatus.Yes)
+      {
+        throw new LeanException("内置部门不能修改状态");
+      }
+
+      dept.DeptStatus = input.DeptStatus;
+      await _deptRepository.UpdateAsync(dept);
+
+      LogAudit("ChangeDeptStatus", $"修改部门状态: {dept.DeptName}, 状态: {input.DeptStatus}");
+      return LeanApiResult.Ok();
+    }, "修改部门状态");
+  }
+
+  /// <summary>
+  /// 导出部门数据
+  /// </summary>
+  public async Task<byte[]> ExportAsync(LeanQueryDeptDto input)
+  {
+    // 获取部门列表
+    var depts = await QueryAsync(input);
+
+    // 转换为导出DTO
+    var exportDtos = depts.Select(x => new LeanDeptExportDto
+    {
+      DeptCode = x.DeptCode,
+      DeptName = x.DeptName,
+      ParentId = x.ParentId,
+      DeptDescription = x.DeptDescription,
+      Leader = x.Leader,
+      Phone = x.Phone,
+      Email = x.Email,
+      OrderNum = x.OrderNum,
+      DeptStatus = x.DeptStatus,
+      IsBuiltin = x.IsBuiltin,
+      CreateTime = x.CreateTime
+    }).ToList();
+
+    // 导出Excel
+    return LeanExcelHelper.Export(exportDtos);
+  }
+
+  /// <summary>
+  /// 导入部门数据
+  /// </summary>
+  public async Task<LeanImportDeptResultDto> ImportAsync(LeanFileInfo file)
+  {
+    var result = new LeanImportDeptResultDto();
+    try
+    {
+      // 读取Excel文件
+      var bytes = new byte[file.Stream.Length];
+      await file.Stream.ReadAsync(bytes, 0, (int)file.Stream.Length);
+      var importResult = LeanExcelHelper.Import<LeanDeptImportDto>(bytes);
+
+      foreach (var item in importResult.Data)
+      {
+        try
+        {
+          // 检查部门编码是否存在
+          var exists = await _deptRepository.AnyAsync(x => x.DeptCode == item.DeptCode);
+          if (exists)
+          {
+            result.AddError(item.DeptCode, $"部门编码 {item.DeptCode} 已存在");
+            continue;
+          }
+
+          // 创建部门实体
+          var dept = new LeanDept
+          {
+            DeptCode = item.DeptCode,
+            DeptName = item.DeptName,
+            ParentId = item.ParentId,
+            OrderNum = item.OrderNum,
+            Leader = item.Leader,
+            Phone = item.Phone,
+            Email = item.Email,
+            DeptStatus = LeanDeptStatus.Normal,
+            IsBuiltin = LeanBuiltinStatus.No,
+            DataScope = LeanDataScopeType.Self
+          };
+
+          // 保存部门
+          await _deptRepository.CreateAsync(dept);
+          LogAudit("ImportDept", $"导入部门: {dept.DeptName}");
+          result.SuccessCount++;
+        }
+        catch (Exception ex)
+        {
+          result.AddError(item.DeptCode, ex.Message);
+        }
+      }
+      return result;
+    }
+    catch (Exception ex)
+    {
+      result.ErrorMessage = $"导入失败：{ex.Message}";
+      return result;
+    }
+  }
+
+  /// <summary>
+  /// 获取导入模板
+  /// </summary>
+  public async Task<byte[]> GetImportTemplateAsync()
+  {
+    var template = new List<LeanDeptImportDto>
+    {
+      new LeanDeptImportDto
+      {
+        DeptCode = "dept001",
+        DeptName = "示例部门",
+        ParentId = 0,
+        OrderNum = 1,
+        Leader = "张三",
+        Phone = "13800138000",
+        Email = "zhangsan@example.com"
+      }
+    };
+
+    return await Task.FromResult(LeanExcelHelper.Export(template));
   }
 }

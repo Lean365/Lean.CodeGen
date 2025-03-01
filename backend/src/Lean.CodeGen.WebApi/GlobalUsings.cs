@@ -10,7 +10,7 @@ global using Microsoft.AspNetCore.Mvc;
 global using Microsoft.AspNetCore.Authorization;
 global using Microsoft.Extensions.DependencyInjection;
 global using Microsoft.Extensions.Configuration;
-global using Microsoft.Extensions.Logging;
+global  using NLog;
 
 // 第三方库
 global using Autofac;

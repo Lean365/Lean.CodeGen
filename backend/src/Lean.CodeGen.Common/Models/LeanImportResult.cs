@@ -34,6 +34,11 @@ public class LeanImportResult
   public List<LeanImportError> Errors { get; set; } = new();
 
   /// <summary>
+  /// 错误信息
+  /// </summary>
+  public string? ErrorMessage { get; set; }
+
+  /// <summary>
   /// 成功记录数
   /// </summary>
   public int SuccessCount { get; set; }

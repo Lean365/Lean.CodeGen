@@ -4,6 +4,8 @@ using Lean.CodeGen.Common.Models;
 using Lean.CodeGen.WebApi.Controllers;
 using Microsoft.AspNetCore.Mvc;
 using Lean.CodeGen.Common.Enums;
+using Lean.CodeGen.Application.Services.Admin;
+using Microsoft.Extensions.Configuration;
 
 namespace Lean.CodeGen.WebApi.Controllers.Workflow;
 
@@ -21,7 +23,13 @@ public class LeanWorkflowActivityTypeController : LeanBaseController
   /// 构造函数
   /// </summary>
   /// <param name="service">工作流活动类型服务</param>
-  public LeanWorkflowActivityTypeController(ILeanWorkflowActivityTypeService service)
+  /// <param name="localizationService">本地化服务</param>
+  /// <param name="configuration">配置</param>
+  public LeanWorkflowActivityTypeController(
+      ILeanWorkflowActivityTypeService service,
+      ILeanLocalizationService localizationService,
+      IConfiguration configuration)
+      : base(localizationService, configuration)
   {
     _service = service;
   }
@@ -68,14 +76,14 @@ public class LeanWorkflowActivityTypeController : LeanBaseController
   /// <param name="dto">活动类型</param>
   /// <returns>是否成功</returns>
   [HttpPut("{typeName}")]
-  public async Task<LeanApiResult<bool>> UpdateAsync(string typeName, LeanWorkflowActivityTypeDto dto)
+  public async Task<IActionResult> UpdateAsync(string typeName, LeanWorkflowActivityTypeDto dto)
   {
     if (typeName != dto.TypeName)
     {
-      return LeanApiResult<bool>.Error("类型名称不匹配");
+      return await ErrorAsync("workflow.activity.type.error.name_mismatch");
     }
     var result = await _service.UpdateAsync(dto);
-    return LeanApiResult<bool>.Ok(result);
+    return Success(result, LeanBusinessType.Update);
   }
 
   /// <summary>
@@ -84,9 +92,9 @@ public class LeanWorkflowActivityTypeController : LeanBaseController
   /// <param name="typeName">活动类型名称</param>
   /// <returns>是否成功</returns>
   [HttpDelete("{typeName}")]
-  public async Task<LeanApiResult<bool>> DeleteAsync(string typeName)
+  public async Task<IActionResult> DeleteAsync(string typeName)
   {
     var result = await _service.DeleteAsync(typeName);
-    return LeanApiResult<bool>.Ok(result);
+    return Success(result, LeanBusinessType.Delete);
   }
 }

@@ -42,7 +42,7 @@ public interface ILeanConfigService
   /// <summary>
   /// 导入系统配置
   /// </summary>
-  Task<LeanExcelImportResult<LeanConfigImportDto>> ImportAsync(byte[] file);
+  Task<LeanExcelImportResult<LeanConfigImportDto>> ImportAsync(LeanFileInfo file);
 
   /// <summary>
   /// 获取导入模板

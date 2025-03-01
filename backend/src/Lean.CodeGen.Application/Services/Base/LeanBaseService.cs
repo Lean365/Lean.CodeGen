@@ -1,10 +1,11 @@
 using System;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using Lean.CodeGen.Common.Options;
 using Lean.CodeGen.Application.Services.Security;
 using Microsoft.Extensions.Options;
 using Lean.CodeGen.Common.Exceptions;
+using Lean.CodeGen.Application.Services.Admin;
+using Lean.CodeGen.Common.Security;
 
 namespace Lean.CodeGen.Application.Services.Base;
 
@@ -19,6 +20,7 @@ namespace Lean.CodeGen.Application.Services.Base;
 /// 4. 日志记录
 /// 5. 审计跟踪
 /// 6. 性能监控
+/// 7. 本地化支持
 /// </remarks>
 public abstract class LeanBaseService
 {
@@ -47,14 +49,60 @@ public abstract class LeanBaseService
   protected readonly LeanSecurityOptions SecurityOptions;
 
   /// <summary>
+  /// 本地化服务
+  /// </summary>
+  /// <remarks>
+  /// 提供多语言翻译支持
+  /// </remarks>
+  protected readonly ILeanLocalizationService LocalizationService;
+
+  /// <summary>
+  /// 服务上下文
+  /// </summary>
+  protected readonly LeanBaseServiceContext Context;
+
+  /// <summary>
   /// 构造函数
   /// </summary>
   /// <param name="context">基础服务上下文</param>
   protected LeanBaseService(LeanBaseServiceContext context)
   {
+    Context = context;
     SqlSafeService = context.SqlSafeService;
     SecurityOptions = context.SecurityOptions;
     Logger = context.Logger;
+    LocalizationService = context.LocalizationService;
+  }
+
+  /// <summary>
+  /// 获取翻译
+  /// </summary>
+  /// <param name="key">翻译键</param>
+  /// <param name="langCode">语言代码，默认为中文</param>
+  /// <returns>翻译值</returns>
+  protected async Task<string> GetTranslationAsync(string key, string langCode = "zh-CN")
+  {
+    return await LocalizationService.GetTranslationAsync(langCode, key);
+  }
+
+  /// <summary>
+  /// 获取系统翻译
+  /// </summary>
+  /// <param name="key">翻译键</param>
+  /// <param name="parameters">翻译参数</param>
+  /// <returns>翻译值</returns>
+  protected async Task<string> GetSystemTranslationAsync(string key, object? parameters = null)
+  {
+    var translation = await LocalizationService.GetTranslationAsync("zh-CN", key);
+    if (parameters != null)
+    {
+      foreach (var prop in parameters.GetType().GetProperties())
+      {
+        var value = prop.GetValue(parameters)?.ToString() ?? string.Empty;
+        translation = translation.Replace($"{{{prop.Name}}}", value);
+      }
+    }
+    return translation;
   }
 
   /// <summary>
@@ -132,27 +180,21 @@ public abstract class LeanBaseService
   {
     try
     {
-      using var scope = Logger.BeginScope(new
-      {
-        Operation = operationName,
-        StartTime = DateTime.Now
-      });
-
-      Logger.LogInformation($"开始执行操作: {operationName}");
+      Logger.Info($"开始执行操作: {operationName}");
 
       var result = await action();
 
-      Logger.LogInformation($"操作执行成功: {operationName}");
+      Logger.Info($"操作执行成功: {operationName}");
       return result;
     }
     catch (LeanException ex)
     {
-      Logger.LogWarning(ex, $"业务异常: {operationName}");
+      Logger.Warn(ex, $"业务异常: {operationName}");
       throw;
     }
     catch (Exception ex)
     {
-      Logger.LogError(ex, $"操作执行失败: {operationName}");
+      Logger.Error(ex, $"操作执行失败: {operationName}");
       throw new LeanException($"执行 {operationName} 时发生错误: {ex.Message}");
     }
   }
@@ -172,26 +214,20 @@ public abstract class LeanBaseService
   {
     try
     {
-      using var scope = Logger.BeginScope(new
-      {
-        Operation = operationName,
-        StartTime = DateTime.Now
-      });
-
-      Logger.LogInformation($"开始执行操作: {operationName}");
+      Logger.Info($"开始执行操作: {operationName}");
 
       await action();
 
-      Logger.LogInformation($"操作执行成功: {operationName}");
+      Logger.Info($"操作执行成功: {operationName}");
     }
     catch (LeanException ex)
     {
-      Logger.LogWarning(ex, $"业务异常: {operationName}");
+      Logger.Warn(ex, $"业务异常: {operationName}");
       throw;
     }
     catch (Exception ex)
     {
-      Logger.LogError(ex, $"操作执行失败: {operationName}");
+      Logger.Error(ex, $"操作执行失败: {operationName}");
       throw new LeanException($"执行 {operationName} 时发生错误: {ex.Message}");
     }
   }
@@ -211,8 +247,14 @@ public abstract class LeanBaseService
   /// </remarks>
   protected void LogAudit(string action, string details, bool success = true)
   {
-    var logLevel = success ? LogLevel.Information : LogLevel.Warning;
-    Logger.Log(logLevel, $"审计日志 - 操作: {action}, 详情: {details}, 状态: {(success ? "成功" : "失败")}");
+    if (success)
+    {
+      Logger.Info($"审计日志 - 操作: {action}, 详情: {details}, 状态: 成功");
+    }
+    else
+    {
+      Logger.Warn($"审计日志 - 操作: {action}, 详情: {details}, 状态: 失败");
+    }
   }
 
   /// <summary>
@@ -234,7 +276,7 @@ public abstract class LeanBaseService
     return new DisposableAction(() =>
     {
       var duration = DateTime.Now - startTime;
-      Logger.LogInformation($"性能日志 - 操作: {operation}, 耗时: {duration.TotalMilliseconds}ms");
+      Logger.Info($"性能日志 - 操作: {operation}, 耗时: {duration.TotalMilliseconds}ms");
     });
   }
 }

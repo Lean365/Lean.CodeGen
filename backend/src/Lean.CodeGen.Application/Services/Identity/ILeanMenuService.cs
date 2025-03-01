@@ -1,5 +1,6 @@
 using Lean.CodeGen.Application.Dtos.Identity;
 using Lean.CodeGen.Common.Models;
+using Lean.CodeGen.Common.Excel;
 
 namespace Lean.CodeGen.Application.Services.Identity;
 
@@ -20,34 +21,42 @@ public interface ILeanMenuService
   /// </summary>
   /// <param name="input">菜单创建参数</param>
   /// <returns>创建成功的菜单信息</returns>
-  Task<LeanMenuDto> CreateAsync(LeanCreateMenuDto input);
+  Task<LeanApiResult<long>> CreateAsync(LeanCreateMenuDto input);
 
   /// <summary>
   /// 更新菜单
   /// </summary>
   /// <param name="input">菜单更新参数</param>
   /// <returns>更新后的菜单信息</returns>
-  Task<LeanMenuDto> UpdateAsync(LeanUpdateMenuDto input);
+  Task<LeanApiResult> UpdateAsync(LeanUpdateMenuDto input);
 
   /// <summary>
   /// 删除菜单
   /// </summary>
   /// <param name="input">菜单删除参数</param>
-  Task DeleteAsync(LeanDeleteMenuDto input);
+  Task<LeanApiResult> DeleteAsync(long id);
+
+  /// <summary>
+  /// 批量删除菜单
+  /// </summary>
+  Task<LeanApiResult> BatchDeleteAsync(List<long> ids);
 
   /// <summary>
   /// 获取菜单信息
   /// </summary>
   /// <param name="id">菜单ID</param>
   /// <returns>菜单详细信息</returns>
-  Task<LeanMenuDto> GetAsync(long id);
+  Task<LeanApiResult<LeanMenuDto>> GetAsync(long id);
 
   /// <summary>
-  /// 查询菜单列表
+  /// 分页查询菜单
   /// </summary>
-  /// <param name="input">查询参数</param>
-  /// <returns>菜单列表</returns>
-  Task<List<LeanMenuDto>> QueryAsync(LeanQueryMenuDto input);
+  Task<LeanApiResult<LeanPageResult<LeanMenuDto>>> GetPageAsync(LeanQueryMenuDto input);
+
+  /// <summary>
+  /// 设置菜单状态
+  /// </summary>
+  Task<LeanApiResult> SetStatusAsync(LeanChangeMenuStatusDto input);
 
   /// <summary>
   /// 获取菜单树形结构
@@ -57,10 +66,26 @@ public interface ILeanMenuService
   Task<List<LeanMenuTreeDto>> GetTreeAsync(LeanQueryMenuDto input);
 
   /// <summary>
-  /// 修改菜单状态
+  /// 导出菜单数据
   /// </summary>
-  /// <param name="input">状态修改参数</param>
-  Task ChangeStatusAsync(LeanChangeMenuStatusDto input);
+  Task<byte[]> ExportAsync(LeanQueryMenuDto input);
+
+  /// <summary>
+  /// 导入菜单数据
+  /// </summary>
+  Task<LeanImportMenuResultDto> ImportAsync(LeanFileInfo file);
+
+  /// <summary>
+  /// 获取导入模板
+  /// </summary>
+  Task<byte[]> GetImportTemplateAsync();
+
+  /// <summary>
+  /// 查询菜单列表
+  /// </summary>
+  /// <param name="input">查询参数</param>
+  /// <returns>菜单列表</returns>
+  Task<List<LeanMenuDto>> QueryAsync(LeanQueryMenuDto input);
 
   /// <summary>
   /// 获取角色菜单树

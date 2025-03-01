@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
-using Microsoft.Extensions.Logging;
+using NLog;
 using Lean.CodeGen.Domain.Interfaces.Caching;
 using Lean.CodeGen.Common.Options;
 
@@ -16,14 +16,14 @@ public class LeanMemoryCacheService : ILeanCacheService
 {
   private readonly IMemoryCache _cache;
   private readonly LeanCacheOptions _options;
-  private readonly ILogger<LeanMemoryCacheService> _logger;
+  private readonly ILogger _logger;
   private readonly ConcurrentDictionary<string, long> _keySizes;
   private long _currentSize;
 
   public LeanMemoryCacheService(
       IMemoryCache cache,
       IOptions<LeanCacheOptions> options,
-      ILogger<LeanMemoryCacheService> logger)
+      ILogger logger)
   {
     _cache = cache;
     _options = options.Value;
@@ -175,8 +175,7 @@ public class LeanMemoryCacheService : ILeanCacheService
     if (_cache is MemoryCache memoryCache)
     {
       var compactionPercentage = _options.Memory.CompactionPercentage;
-      _logger.LogInformation($"触发缓存清理，当前大小: {_currentSize / (1024 * 1024)}MB, 压缩比例: {compactionPercentage}");
-      memoryCache.Compact(compactionPercentage);
+      _logger.Info($"触发缓存清理，当前大小: {_currentSize / (1024 * 1024)}MB, 压缩比例: {compactionPercentage}"); memoryCache.Compact(compactionPercentage);
     }
   }
 
@@ -185,7 +184,7 @@ public class LeanMemoryCacheService : ILeanCacheService
     if (key is string cacheKey && _keySizes.TryRemove(cacheKey, out var size))
     {
       Interlocked.Add(ref _currentSize, -size);
-      _logger.LogDebug($"缓存项被移除: {cacheKey}, 原因: {reason}, 大小: {size / 1024}KB");
+      _logger.Debug($"缓存项被移除: {cacheKey}, 原因: {reason}, 大小: {size / 1024}KB");
     }
   }
 }

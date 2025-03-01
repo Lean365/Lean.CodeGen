@@ -1,55 +1,76 @@
 using Lean.CodeGen.Common.Enums;
 using Lean.CodeGen.Domain.Entities.Identity;
-using Lean.CodeGen.Infrastructure.Data.Context;
 using SqlSugar;
 using System.Threading.Tasks;
+using NLog;
+using ILogger = NLog.ILogger;
 
 namespace Lean.CodeGen.Infrastructure.Data.Seeds.Identity;
 
 /// <summary>
 /// 岗位种子数据
 /// </summary>
-public class LeanPostSeed : ILeanDataSeed
+public class LeanPostSeed
 {
-  public int Order => 4;
+  private readonly ISqlSugarClient _db;
+  private readonly ILogger _logger;
 
-  public async Task SeedAsync(LeanDbContext dbContext)
+  public LeanPostSeed(ISqlSugarClient db)
   {
-    var db = dbContext.GetDatabase();
-    if (await db.Queryable<LeanPost>().AnyAsync())
-    {
-      return;
-    }
+    _db = db;
+    _logger = LogManager.GetCurrentClassLogger();
+  }
 
-    await db.Insertable(new[]
-    {
-            new LeanPost
+  public async Task InitializeAsync()
+  {
+    _logger.Info("开始初始化岗位数据...");
+
+    var defaultPosts = new List<LeanPost>
+        {
+            new()
             {
-                PostName = "系统管理员",
-                PostCode = "ADMIN",
-                PostDescription = "系统管理员岗位",
+                PostCode = "ceo",
+                PostName = "董事长",
                 OrderNum = 1,
                 PostStatus = LeanPostStatus.Normal,
                 IsBuiltin = LeanBuiltinStatus.Yes
             },
-            new LeanPost
+            new()
             {
-                PostName = "开发工程师",
-                PostCode = "DEV",
-                PostDescription = "开发工程师岗位",
+                PostCode = "se",
+                PostName = "项目经理",
                 OrderNum = 2,
-                PostStatus =LeanPostStatus.Normal,
+                PostStatus = LeanPostStatus.Normal,
                 IsBuiltin = LeanBuiltinStatus.Yes
             },
-            new LeanPost
+            new()
             {
-                PostName = "测试工程师",
-                PostCode = "QA",
-                PostDescription = "测试工程师岗位",
+                PostCode = "hr",
+                PostName = "人力资源",
                 OrderNum = 3,
                 PostStatus = LeanPostStatus.Normal,
                 IsBuiltin = LeanBuiltinStatus.Yes
             }
-        }).ExecuteCommandAsync();
+        };
+
+    foreach (var post in defaultPosts)
+    {
+      var exists = await _db.Queryable<LeanPost>()
+          .FirstAsync(x => x.PostCode == post.PostCode);
+
+      if (exists != null)
+      {
+        post.Id = exists.Id;
+        await _db.Updateable(post).ExecuteCommandAsync();
+        _logger.Info($"更新岗位: {post.PostName}");
+      }
+      else
+      {
+        await _db.Insertable(post).ExecuteCommandAsync();
+        _logger.Info($"新增岗位: {post.PostName}");
+      }
+    }
+
+    _logger.Info("岗位数据初始化完成");
   }
 }

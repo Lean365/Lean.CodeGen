@@ -12,7 +12,7 @@ using Lean.CodeGen.Common.Options;
 using Lean.CodeGen.Common.Security;
 using Lean.CodeGen.Application.Services.Security;
 using Microsoft.Extensions.Options;
-using Microsoft.Extensions.Logging;
+using NLog;
 using Mapster;
 using Lean.CodeGen.Domain.Validators;
 
@@ -23,9 +23,9 @@ namespace Lean.CodeGen.Application.Services.Admin;
 /// </summary>
 public class LeanDictDataService : LeanBaseService, ILeanDictDataService
 {
-  private readonly ILogger<LeanDictDataService> _logger;
   private readonly ILeanRepository<LeanDictData> _dictDataRepository;
   private readonly ILeanRepository<LeanDictType> _dictTypeRepository;
+  private readonly ILogger _logger;
   private readonly LeanUniqueValidator<LeanDictData> _uniqueValidator;
 
   /// <summary>
@@ -39,7 +39,7 @@ public class LeanDictDataService : LeanBaseService, ILeanDictDataService
   {
     _dictDataRepository = dictDataRepository;
     _dictTypeRepository = dictTypeRepository;
-    _logger = (ILogger<LeanDictDataService>)context.Logger;
+    _logger = context.Logger;
     _uniqueValidator = new LeanUniqueValidator<LeanDictData>(_dictDataRepository);
   }
 
@@ -319,14 +319,16 @@ public class LeanDictDataService : LeanBaseService, ILeanDictDataService
   /// <summary>
   /// 导入字典数据
   /// </summary>
-  public async Task<LeanExcelImportResult<LeanDictDataImportDto>> ImportAsync(byte[] file)
+  public async Task<LeanExcelImportResult<LeanDictDataImportDto>> ImportAsync(LeanFileInfo file)
   {
     var result = new LeanExcelImportResult<LeanDictDataImportDto>();
 
     try
     {
       // 读取Excel文件
-      var importDtos = LeanExcelHelper.Import<LeanDictDataImportDto>(file);
+      var bytes = new byte[file.Stream.Length];
+      await file.Stream.ReadAsync(bytes, 0, (int)file.Stream.Length);
+      var importDtos = LeanExcelHelper.Import<LeanDictDataImportDto>(bytes);
 
       // 验证导入数据
       foreach (var dto in importDtos.Data)
@@ -366,7 +368,7 @@ public class LeanDictDataService : LeanBaseService, ILeanDictDataService
     }
     catch (Exception ex)
     {
-      _logger.LogError(ex, "导入字典数据失败");
+      _logger.Error(ex, "导入字典数据失败");
       result.ErrorMessage = $"导入失败：{ex.Message}";
       return result;
     }
