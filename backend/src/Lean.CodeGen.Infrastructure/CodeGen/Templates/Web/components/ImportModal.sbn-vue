@@ -1,0 +1,175 @@
+<template>
+  <a-modal
+    :visible="visible"
+    title="导入{{ description }}"
+    @ok="handleSubmit"
+    @cancel="handleCancel"
+    :confirmLoading="loading"
+  >
+    <a-form
+      ref="formRef"
+      :model="formData"
+      :rules="rules"
+      :label-col="{ span: 6 }"
+      :wrapper-col="{ span: 16 }"
+    >
+      <a-form-item label="导入文件" name="file">
+        <a-upload
+          v-model:fileList="fileList"
+          :beforeUpload="beforeUpload"
+          :maxCount="1"
+        >
+          <a-button>
+            <template #icon><UploadOutlined /></template>
+            选择文件
+          </a-button>
+        </a-upload>
+      </a-form-item>
+      <a-form-item>
+        <a-button type="link" @click="handleDownloadTemplate">
+          <template #icon><DownloadOutlined /></template>
+          下载导入模板
+        </a-button>
+      </a-form-item>
+    </a-form>
+
+    <!-- 导入结果 -->
+    <template v-if="importResult">
+      <a-divider />
+      <a-descriptions title="导入结果" :column="1">
+        <a-descriptions-item label="总数">{{ importResult.totalCount }}</a-descriptions-item>
+        <a-descriptions-item label="成功数">{{ importResult.successCount }}</a-descriptions-item>
+        <a-descriptions-item label="失败数">{{ importResult.failureCount }}</a-descriptions-item>
+      </a-descriptions>
+      <template v-if="importResult.errors?.length">
+        <a-divider />
+        <div class="error-list">
+          <div class="error-list-title">错误信息：</div>
+          <a-list
+            size="small"
+            :data-source="importResult.errors"
+            :pagination="false"
+          >
+            <template #renderItem="{ item }">
+              <a-list-item>
+                <a-typography-text type="danger">{{ item }}</a-typography-text>
+              </a-list-item>
+            </template>
+          </a-list>
+        </div>
+      </template>
+    </template>
+  </a-modal>
+</template>
+
+<script lang="ts" setup>
+import { ref, reactive } from 'vue'
+import { message } from 'ant-design-vue'
+import type { FormInstance, UploadProps } from 'ant-design-vue'
+import { UploadOutlined, DownloadOutlined } from '@ant-design/icons-vue'
+import { import{{ entity_name }}, getImportTemplate } from '@/api/{{ module_name }}'
+
+const props = defineProps<{
+  visible: boolean
+}>()
+
+const emit = defineEmits<{
+  (e: 'update:visible', visible: boolean): void
+  (e: 'success'): void
+}>()
+
+// 表单数据
+const formRef = ref<FormInstance>()
+const formData = reactive({
+  file: undefined as File | undefined
+})
+const fileList = ref<any[]>([])
+
+// 表单校验规则
+const rules = {
+  file: [{ required: true, message: '请选择导入文件' }]
+}
+
+// 加载状态
+const loading = ref(false)
+
+// 导入结果
+const importResult = ref<any>(null)
+
+// 文件上传前校验
+const beforeUpload: UploadProps['beforeUpload'] = (file) => {
+  const isExcel = file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  if (!isExcel) {
+    message.error('只能上传 Excel 文件！')
+    return false
+  }
+  formData.file = file
+  return false
+}
+
+// 提交表单
+const handleSubmit = () => {
+  if (!formData.file) {
+    message.error('请选择导入文件')
+    return
+  }
+
+  loading.value = true
+  const formDataObj = new FormData()
+  formDataObj.append('file', formData.file)
+
+  import{{ entity_name }}(formDataObj)
+    .then((res) => {
+      importResult.value = res.data
+      if (res.data.failureCount === 0) {
+        message.success('导入成功')
+        emit('success')
+      } else {
+        message.warning(`导入完成，成功${res.data.successCount}条，失败${res.data.failureCount}条`)
+      }
+    })
+    .catch((error) => {
+      console.error(error)
+      message.error('导入失败')
+    })
+    .finally(() => {
+      loading.value = false
+    })
+}
+
+// 下载导入模板
+const handleDownloadTemplate = async () => {
+  try {
+    const data = await getImportTemplate()
+    const blob = new Blob([data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = '{{ entity_name }}-import-template.xlsx'
+    link.click()
+    window.URL.revokeObjectURL(url)
+  } catch (error) {
+    console.error(error)
+    message.error('下载模板失败')
+  }
+}
+
+// 取消
+const handleCancel = () => {
+  formRef.value?.resetFields()
+  fileList.value = []
+  importResult.value = null
+  emit('update:visible', false)
+}
+</script>
+
+<style lang="less" scoped>
+.error-list {
+  margin-top: 16px;
+  .error-list-title {
+    margin-bottom: 8px;
+    color: #ff4d4f;
+    font-weight: 500;
+  }
+}
+</style> 

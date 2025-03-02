@@ -291,3 +291,114 @@ public class LeanLogoutDto
   [Required(ErrorMessage = "设备ID不能为空")]
   public string DeviceId { get; set; } = string.Empty;
 }
+
+/// <summary>
+/// 登录请求
+/// </summary>
+public class LeanLoginRequestDto
+{
+  /// <summary>
+  /// 用户名
+  /// </summary>
+  [Required(ErrorMessage = "用户名不能为空")]
+  [StringLength(50, ErrorMessage = "用户名长度不能超过50个字符")]
+  public string UserName { get; set; } = default!;
+
+  /// <summary>
+  /// 密码
+  /// </summary>
+  [Required(ErrorMessage = "密码不能为空")]
+  [StringLength(50, ErrorMessage = "密码长度不能超过50个字符")]
+  public string Password { get; set; } = default!;
+
+  /// <summary>
+  /// 滑块验证码X坐标
+  /// </summary>
+  [Required(ErrorMessage = "滑块验证码位置不能为空")]
+  public int SliderX { get; set; }
+
+  /// <summary>
+  /// 滑块验证码Y坐标
+  /// </summary>
+  [Required(ErrorMessage = "滑块验证码位置不能为空")]
+  public int SliderY { get; set; }
+
+  /// <summary>
+  /// 验证码键
+  /// </summary>
+  [Required(ErrorMessage = "验证码键不能为空")]
+  public string CaptchaKey { get; set; } = default!;
+}
+
+/// <summary>
+/// 登录响应
+/// </summary>
+public class LeanLoginResponseDto
+{
+  /// <summary>
+  /// 访问令牌
+  /// </summary>
+  public string AccessToken { get; set; } = default!;
+
+  /// <summary>
+  /// 过期时间（分钟）
+  /// </summary>
+  public int ExpiresIn { get; set; }
+
+  /// <summary>
+  /// 用户信息
+  /// </summary>
+  public LeanUserInfoDto UserInfo { get; set; } = default!;
+}
+
+/// <summary>
+/// 用户信息
+/// </summary>
+public class LeanUserInfoDto
+{
+  /// <summary>
+  /// 用户ID
+  /// </summary>
+  public long UserId { get; set; }
+
+  /// <summary>
+  /// 用户名
+  /// </summary>
+  public string UserName { get; set; } = default!;
+
+  /// <summary>
+  /// 昵称
+  /// </summary>
+  public string NickName { get; set; } = default!;
+
+  /// <summary>
+  /// 头像
+  /// </summary>
+  public string? Avatar { get; set; }
+
+  /// <summary>
+  /// 角色列表
+  /// </summary>
+  public List<string> Roles { get; set; } = new();
+
+  /// <summary>
+  /// 权限列表
+  /// </summary>
+  public List<string> Permissions { get; set; } = new();
+}
+
+/// <summary>
+/// 验证码响应
+/// </summary>
+public class LeanCaptchaResponseDto
+{
+  /// <summary>
+  /// 验证码键
+  /// </summary>
+  public string CaptchaKey { get; set; } = default!;
+
+  /// <summary>
+  /// 验证码图片（Base64）
+  /// </summary>
+  public string CaptchaImage { get; set; } = default!;
+}

@@ -1,0 +1,176 @@
+<!-- {{ entity_name }}表单 -->
+<template>
+  <a-modal
+    :visible="visible"
+    :title="title"
+    :confirm-loading="loading"
+    @ok="handleSubmit"
+    @cancel="handleCancel"
+  >
+    <a-form
+      ref="formRef"
+      :model="formData"
+      :rules="rules"
+      :label-col="{ span: 6 }"
+      :wrapper-col="{ span: 16 }"
+    >
+      {{~ for field in form_fields ~}}
+      {{~ if field.type == 'input' ~}}
+      <a-form-item
+        label="{{ field.label }}"
+        name="{{ field.name }}"
+      >
+        <a-input
+          v-model:value="formData.{{ field.name }}"
+          :placeholder="'请输入{{ field.label }}'"
+          :maxLength="{{ field.maxLength }}"
+        />
+      </a-form-item>
+      {{~ else if field.type == 'textarea' ~}}
+      <a-form-item
+        label="{{ field.label }}"
+        name="{{ field.name }}"
+      >
+        <a-textarea
+          v-model:value="formData.{{ field.name }}"
+          :placeholder="'请输入{{ field.label }}'"
+          :maxLength="{{ field.maxLength }}"
+          :auto-size="{ minRows: 2, maxRows: 6 }"
+        />
+      </a-form-item>
+      {{~ else if field.type == 'number' ~}}
+      <a-form-item
+        label="{{ field.label }}"
+        name="{{ field.name }}"
+      >
+        <a-input-number
+          v-model:value="formData.{{ field.name }}"
+          :placeholder="'请输入{{ field.label }}'"
+          style="width: 100%"
+        />
+      </a-form-item>
+      {{~ else if field.type == 'select' ~}}
+      <a-form-item
+        label="{{ field.label }}"
+        name="{{ field.name }}"
+      >
+        <a-select
+          v-model:value="formData.{{ field.name }}"
+          :placeholder="'请选择{{ field.label }}'"
+          style="width: 100%"
+        >
+          <a-select-option
+            v-for="item in {{ field.name }}Options"
+            :key="item.value"
+            :value="item.value"
+          >
+            {{ '{{' }} item.label {{ '}}' }}
+          </a-select-option>
+        </a-select>
+      </a-form-item>
+      {{~ end ~}}
+      {{~ end ~}}
+    </a-form>
+  </a-modal>
+</template>
+
+<script lang="ts" setup>
+import { ref, reactive, computed } from 'vue'
+import type { FormInstance } from 'ant-design-vue'
+import { message } from 'ant-design-vue'
+import type { Create{{ entity_name }}Data, Update{{ entity_name }}Data } from '../api/types'
+import { create{{ entity_name }}, update{{ entity_name }} } from '../api'
+
+interface Props {
+  visible: boolean
+  editData?: any
+}
+
+const props = defineProps<Props>()
+const emit = defineEmits(['update:visible', 'success'])
+
+// 表单ref
+const formRef = ref<FormInstance>()
+
+// 加载状态
+const loading = ref(false)
+
+// 标题
+const title = computed(() => props.editData ? '编辑{{ entity_name_zh }}' : '新增{{ entity_name_zh }}')
+
+// 表单数据
+const formData = reactive<Create{{ entity_name }}Data | Update{{ entity_name }}Data>({
+  {{~ for field in form_fields ~}}
+  {{ field.name }}: undefined,
+  {{~ end ~}}
+})
+
+// 表单校验规则
+const rules = {
+  {{~ for field in form_fields ~}}
+  {{~ if field.required ~}}
+  {{ field.name }}: [
+    { required: true, message: '请{{ field.type == "select" ? "选择" : "输入" }}{{ field.label }}' }
+  ],
+  {{~ end ~}}
+  {{~ end ~}}
+}
+
+{{~ for field in form_fields ~}}
+{{~ if field.type == 'select' ~}}
+// {{ field.label }}选项
+const {{ field.name }}Options = [
+  {{~ for option in field.options ~}}
+  { label: '{{ option.label }}', value: {{ option.value }} },
+  {{~ end ~}}
+]
+{{~ end ~}}
+{{~ end ~}}
+
+// 监听编辑数据变化
+watch(
+  () => props.editData,
+  (val) => {
+    if (val) {
+      Object.assign(formData, val)
+    } else {
+      Object.keys(formData).forEach(key => {
+        formData[key] = undefined
+      })
+    }
+  },
+  { immediate: true }
+)
+
+// 提交表单
+const handleSubmit = async () => {
+  try {
+    await formRef.value?.validate()
+    loading.value = true
+    
+    if (props.editData) {
+      await update{{ entity_name }}({
+        id: props.editData.id,
+        ...formData
+      })
+      message.success('更新成功')
+    } else {
+      await create{{ entity_name }}(formData as Create{{ entity_name }}Data)
+      message.success('创建成功')
+    }
+    
+    emit('success')
+    handleCancel()
+  } catch (error) {
+    console.error(error)
+  } finally {
+    loading.value = false
+  }
+}
+
+// 取消
+const handleCancel = () => {
+  formRef.value?.resetFields()
+  emit('update:visible', false)
+}
+</script> 

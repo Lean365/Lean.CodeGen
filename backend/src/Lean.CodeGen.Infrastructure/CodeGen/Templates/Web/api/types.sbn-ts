@@ -1,0 +1,80 @@
+// 列表项类型
+export interface {{ entity_name }}Item {
+  id: number
+  {{~ for field in fields ~}}
+  /** {{ field.description }} */
+  {{ field.name }}: {{ field.tsType }}
+  {{~ end ~}}
+  createTime: string
+  updateTime: string
+}
+
+// 查询参数类型
+export interface Query{{ entity_name }}Params {
+  /** 关键词 */
+  keyword?: string
+  /** 页码 */
+  pageIndex: number
+  /** 每页条数 */
+  pageSize: number
+  {{~ for field in query_fields ~}}
+  /** {{ field.description }} */
+  {{ field.name }}?: {{ field.tsType }}
+  {{~ end ~}}
+}
+
+{{~ if enable_create ~}}
+// 创建参数类型
+export interface Create{{ entity_name }}Data {
+  {{~ for field in create_fields ~}}
+  /** {{ field.description }} */
+  {{ field.name }}{{~ if !field.required ~}}?{{~ end ~}}: {{ field.tsType }}
+  {{~ end ~}}
+}
+{{~ end ~}}
+
+{{~ if enable_update ~}}
+// 更新参数类型
+export interface Update{{ entity_name }}Data {
+  /** ID */
+  id: number
+  {{~ for field in update_fields ~}}
+  /** {{ field.description }} */
+  {{ field.name }}{{~ if !field.required ~}}?{{~ end ~}}: {{ field.tsType }}
+  {{~ end ~}}
+}
+{{~ end ~}}
+
+{{~ if enable_status ~}}
+// 状态修改参数类型
+export interface Change{{ entity_name }}StatusData {
+  /** ID */
+  id: number
+  /** 状态(0:禁用,1:启用) */
+  status: 0 | 1
+}
+{{~ end ~}}
+
+{{~ if enable_sort ~}}
+// 排序参数类型
+export interface Sort{{ entity_name }}Data {
+  /** ID */
+  id: number
+  /** 排序号 */
+  orderNum: number
+}
+{{~ end ~}}
+
+{{~ if enable_import ~}}
+// 导入结果类型
+export interface Import{{ entity_name }}Result {
+  /** 总数 */
+  totalCount: number
+  /** 成功数 */
+  successCount: number
+  /** 失败数 */
+  failureCount: number
+  /** 错误信息 */
+  errors?: string[]
+}
+{{~ end ~}} 

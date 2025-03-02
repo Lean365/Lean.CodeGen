@@ -35,6 +35,9 @@ using NLog;
 using NLog.Web;
 using ILogger = NLog.ILogger;
 using Microsoft.Extensions.Options;
+using Lean.CodeGen.Common.Helpers;
+using Lean.CodeGen.WebApi.Services;
+using Microsoft.AspNetCore.Hosting;
 
 // 创建Web应用程序构建器
 var builder = WebApplication.CreateBuilder(args);
@@ -56,6 +59,10 @@ builder.Services.Configure<LeanLocalizationOptions>(
 // 配置数据库选项
 builder.Services.Configure<LeanDatabaseOptions>(
     builder.Configuration.GetSection(LeanDatabaseOptions.Position));
+
+// 配置 IP 选项
+builder.Services.Configure<LeanIpOptions>(
+    builder.Configuration.GetSection("Ip"));
 
 // 添加数据库上下文
 builder.Services.AddScoped<LeanDbContext>();
@@ -126,6 +133,23 @@ builder.Services.AddLeanJwt(builder.Configuration);
 builder.Services.AddScoped<ILeanLocalizationService, LeanLocalizationService>();
 builder.Services.AddScoped<ILeanConfigService, LeanConfigService>();
 builder.Services.AddScoped<ILeanHttpContextAccessor, LeanHttpContextAccessor>();
+
+// 注册滑块验证码服务
+builder.Services.Configure<LeanSliderCaptchaOptions>(builder.Configuration.GetSection("SliderCaptcha"));
+builder.Services.AddSingleton<LeanSliderCaptchaHelper>(sp =>
+{
+  var env = sp.GetRequiredService<IWebHostEnvironment>();
+  var options = sp.GetRequiredService<IOptions<LeanSliderCaptchaOptions>>();
+  return new LeanSliderCaptchaHelper(env.WebRootPath, options);
+});
+builder.Services.AddHostedService<LeanSliderCaptchaInitializer>();
+
+// 注册系统信息帮助类
+builder.Services.AddScoped<LeanServerInfoHelper>();
+builder.Services.AddScoped<LeanClientInfoHelper>();
+
+// 注册 IP 帮助类
+builder.Services.AddSingleton<LeanIpHelper>();
 
 // 构建应用程序
 var app = builder.Build();

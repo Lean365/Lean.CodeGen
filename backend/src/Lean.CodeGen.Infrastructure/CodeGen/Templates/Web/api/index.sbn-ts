@@ -1,0 +1,87 @@
+import { http } from '@/utils/http'
+import type { LeanApiResult, LeanPageResult } from '@/types/api'
+import type {
+  {{ entity_name }}Item,
+  Create{{ entity_name }}Data,
+  Update{{ entity_name }}Data,
+  Query{{ entity_name }}Params,
+  Change{{ entity_name }}StatusData,
+  Sort{{ entity_name }}Data,
+  Import{{ entity_name }}Result
+} from './types'
+
+const baseUrl = '/api/{{ version }}/{{ route_name }}'
+
+// 获取详情
+export const get{{ entity_name }} = (id: number | string) => {
+  return http.get<LeanApiResult<{{ entity_name }}Item>>(`${baseUrl}/${id}`)
+}
+
+// 分页查询
+export const get{{ entity_name }}Page = (params: Query{{ entity_name }}Params) => {
+  return http.get<LeanApiResult<LeanPageResult<{{ entity_name }}Item>>>(baseUrl, { params })
+}
+
+{{~ if enable_create ~}}
+// 创建
+export const create{{ entity_name }} = (data: Create{{ entity_name }}Data) => {
+  return http.post<LeanApiResult<number>>(baseUrl, data)
+}
+{{~ end ~}}
+
+{{~ if enable_update ~}}
+// 更新
+export const update{{ entity_name }} = (data: Update{{ entity_name }}Data) => {
+  return http.put<LeanApiResult>(baseUrl, data)
+}
+{{~ end ~}}
+
+{{~ if enable_delete ~}}
+// 删除
+export const delete{{ entity_name }} = (id: number | string) => {
+  return http.delete<LeanApiResult>(`${baseUrl}/${id}`)
+}
+
+// 批量删除
+export const batchDelete{{ entity_name }} = (ids: (number | string)[]) => {
+  return http.delete<LeanApiResult>(`${baseUrl}/batch`, { data: ids })
+}
+{{~ end ~}}
+
+{{~ if enable_status ~}}
+// 修改状态
+export const set{{ entity_name }}Status = (data: Change{{ entity_name }}StatusData) => {
+  return http.put<LeanApiResult>(`${baseUrl}/status`, data)
+}
+{{~ end ~}}
+
+{{~ if enable_sort ~}}
+// 修改排序
+export const set{{ entity_name }}Sort = (data: Sort{{ entity_name }}Data) => {
+  return http.put<LeanApiResult>(`${baseUrl}/sort`, data)
+}
+{{~ end ~}}
+
+{{~ if enable_export ~}}
+// 导出
+export const export{{ entity_name }} = (params: Query{{ entity_name }}Params) => {
+  return http.get<Blob>(`${baseUrl}/export`, {
+    params,
+    responseType: 'blob'
+  })
+}
+{{~ end ~}}
+
+{{~ if enable_import ~}}
+// 导入
+export const import{{ entity_name }} = (data: FormData) => {
+  return http.post<LeanApiResult<Import{{ entity_name }}Result>>(`${baseUrl}/import`, data)
+}
+
+// 获取导入模板
+export const getImportTemplate = () => {
+  return http.get<Blob>(`${baseUrl}/import-template`, {
+    responseType: 'blob'
+  })
+}
+{{~ end ~}} 

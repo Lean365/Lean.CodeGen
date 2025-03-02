@@ -1,0 +1,180 @@
+//===================================================
+// 项目名: {{ namespace }}
+// 文件名: I{{ service_name }}Service.cs
+// 功能描述: {{ service_name }}服务接口
+// 创建时间: {{ create_time }}
+// 作者: {{ author }}
+// 版本: {{ version }}
+//===================================================
+
+using {{ dto_namespace }};
+using Lean.CodeGen.Common.Models;
+using Lean.CodeGen.Common.Excel;
+
+namespace {{ namespace }};
+
+/// <summary>
+/// {{ service_name }}服务接口
+/// </summary>
+/// <remarks>
+/// 提供{{ service_name }}管理相关的业务功能，包括：
+/// 1. {{ service_name }}的增删改查
+/// 2. {{ service_name }}状态管理
+/// 3. {{ service_name }}排序管理
+/// 4. {{ service_name }}导入导出
+/// </remarks>
+public interface I{{ service_name }}Service
+{
+    /// <summary>
+    /// 获取{{ service_name }}详情
+    /// </summary>
+    /// <param name="id">主键</param>
+    /// <returns>{{ service_name }}详情</returns>
+    /// <remarks>
+    /// 获取{{ service_name }}详情时会进行以下操作：
+    /// 1. 检查数据是否存在
+    /// 2. 获取关联数据（如果有）
+    /// 3. 转换数据格式
+    /// </remarks>
+    Task<LeanApiResult<Lean{{ service_name }}Dto>> GetAsync(long id);
+
+    /// <summary>
+    /// 分页查询{{ service_name }}
+    /// </summary>
+    /// <param name="input">查询参数</param>
+    /// <returns>分页查询结果</returns>
+    /// <remarks>
+    /// 分页查询{{ service_name }}时会进行以下操作：
+    /// 1. 构建查询条件
+    /// 2. 执行分页查询
+    /// 3. 获取关联数据（如果有）
+    /// 4. 转换数据格式
+    /// </remarks>
+    Task<LeanApiResult<LeanPageResult<Lean{{ service_name }}Dto>>> GetPageAsync(LeanQuery{{ service_name }}Dto input);
+
+    {{~ if enable_create ~}}
+    /// <summary>
+    /// 创建{{ service_name }}
+    /// </summary>
+    /// <param name="input">创建参数</param>
+    /// <returns>创建后的主键</returns>
+    /// <remarks>
+    /// 创建{{ service_name }}时会进行以下操作：
+    /// 1. 参数验证
+    /// 2. 唯一性验证
+    /// 3. 创建数据
+    /// 4. 保存关联数据（如果有）
+    /// </remarks>
+    Task<LeanApiResult<long>> CreateAsync(LeanCreate{{ service_name }}Dto input);
+    {{~ end ~}}
+
+    {{~ if enable_update ~}}
+    /// <summary>
+    /// 更新{{ service_name }}
+    /// </summary>
+    /// <param name="input">更新参数</param>
+    /// <returns>操作结果</returns>
+    /// <remarks>
+    /// 更新{{ service_name }}时会进行以下操作：
+    /// 1. 参数验证
+    /// 2. 检查数据是否存在
+    /// 3. 唯一性验证
+    /// 4. 更新数据
+    /// 5. 更新关联数据（如果有）
+    /// </remarks>
+    Task<LeanApiResult> UpdateAsync(LeanUpdate{{ service_name }}Dto input);
+    {{~ end ~}}
+
+    {{~ if enable_delete ~}}
+    /// <summary>
+    /// 删除{{ service_name }}
+    /// </summary>
+    /// <param name="id">主键</param>
+    /// <returns>操作结果</returns>
+    /// <remarks>
+    /// 删除{{ service_name }}时会进行以下操作：
+    /// 1. 检查数据是否存在
+    /// 2. 检查数据是否可以删除
+    /// 3. 删除关联数据（如果有）
+    /// 4. 删除数据
+    /// </remarks>
+    Task<LeanApiResult> DeleteAsync(long id);
+
+    /// <summary>
+    /// 批量删除{{ service_name }}
+    /// </summary>
+    /// <param name="ids">主键列表</param>
+    /// <returns>操作结果</returns>
+    /// <remarks>
+    /// 批量删除{{ service_name }}时会进行以下操作：
+    /// 1. 参数验证
+    /// 2. 检查数据是否存在
+    /// 3. 检查数据是否可以删除
+    /// 4. 删除关联数据（如果有）
+    /// 5. 批量删除数据
+    /// </remarks>
+    Task<LeanApiResult> BatchDeleteAsync(List<long> ids);
+    {{~ end ~}}
+
+    {{~ if enable_status ~}}
+    /// <summary>
+    /// 修改{{ service_name }}状态
+    /// </summary>
+    /// <param name="input">状态修改参数</param>
+    /// <returns>操作结果</returns>
+    /// <remarks>
+    /// 修改{{ service_name }}状态时会进行以下操作：
+    /// 1. 参数验证
+    /// 2. 检查数据是否存在
+    /// 3. 检查状态是否可以修改
+    /// 4. 修改状态
+    /// </remarks>
+    Task<LeanApiResult> SetStatusAsync(LeanChange{{ service_name }}StatusDto input);
+    {{~ end ~}}
+
+    {{~ if enable_sort ~}}
+    /// <summary>
+    /// 修改{{ service_name }}排序
+    /// </summary>
+    /// <param name="input">排序修改参数</param>
+    /// <returns>操作结果</returns>
+    /// <remarks>
+    /// 修改{{ service_name }}排序时会进行以下操作：
+    /// 1. 参数验证
+    /// 2. 检查数据是否存在
+    /// 3. 修改排序号
+    /// </remarks>
+    Task<LeanApiResult> SetSortAsync(LeanSort{{ service_name }}Dto input);
+    {{~ end ~}}
+
+    {{~ if enable_export ~}}
+    /// <summary>
+    /// 导出{{ service_name }}
+    /// </summary>
+    /// <param name="input">查询参数</param>
+    /// <returns>Excel文件字节数组</returns>
+    /// <remarks>
+    /// 导出{{ service_name }}时会进行以下操作：
+    /// 1. 构建查询条件
+    /// 2. 查询数据
+    /// 3. 转换数据格式
+    /// 4. 生成Excel文件
+    /// </remarks>
+    Task<byte[]> ExportAsync(LeanQuery{{ service_name }}Dto input);
+    {{~ end ~}}
+
+    {{~ if enable_import ~}}
+    /// <summary>
+    /// 导入{{ service_name }}数据
+    /// </summary>
+    /// <param name="file">导入文件</param>
+    /// <returns>导入结果</returns>
+    Task<LeanImport{{ service_name }}ResultDto> ImportAsync(LeanFileInfo file);
+
+    /// <summary>
+    /// 获取导入模板
+    /// </summary>
+    /// <returns>模板文件字节数组</returns>
+    Task<byte[]> GetImportTemplateAsync();
+    {{~ end ~}}
+} 

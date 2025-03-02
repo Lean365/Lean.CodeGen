@@ -1,0 +1,331 @@
+//===================================================
+// 项目名: {{ namespace }}
+// 文件名: {{ entity_name }}Controller.cs
+// 功能描述: {{ description }}控制器
+// 创建时间: {{ create_time }}
+// 作者: {{ author }}
+// 版本: {{ version }}
+//===================================================
+
+using Lean.CodeGen.Application.Services;
+using Lean.CodeGen.WebApi.Controllers;
+using {{ dto_namespace }};
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
+using Lean.CodeGen.Common.Enums;
+using Lean.CodeGen.Common.Models;
+using Lean.CodeGen.Application.Services.Admin;
+using Microsoft.Extensions.Configuration;
+
+namespace {{ namespace }};
+
+/// <summary>
+/// {{ description }}控制器
+/// </summary>
+/// <remarks>
+/// 提供{{ description }}管理相关的API接口，包括：
+/// 1. {{ description }}的详情查询和分页查询（必需）
+/// 2. {{ description }}的创建、更新和删除（可选）
+/// 3. {{ description }}状态管理（可选）
+/// 4. {{ description }}排序管理（可选）
+/// 5. {{ description }}导入导出（可选）
+/// </remarks>
+[Route("api/{{ version }}/{{ route_name }}")]
+[ApiController]
+[Authorize]
+[Tags("{{ description }}管理")]
+public class {{ entity_name }}Controller : LeanBaseController
+{
+    /// <summary>
+    /// {{ description }}服务接口
+    /// </summary>
+    private readonly I{{ entity_name }}Service _service;
+
+    /// <summary>
+    /// 构造函数
+    /// </summary>
+    /// <param name="service">{{ description }}服务接口</param>
+    /// <param name="localizationService">本地化服务</param>
+    /// <param name="configuration">配置</param>
+    public {{ entity_name }}Controller(
+        I{{ entity_name }}Service service,
+        ILeanLocalizationService localizationService,
+        IConfiguration configuration)
+        : base(localizationService, configuration)
+    {
+        _service = service;
+    }
+
+    /// <summary>
+    /// 获取{{ description }}详情
+    /// </summary>
+    /// <param name="id">主键</param>
+    /// <returns>{{ description }}详情</returns>
+    /// <remarks>
+    /// 获取{{ description }}详情时会进行以下操作：
+    /// 1. 参数验证
+    /// 2. 权限验证
+    /// 3. 获取数据
+    /// 4. 记录操作日志
+    /// </remarks>
+    [HttpGet("{id}")]
+    [SwaggerOperation(Summary = "获取{{ description }}详情")]
+    public async Task<IActionResult> GetAsync(long id)
+    {
+        var result = await _service.GetAsync(id);
+        return Success(result, LeanBusinessType.Query);
+    }
+
+    /// <summary>
+    /// 分页查询{{ description }}
+    /// </summary>
+    /// <param name="input">查询参数</param>
+    /// <returns>分页查询结果</returns>
+    /// <remarks>
+    /// 分页查询{{ description }}时会进行以下操作：
+    /// 1. 参数验证
+    /// 2. 权限验证
+    /// 3. 查询数据
+    /// 4. 记录操作日志
+    /// </remarks>
+    [HttpGet]
+    [SwaggerOperation(Summary = "分页查询{{ description }}")]
+    public async Task<IActionResult> GetPageAsync([FromQuery] LeanQuery{{ entity_name }}Dto input)
+    {
+        var result = await _service.GetPageAsync(input);
+        return Success(result, LeanBusinessType.Query);
+    }
+
+    {{~ if enable_create ~}}
+    /// <summary>
+    /// 创建{{ description }}
+    /// </summary>
+    /// <param name="input">创建参数</param>
+    /// <returns>创建后的主键</returns>
+    /// <remarks>
+    /// 创建{{ description }}时会进行以下操作：
+    /// 1. 参数验证
+    /// 2. 权限验证
+    /// 3. 业务处理
+    /// 4. 记录操作日志
+    /// </remarks>
+    [HttpPost]
+    [SwaggerOperation(Summary = "创建{{ description }}")]
+    {{~ if action.permissions ~}}
+    [LeanPermission("{{ action.permissions }}")]
+    {{~ end ~}}
+    public async Task<IActionResult> CreateAsync([FromBody] LeanCreate{{ entity_name }}Dto input)
+    {
+        var result = await _service.CreateAsync(input);
+        return Success(result, LeanBusinessType.Create);
+    }
+    {{~ end ~}}
+
+    {{~ if enable_update ~}}
+    /// <summary>
+    /// 更新{{ description }}
+    /// </summary>
+    /// <param name="input">更新参数</param>
+    /// <returns>操作结果</returns>
+    /// <remarks>
+    /// 更新{{ description }}时会进行以下操作：
+    /// 1. 参数验证
+    /// 2. 权限验证
+    /// 3. 业务处理
+    /// 4. 记录操作日志
+    /// </remarks>
+    [HttpPut]
+    [SwaggerOperation(Summary = "更新{{ description }}")]
+    {{~ if action.permissions ~}}
+    [LeanPermission("{{ action.permissions }}")]
+    {{~ end ~}}
+    public async Task<IActionResult> UpdateAsync([FromBody] LeanUpdate{{ entity_name }}Dto input)
+    {
+        var result = await _service.UpdateAsync(input);
+        return Success(result, LeanBusinessType.Update);
+    }
+    {{~ end ~}}
+
+    {{~ if enable_delete ~}}
+    /// <summary>
+    /// 删除{{ description }}
+    /// </summary>
+    /// <param name="id">主键</param>
+    /// <returns>操作结果</returns>
+    /// <remarks>
+    /// 删除{{ description }}时会进行以下操作：
+    /// 1. 参数验证
+    /// 2. 权限验证
+    /// 3. 业务处理
+    /// 4. 记录操作日志
+    /// </remarks>
+    [HttpDelete("{id}")]
+    [SwaggerOperation(Summary = "删除{{ description }}")]
+    {{~ if action.permissions ~}}
+    [LeanPermission("{{ action.permissions }}")]
+    {{~ end ~}}
+    public async Task<IActionResult> DeleteAsync(long id)
+    {
+        var result = await _service.DeleteAsync(id);
+        return Success(result, LeanBusinessType.Delete);
+    }
+
+    /// <summary>
+    /// 批量删除{{ description }}
+    /// </summary>
+    /// <param name="ids">主键列表</param>
+    /// <returns>操作结果</returns>
+    /// <remarks>
+    /// 批量删除{{ description }}时会进行以下操作：
+    /// 1. 参数验证
+    /// 2. 权限验证
+    /// 3. 业务处理
+    /// 4. 记录操作日志
+    /// </remarks>
+    [HttpDelete("batch")]
+    [SwaggerOperation(Summary = "批量删除{{ description }}")]
+    {{~ if action.permissions ~}}
+    [LeanPermission("{{ action.permissions }}")]
+    {{~ end ~}}
+    public async Task<IActionResult> BatchDeleteAsync([FromBody] List<long> ids)
+    {
+        var result = await _service.BatchDeleteAsync(ids);
+        return Success(result, LeanBusinessType.Delete);
+    }
+    {{~ end ~}}
+
+    {{~ if enable_status ~}}
+    /// <summary>
+    /// 修改{{ description }}状态
+    /// </summary>
+    /// <param name="input">状态修改参数</param>
+    /// <returns>操作结果</returns>
+    /// <remarks>
+    /// 修改{{ description }}状态时会进行以下操作：
+    /// 1. 参数验证
+    /// 2. 权限验证
+    /// 3. 检查数据是否存在
+    /// 4. 检查状态是否可以修改
+    /// 5. 修改状态
+    /// 6. 记录操作日志
+    /// </remarks>
+    [HttpPut("status")]
+    [SwaggerOperation(Summary = "修改{{ description }}状态")]
+    {{~ if action.permissions ~}}
+    [LeanPermission("{{ action.permissions }}")]
+    {{~ end ~}}
+    public async Task<IActionResult> SetStatusAsync([FromBody] LeanChange{{ entity_name }}StatusDto input)
+    {
+        var result = await _service.SetStatusAsync(input);
+        return Success(result, LeanBusinessType.Update);
+    }
+    {{~ end ~}}
+
+    {{~ if enable_sort ~}}
+    /// <summary>
+    /// 修改{{ description }}排序
+    /// </summary>
+    /// <param name="input">排序修改参数</param>
+    /// <returns>操作结果</returns>
+    /// <remarks>
+    /// 修改{{ description }}排序时会进行以下操作：
+    /// 1. 参数验证
+    /// 2. 权限验证
+    /// 3. 检查数据是否存在
+    /// 4. 修改排序号
+    /// 5. 记录操作日志
+    /// </remarks>
+    [HttpPut("sort")]
+    [SwaggerOperation(Summary = "修改{{ description }}排序")]
+    {{~ if action.permissions ~}}
+    [LeanPermission("{{ action.permissions }}")]
+    {{~ end ~}}
+    public async Task<IActionResult> SetSortAsync([FromBody] LeanSort{{ entity_name }}Dto input)
+    {
+        var result = await _service.SetSortAsync(input);
+        return Success(result, LeanBusinessType.Update);
+    }
+    {{~ end ~}}
+
+    {{~ if enable_export ~}}
+    /// <summary>
+    /// 导出{{ description }}
+    /// </summary>
+    /// <param name="input">查询参数</param>
+    /// <returns>Excel文件</returns>
+    /// <remarks>
+    /// 导出{{ description }}时会进行以下操作：
+    /// 1. 参数验证
+    /// 2. 权限验证
+    /// 3. 查询数据
+    /// 4. 生成Excel
+    /// 5. 记录操作日志
+    /// </remarks>
+    [HttpGet("export")]
+    [SwaggerOperation(Summary = "导出{{ description }}")]
+    {{~ if action.permissions ~}}
+    [LeanPermission("{{ action.permissions }}")]
+    {{~ end ~}}
+    public async Task<IActionResult> ExportAsync([FromQuery] LeanQuery{{ entity_name }}Dto input)
+    {
+        var fileBytes = await _service.ExportAsync(input);
+        return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "{{ entity_name }}.xlsx");
+    }
+    {{~ end ~}}
+
+    {{~ if enable_import ~}}
+    /// <summary>
+    /// 导入{{ description }}数据
+    /// </summary>
+    /// <returns>导入结果</returns>
+    /// <remarks>
+    /// 导入{{ description }}时会进行以下操作：
+    /// 1. 参数验证
+    /// 2. 权限验证
+    /// 3. 读取Excel
+    /// 4. 保存数据
+    /// 5. 记录操作日志
+    /// </remarks>
+    [HttpPost("import")]
+    [SwaggerOperation(Summary = "导入{{ description }}")]
+    {{~ if action.permissions ~}}
+    [LeanPermission("{{ action.permissions }}")]
+    {{~ end ~}}
+    public async Task<IActionResult> ImportAsync([FromForm] IFormFile file)
+    {
+        using var ms = new MemoryStream();
+        await file.CopyToAsync(ms);
+        ms.Position = 0;
+        var fileInfo = new LeanFileInfo
+        {
+            Stream = ms,
+            FileName = file.FileName,
+            ContentType = file.ContentType
+        };
+        var result = await _service.ImportAsync(fileInfo);
+        return Success(result, LeanBusinessType.Import);
+    }
+
+    /// <summary>
+    /// 获取导入模板
+    /// </summary>
+    /// <returns>Excel模板文件</returns>
+    /// <remarks>
+    /// 获取导入模板时会进行以下操作：
+    /// 1. 权限验证
+    /// 2. 生成模板
+    /// 3. 记录操作日志
+    /// </remarks>
+    [HttpGet("import-template")]
+    [SwaggerOperation(Summary = "获取导入模板")]
+    {{~ if action.permissions ~}}
+    [LeanPermission("{{ action.permissions }}")]
+    {{~ end ~}}
+    public async Task<IActionResult> GetImportTemplateAsync()
+    {
+        var fileBytes = await _service.GetImportTemplateAsync();
+        return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "{{ entity_name }}-import-template.xlsx");
+    }
+    {{~ end ~}}
+} 

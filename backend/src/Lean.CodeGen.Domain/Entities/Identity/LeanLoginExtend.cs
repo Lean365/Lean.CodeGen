@@ -191,6 +191,12 @@ public class LeanLoginExtend : LeanBaseEntity
   public LeanLoginStatus LoginStatus { get; set; }
 
   /// <summary>
+  /// 系统信息
+  /// </summary>
+  [SugarColumn(ColumnName = "system_info", ColumnDescription = "系统信息", Length = -1, IsNullable = true, ColumnDataType = "nvarchar")]
+  public string? SystemInfo { get; set; }
+
+  /// <summary>
   /// 用户
   /// </summary>
   /// <remarks>

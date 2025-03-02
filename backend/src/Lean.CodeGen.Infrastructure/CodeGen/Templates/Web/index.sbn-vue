@@ -1,0 +1,402 @@
+<template>
+  <div class="app-container">
+    <!-- 搜索区域 -->
+    <a-card class="search-card" :bordered="false">
+      <a-form layout="inline">
+        <a-form-item label="关键词">
+          <a-input
+            v-model:value="queryParams.keyword"
+            placeholder="请输入关键词"
+            allow-clear
+            @keyup.enter="handleQuery"
+          />
+        </a-form-item>
+        {{~ for field in query_fields ~}}
+        {{~ if field.type == 'input' ~}}
+        <a-form-item label="{{ field.label }}">
+          <a-input
+            v-model:value="queryParams.{{ field.name }}"
+            placeholder="请输入{{ field.label }}"
+            allow-clear
+            @keyup.enter="handleQuery"
+          />
+        </a-form-item>
+        {{~ else if field.type == 'select' ~}}
+        <a-form-item label="{{ field.label }}">
+          <a-select
+            v-model:value="queryParams.{{ field.name }}"
+            placeholder="请选择{{ field.label }}"
+            style="width: 200px"
+            allow-clear
+          >
+            <a-select-option
+              v-for="item in {{ field.name }}Options"
+              :key="item.value"
+              :value="item.value"
+            >
+              {{ '{{' }} item.label {{ '}}' }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        {{~ end ~}}
+        {{~ end ~}}
+        <a-form-item>
+          <a-space>
+            <a-button type="primary" @click="handleQuery">
+              <template #icon><SearchOutlined /></template>
+              查询
+            </a-button>
+            <a-button @click="handleReset">
+              <template #icon><ReloadOutlined /></template>
+              重置
+            </a-button>
+          </a-space>
+        </a-form-item>
+      </a-form>
+    </a-card>
+
+    <!-- 操作按钮区域 -->
+    <a-card class="table-card" :bordered="false">
+      <template #extra>
+        <a-space>
+          {{~ if enable_create ~}}
+          <a-button type="primary" @click="handleAdd">
+            <template #icon><PlusOutlined /></template>
+            新增
+          </a-button>
+          {{~ end ~}}
+          {{~ if enable_import ~}}
+          <a-button type="primary" @click="handleImport">
+            <template #icon><ImportOutlined /></template>
+            导入
+          </a-button>
+          {{~ end ~}}
+          {{~ if enable_export ~}}
+          <a-button type="primary" @click="handleExport">
+            <template #icon><ExportOutlined /></template>
+            导出
+          </a-button>
+          {{~ end ~}}
+          {{~ if enable_delete ~}}
+          <a-button
+            type="primary"
+            danger
+            :disabled="!selectedRowKeys.length"
+            @click="handleBatchDelete"
+          >
+            <template #icon><DeleteOutlined /></template>
+            批量删除
+          </a-button>
+          {{~ end ~}}
+        </a-space>
+      </template>
+
+      <!-- 表格 -->
+      <a-table
+        row-key="id"
+        :columns="columns"
+        :data-source="dataSource"
+        :loading="loading"
+        :pagination="pagination"
+        :row-selection="rowSelection"
+        @change="handleTableChange"
+      >
+        {{~ for field in table_fields ~}}
+        {{~ if field.type == 'status' ~}}
+        <template #{{ field.name }}="{ text, record }">
+          <a-switch
+            :checked="text === 1"
+            :loading="record.statusLoading"
+            @change="(checked) => handleStatusChange(record, checked)"
+          />
+        </template>
+        {{~ end ~}}
+        {{~ end ~}}
+        <template #action="{ record }">
+          <a-space>
+            {{~ if enable_update ~}}
+            <a @click="handleEdit(record)">编辑</a>
+            {{~ end ~}}
+            {{~ if enable_delete ~}}
+            <a-popconfirm
+              title="确定要删除吗？"
+              @confirm="handleDelete(record)"
+            >
+              <a class="text-danger">删除</a>
+            </a-popconfirm>
+            {{~ end ~}}
+          </a-space>
+        </template>
+      </a-table>
+    </a-card>
+
+    <!-- 表单弹窗 -->
+    <Form
+      v-model:visible="formVisible"
+      :edit-data="editData"
+      @success="handleSuccess"
+    />
+
+    <!-- 导入弹窗 -->
+    {{~ if enable_import ~}}
+    <ImportModal
+      v-model:visible="importVisible"
+      @success="handleSuccess"
+    />
+    {{~ end ~}}
+  </div>
+</template>
+
+<script lang="ts" setup>
+import { ref, reactive, onMounted } from 'vue'
+import type { TablePaginationConfig } from 'ant-design-vue'
+import { message, Modal } from 'ant-design-vue'
+import {
+  SearchOutlined,
+  ReloadOutlined,
+  PlusOutlined,
+  ImportOutlined,
+  ExportOutlined,
+  DeleteOutlined
+} from '@ant-design/icons-vue'
+import type { {{ entity_name }}Item, Query{{ entity_name }}Params } from './api/types'
+import {
+  get{{ entity_name }}Page,
+  delete{{ entity_name }},
+  batchDelete{{ entity_name }},
+  {{~ if enable_status ~}}
+  set{{ entity_name }}Status,
+  {{~ end ~}}
+  {{~ if enable_export ~}}
+  export{{ entity_name }},
+  {{~ end ~}}
+} from './api'
+import Form from './components/Form.vue'
+{{~ if enable_import ~}}
+import ImportModal from './components/ImportModal.vue'
+{{~ end ~}}
+
+// 查询参数
+const queryParams = reactive<Query{{ entity_name }}Params>({
+  keyword: '',
+  pageIndex: 1,
+  pageSize: 10,
+  {{~ for field in query_fields ~}}
+  {{ field.name }}: undefined,
+  {{~ end ~}}
+})
+
+{{~ for field in query_fields ~}}
+{{~ if field.type == 'select' ~}}
+// {{ field.label }}选项
+const {{ field.name }}Options = [
+  {{~ for option in field.options ~}}
+  { label: '{{ option.label }}', value: {{ option.value }} },
+  {{~ end ~}}
+]
+{{~ end ~}}
+{{~ end ~}}
+
+// 表格列定义
+const columns = [
+  {{~ for field in table_fields ~}}
+  {
+    title: '{{ field.label }}',
+    dataIndex: '{{ field.name }}',
+    {{~ if field.type == 'status' ~}}
+    slots: { customRender: '{{ field.name }}' },
+    {{~ end ~}}
+  },
+  {{~ end ~}}
+  {
+    title: '操作',
+    key: 'action',
+    width: 120,
+    slots: { customRender: 'action' },
+  },
+]
+
+// 加载状态
+const loading = ref(false)
+
+// 数据源
+const dataSource = ref<{{ entity_name }}Item[]>([])
+
+// 分页配置
+const pagination = reactive<TablePaginationConfig>({
+  total: 0,
+  current: 1,
+  pageSize: 10,
+  showSizeChanger: true,
+  showQuickJumper: true,
+})
+
+// 选中项
+const selectedRowKeys = ref<(string | number)[]>([])
+
+// 表格选择配置
+const rowSelection = {
+  selectedRowKeys,
+  onChange: (keys: (string | number)[]) => {
+    selectedRowKeys.value = keys
+  },
+}
+
+// 表单弹窗显示状态
+const formVisible = ref(false)
+
+// 编辑数据
+const editData = ref<{{ entity_name }}Item>()
+
+{{~ if enable_import ~}}
+// 导入弹窗显示状态
+const importVisible = ref(false)
+{{~ end ~}}
+
+// 查询列表
+const getList = async () => {
+  try {
+    loading.value = true
+    const { data } = await get{{ entity_name }}Page(queryParams)
+    dataSource.value = data.items
+    pagination.total = data.total
+    pagination.current = queryParams.pageIndex
+    pagination.pageSize = queryParams.pageSize
+  } catch (error) {
+    console.error(error)
+  } finally {
+    loading.value = false
+  }
+}
+
+// 查询按钮点击
+const handleQuery = () => {
+  queryParams.pageIndex = 1
+  getList()
+}
+
+// 重置按钮点击
+const handleReset = () => {
+  queryParams.keyword = ''
+  {{~ for field in query_fields ~}}
+  queryParams.{{ field.name }} = undefined
+  {{~ end ~}}
+  handleQuery()
+}
+
+// 表格变化事件
+const handleTableChange = (pag: TablePaginationConfig) => {
+  queryParams.pageIndex = pag.current || 1
+  queryParams.pageSize = pag.pageSize || 10
+  getList()
+}
+
+// 新增按钮点击
+const handleAdd = () => {
+  editData.value = undefined
+  formVisible.value = true
+}
+
+// 编辑按钮点击
+const handleEdit = (record: {{ entity_name }}Item) => {
+  editData.value = record
+  formVisible.value = true
+}
+
+{{~ if enable_status ~}}
+// 状态切换
+const handleStatusChange = async (record: {{ entity_name }}Item, checked: boolean) => {
+  try {
+    record.statusLoading = true
+    await set{{ entity_name }}Status({
+      id: record.id,
+      status: checked ? 1 : 0,
+    })
+    record.status = checked ? 1 : 0
+    message.success('状态修改成功')
+  } catch (error) {
+    console.error(error)
+  } finally {
+    record.statusLoading = false
+  }
+}
+{{~ end ~}}
+
+// 删除
+const handleDelete = async (record: {{ entity_name }}Item) => {
+  try {
+    await delete{{ entity_name }}(record.id)
+    message.success('删除成功')
+    getList()
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+// 批量删除
+const handleBatchDelete = () => {
+  Modal.confirm({
+    title: '确定要删除选中项吗？',
+    content: '删除后无法恢复',
+    async onOk() {
+      try {
+        await batchDelete{{ entity_name }}(selectedRowKeys.value)
+        message.success('删除成功')
+        selectedRowKeys.value = []
+        getList()
+      } catch (error) {
+        console.error(error)
+      }
+    },
+  })
+}
+
+{{~ if enable_import ~}}
+// 导入按钮点击
+const handleImport = () => {
+  importVisible.value = true
+}
+{{~ end ~}}
+
+{{~ if enable_export ~}}
+// 导出
+const handleExport = async () => {
+  try {
+    const blob = await export{{ entity_name }}(queryParams)
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = '{{ entity_name_zh }}列表.xlsx'
+    link.click()
+    window.URL.revokeObjectURL(url)
+  } catch (error) {
+    console.error(error)
+  }
+}
+{{~ end ~}}
+
+// 表单提交成功
+const handleSuccess = () => {
+  getList()
+}
+
+onMounted(() => {
+  getList()
+})
+</script>
+
+<style lang="less" scoped>
+.search-card {
+  margin-bottom: 16px;
+}
+
+.table-card {
+  :deep(.ant-card-body) {
+    padding-top: 0;
+  }
+}
+
+.text-danger {
+  color: #ff4d4f;
+}
+</style> 

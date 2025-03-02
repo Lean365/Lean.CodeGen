@@ -1,0 +1,67 @@
+//===================================================
+// 项目名: {{ project_name }}
+// 文件名: {{ entity_name }}.cs
+// 功能描述: {{ description }}
+// 创建时间: {{ create_time }}
+// 作者: {{ author }}
+// 版本: {{ version }}
+//===================================================
+
+using System;
+using SqlSugar;
+using Lean.CodeGen.Common.Enums;
+using Lean.CodeGen.Domain.Entities;
+
+namespace {{ namespace }};
+
+/// <summary>
+/// {{ description }}
+/// </summary>
+[SugarTable("{{ table_name }}", "{{ description }}")]
+{{~ if indexes ~}}
+{{~ for index in indexes ~}}
+[SugarIndex("{{ index.name }}", {{ index.fields }}, OrderByType.{{ index.order_type }}{{~ if index.is_unique ~}}, true{{~ end ~}})]
+{{~ end ~}}
+{{~ end ~}}
+public class {{ entity_name }} : LeanBaseEntity
+{
+    {{~ base_fields = ["Id", "TenantId", "CreateTime", "CreateUserId", "CreateUserName", "UpdateTime", "UpdateUserId", "UpdateUserName", "AuditStatus", "AuditUserId", "AuditUserName", "AuditTime", "AuditOpinion", "RevokeUserId", "RevokeUserName", "RevokeTime", "RevokeOpinion", "IsDeleted", "DeleteTime", "DeleteUserId", "DeleteUserName", "Remark"] ~}}
+    {{~ for property in properties ~}}
+    {{~ if !base_fields contains property.name ~}}
+    /// <summary>
+    /// {{ property.description }}
+    /// </summary>
+    /// <remarks>
+    /// {{ property.remarks }}
+    /// </remarks>
+    {{~ if property.is_key ~}}
+    [SugarColumn(ColumnName = "{{ property.column_name }}", ColumnDescription = "{{ property.description }}", IsPrimaryKey = true, IsIdentity = true, IsNullable = false, ColumnDataType = "bigint")]
+    {{~ else ~}}
+    [SugarColumn(
+        ColumnName = "{{ property.column_name }}", 
+        ColumnDescription = "{{ property.description }}"
+        {{~ if property.length ~}}, Length = {{ property.length }}{{~ end ~}}
+        {{~ if property.is_nullable ~}}, IsNullable = true{{~ end ~}}
+        {{~ if property.is_unique ~}}, UniqueGroupNameList = new[] { "{{ property.unique_group }}" }{{~ end ~}}
+        {{~ if property.default_value ~}}, DefaultValue = "{{ property.default_value }}"{{~ end ~}}
+        , ColumnDataType = "{{ property.data_type }}"
+    )]
+    {{~ end ~}}
+    public {{ property.type }} {{ property.name }} { get; set; }{{~ if property.default_value ~}} = {{ property.default_value }};{{~ else if property.type == "string" ~}} = string.Empty;{{~ else ~}} = default!;{{~ end ~}}
+
+    {{~ end ~}}
+    {{~ end ~}}
+    {{~ if navigates ~}}
+    {{~ for navigate in navigates ~}}
+    /// <summary>
+    /// {{ navigate.description }}
+    /// </summary>
+    /// <remarks>
+    /// {{ navigate.remarks }}
+    /// </remarks>
+    [Navigate(NavigateType.{{ navigate.type }}, nameof({{ navigate.foreign_key }}))]
+    public virtual {{ navigate.return_type }} {{ navigate.name }} { get; set; }{{~ if navigate.is_collection ~}} = new();{{~ else ~}} = default!;{{~ end ~}}
+
+    {{~ end ~}}
+    {{~ end ~}}
+} 

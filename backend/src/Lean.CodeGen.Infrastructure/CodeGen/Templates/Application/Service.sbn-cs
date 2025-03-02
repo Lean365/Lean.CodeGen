@@ -1,0 +1,483 @@
+//===================================================
+// 项目名: {{ namespace }}
+// 文件名: Lean{{ service_name }}Service.cs
+// 功能描述: {{ service_name }}服务实现
+// 创建时间: {{ create_time }}
+// 作者: {{ author }}
+// 版本: {{ version }}
+//===================================================
+
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using System.Linq;
+using System.Linq.Expressions;
+using Mapster;
+using {{ dto_namespace }};
+using Lean.CodeGen.Application.Services.Base;
+using Lean.CodeGen.Common.Enums;
+using Lean.CodeGen.Common.Exceptions;
+using Lean.CodeGen.Common.Models;
+using Lean.CodeGen.Domain.Entities;
+using Lean.CodeGen.Domain.Interfaces.Repositories;
+using Lean.CodeGen.Domain.Validators;
+using Lean.CodeGen.Common.Extensions;
+using Lean.CodeGen.Common.Excel;
+using NLog;
+
+namespace {{ namespace }};
+
+/// <summary>
+/// {{ service_name }}服务实现
+/// </summary>
+/// <remarks>
+/// 提供{{ service_name }}管理相关的业务功能，包括：
+/// 1. {{ service_name }}的增删改查
+/// 2. {{ service_name }}状态管理
+/// 3. {{ service_name }}排序管理
+/// 4. {{ service_name }}导入导出
+/// </remarks>
+public class Lean{{ service_name }}Service : LeanBaseService, I{{ service_name }}Service
+{
+    /// <summary>
+    /// 日志记录器
+    /// </summary>
+    private readonly ILogger _logger;
+
+    /// <summary>
+    /// {{ service_name }}仓储接口
+    /// </summary>
+    private readonly ILeanRepository<Lean{{ service_name }}> _repository;
+
+    /// <summary>
+    /// 唯一性验证器
+    /// </summary>
+    private readonly LeanUniqueValidator<Lean{{ service_name }}> _uniqueValidator;
+
+    /// <summary>
+    /// 构造函数
+    /// </summary>
+    /// <param name="repository">{{ service_name }}仓储接口</param>
+    /// <param name="context">服务上下文</param>
+    public Lean{{ service_name }}Service(
+        ILeanRepository<Lean{{ service_name }}> repository,
+        LeanBaseServiceContext context)
+        : base(context)
+    {
+        _repository = repository;
+        _logger = context.Logger;
+        _uniqueValidator = new LeanUniqueValidator<Lean{{ service_name }}>(_repository);
+    }
+
+    /// <summary>
+    /// 获取{{ service_name }}详情
+    /// </summary>
+    /// <param name="id">主键</param>
+    /// <returns>{{ service_name }}详情</returns>
+    public async Task<LeanApiResult<Lean{{ service_name }}Dto>> GetAsync(long id)
+    {
+        try
+        {
+            // 获取实体
+            var entity = await _repository.GetByIdAsync(id);
+            if (entity == null)
+            {
+                throw new LeanNotFoundException("数据不存在");
+            }
+
+            // 转换数据
+            var dto = entity.Adapt<Lean{{ service_name }}Dto>();
+
+            return new LeanApiResult<Lean{{ service_name }}Dto>(dto);
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "获取{{ service_name }}详情失败");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// 分页查询{{ service_name }}
+    /// </summary>
+    /// <param name="input">查询参数</param>
+    /// <returns>分页结果</returns>
+    public async Task<LeanApiResult<LeanPageResult<Lean{{ service_name }}Dto>>> GetPageAsync(LeanQuery{{ service_name }}Dto input)
+    {
+        try
+        {
+            // 构建查询条件
+            Expression<Func<Lean{{ service_name }}, bool>> predicate = x => true;
+            if (!string.IsNullOrEmpty(input.Keyword))
+            {
+                predicate = predicate.And(x => x.Name.Contains(input.Keyword));
+            }
+
+            // 查询数据
+            var (total, items) = await _repository.GetPageListAsync(
+                predicate,
+                input.PageSize,
+                input.PageIndex,
+                x => x.OrderNum,
+                true);
+
+            // 转换数据
+            var dtos = items.Adapt<List<Lean{{ service_name }}Dto>>();
+
+            return new LeanApiResult<LeanPageResult<Lean{{ service_name }}Dto>>(
+                new LeanPageResult<Lean{{ service_name }}Dto>
+                {
+                    Total = total,
+                    Items = dtos
+                });
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "分页查询{{ service_name }}失败");
+            throw;
+        }
+    }
+
+    {{~ if enable_create ~}}
+    /// <summary>
+    /// 创建{{ service_name }}
+    /// </summary>
+    /// <param name="input">创建参数</param>
+    /// <returns>主键</returns>
+    public async Task<LeanApiResult<long>> CreateAsync(LeanCreate{{ service_name }}Dto input)
+    {
+        try
+        {
+            // 参数验证
+            if (input == null)
+            {
+                throw new LeanValidationException("参数不能为空");
+            }
+
+            // 唯一性验证
+            await _uniqueValidator.ValidateAsync(input);
+
+            // 创建实体
+            var entity = input.Adapt<Lean{{ service_name }}>();
+            
+            // 保存数据
+            var id = await _repository.CreateAsync(entity);
+
+            return new LeanApiResult<long>(id);
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "创建{{ service_name }}失败");
+            throw;
+        }
+    }
+    {{~ end ~}}
+
+    {{~ if enable_update ~}}
+    /// <summary>
+    /// 更新{{ service_name }}
+    /// </summary>
+    /// <param name="input">更新参数</param>
+    /// <returns>操作结果</returns>
+    public async Task<LeanApiResult> UpdateAsync(LeanUpdate{{ service_name }}Dto input)
+    {
+        try
+        {
+            // 参数验证
+            if (input == null)
+            {
+                throw new LeanValidationException("参数不能为空");
+            }
+
+            // 获取实体
+            var entity = await _repository.GetByIdAsync(input.Id);
+            if (entity == null)
+            {
+                throw new LeanNotFoundException("数据不存在");
+            }
+
+            // 唯一性验证
+            await _uniqueValidator.ValidateAsync(input, input.Id);
+
+            // 更新实体
+            input.Adapt(entity);
+
+            // 保存数据
+            await _repository.UpdateAsync(entity);
+
+            return new LeanApiResult();
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "更新{{ service_name }}失败");
+            throw;
+        }
+    }
+    {{~ end ~}}
+
+    {{~ if enable_delete ~}}
+    /// <summary>
+    /// 删除{{ service_name }}
+    /// </summary>
+    /// <param name="id">主键</param>
+    /// <returns>操作结果</returns>
+    public async Task<LeanApiResult> DeleteAsync(long id)
+    {
+        try
+        {
+            // 获取实体
+            var entity = await _repository.GetByIdAsync(id);
+            if (entity == null)
+            {
+                throw new LeanNotFoundException("数据不存在");
+            }
+
+            // 删除数据
+            await _repository.DeleteAsync(entity);
+
+            return new LeanApiResult();
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "删除{{ service_name }}失败");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// 批量删除{{ service_name }}
+    /// </summary>
+    /// <param name="ids">主键列表</param>
+    /// <returns>操作结果</returns>
+    public async Task<LeanApiResult> BatchDeleteAsync(List<long> ids)
+    {
+        try
+        {
+            // 参数验证
+            if (ids == null || !ids.Any())
+            {
+                throw new LeanValidationException("请选择要删除的数据");
+            }
+
+            // 获取实体列表
+            var entities = await _repository.GetListAsync(x => ids.Contains(x.Id));
+            if (!entities.Any())
+            {
+                throw new LeanNotFoundException("数据不存在");
+            }
+
+            // 删除数据
+            await _repository.DeleteRangeAsync(entities);
+
+            return new LeanApiResult();
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "批量删除{{ service_name }}失败");
+            throw;
+        }
+    }
+    {{~ end ~}}
+
+    {{~ if enable_status ~}}
+    /// <summary>
+    /// 修改{{ service_name }}状态
+    /// </summary>
+    /// <param name="input">状态修改参数</param>
+    /// <returns>操作结果</returns>
+    public async Task<LeanApiResult> SetStatusAsync(LeanChange{{ service_name }}StatusDto input)
+    {
+        try
+        {
+            // 参数验证
+            if (input == null)
+            {
+                throw new LeanValidationException("参数不能为空");
+            }
+
+            // 获取实体
+            var entity = await _repository.GetByIdAsync(input.Id);
+            if (entity == null)
+            {
+                throw new LeanNotFoundException("数据不存在");
+            }
+
+            // 更新状态
+            entity.Status = input.Status;
+
+            // 保存数据
+            await _repository.UpdateAsync(entity);
+
+            return new LeanApiResult();
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "修改{{ service_name }}状态失败");
+            throw;
+        }
+    }
+    {{~ end ~}}
+
+    {{~ if enable_sort ~}}
+    /// <summary>
+    /// 修改{{ service_name }}排序
+    /// </summary>
+    /// <param name="input">排序修改参数</param>
+    /// <returns>操作结果</returns>
+    public async Task<LeanApiResult> SetSortAsync(LeanSort{{ service_name }}Dto input)
+    {
+        try
+        {
+            // 参数验证
+            if (input == null)
+            {
+                throw new LeanValidationException("参数不能为空");
+            }
+
+            // 获取实体
+            var entity = await _repository.GetByIdAsync(input.Id);
+            if (entity == null)
+            {
+                throw new LeanNotFoundException("数据不存在");
+            }
+
+            // 更新排序号
+            entity.OrderNum = input.OrderNum;
+
+            // 保存数据
+            await _repository.UpdateAsync(entity);
+
+            return new LeanApiResult();
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "修改{{ service_name }}排序失败");
+            throw;
+        }
+    }
+    {{~ end ~}}
+
+    {{~ if enable_export ~}}
+    /// <summary>
+    /// 导出{{ service_name }}
+    /// </summary>
+    /// <param name="input">查询参数</param>
+    /// <returns>Excel文件字节数组</returns>
+    public async Task<byte[]> ExportAsync(LeanQuery{{ service_name }}Dto input)
+    {
+        try
+        {
+            // 构建查询条件
+            Expression<Func<Lean{{ service_name }}, bool>> predicate = x => true;
+            if (!string.IsNullOrEmpty(input.Keyword))
+            {
+                predicate = predicate.And(x => x.Name.Contains(input.Keyword));
+            }
+
+            // 查询数据
+            var entities = await _repository.GetListAsync(predicate);
+
+            // 转换数据
+            var dtos = entities.Adapt<List<Lean{{ service_name }}ExportDto>>();
+
+            // 导出Excel
+            return dtos.ToExcelBytes();
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "导出{{ service_name }}失败");
+            throw;
+        }
+    }
+    {{~ end ~}}
+
+    {{~ if enable_import ~}}
+    /// <summary>
+    /// 导入{{ service_name }}数据
+    /// </summary>
+    /// <param name="file">导入文件</param>
+    /// <returns>导入结果</returns>
+    public async Task<LeanImport{{ service_name }}ResultDto> ImportAsync(LeanFileInfo file)
+    {
+        try
+        {
+            // 参数验证
+            if (file == null || file.Stream == null)
+            {
+                throw new LeanValidationException("导入文件不能为空");
+            }
+
+            // 读取Excel文件
+            var bytes = new byte[file.Stream.Length];
+            await file.Stream.ReadAsync(bytes, 0, bytes.Length);
+            var dtos = LeanExcelHelper.Import<Lean{{ service_name }}ImportDto>(bytes);
+
+            // 导入结果
+            var result = new LeanImport{{ service_name }}ResultDto
+            {
+                TotalCount = dtos.Count,
+                SuccessCount = 0,
+                FailureCount = 0,
+                Errors = new List<string>()
+            };
+
+            // 批量导入
+            foreach (var dto in dtos)
+            {
+                try
+                {
+                    // 唯一性验证
+                    await _uniqueValidator.ValidateAsync(dto);
+
+                    // 创建实体
+                    var entity = dto.Adapt<Lean{{ service_name }}>();
+                    await _repository.CreateAsync(entity);
+
+                    result.SuccessCount++;
+                }
+                catch (Exception ex)
+                {
+                    result.FailureCount++;
+                    result.Errors.Add($"第{result.FailureCount}行导入失败：{ex.Message}");
+                }
+            }
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "导入{{ service_name }}数据失败");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// 获取导入模板
+    /// </summary>
+    /// <returns>模板文件字节数组</returns>
+    public async Task<byte[]> GetImportTemplateAsync()
+    {
+        try
+        {
+            // 创建模板数据
+            var template = new List<Lean{{ service_name }}ImportDto>
+            {
+                new Lean{{ service_name }}ImportDto
+                {
+                    Name = "示例{{ service_name }}",
+                    Code = "{{ service_name }}001",
+                    OrderNum = 1
+                }
+            };
+
+            // 导出Excel
+            return await Task.FromResult(LeanExcelHelper.Export(template));
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "获取{{ service_name }}导入模板失败");
+            throw;
+        }
+    }
+    {{~ end ~}}
+}

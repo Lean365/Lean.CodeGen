@@ -16,7 +16,7 @@ namespace Lean.CodeGen.Domain.Entities.Identity;
 /// 设备扩展实体
 /// </summary>
 [SugarTable("lean_device_extend", "设备扩展表")]
-[SugarIndex("idx_user_device", nameof(UserId), OrderByType.Asc)]
+[SugarIndex("idx_user_device", nameof(UserId), OrderByType.Asc, nameof(DeviceId), OrderByType.Asc)]
 public class LeanDeviceExtend : LeanBaseEntity
 {
   /// <summary>
@@ -34,7 +34,7 @@ public class LeanDeviceExtend : LeanBaseEntity
   /// <remarks>
   /// 设备唯一标识
   /// </remarks>
-  [SugarColumn(ColumnName = "device_id", ColumnDescription = "设备ID", Length = 50, IsNullable = false, ColumnDataType = "nvarchar")]
+  [SugarColumn(ColumnName = "device_id", ColumnDescription = "设备ID", Length = 100, IsNullable = false, ColumnDataType = "nvarchar")]
   public string DeviceId { get; set; } = string.Empty;
 
   /// <summary>
@@ -108,6 +108,24 @@ public class LeanDeviceExtend : LeanBaseEntity
   /// </remarks>
   [SugarColumn(ColumnName = "device_status", ColumnDescription = "设备状态", IsNullable = false, DefaultValue = "0", ColumnDataType = "int")]
   public LeanDeviceStatus DeviceStatus { get; set; }
+
+  /// <summary>
+  /// 处理器架构
+  /// </summary>
+  [SugarColumn(ColumnName = "processor_architecture", ColumnDescription = "处理器架构", Length = 50, IsNullable = true, ColumnDataType = "nvarchar")]
+  public string? ProcessorArchitecture { get; set; }
+
+  /// <summary>
+  /// 是否64位操作系统
+  /// </summary>
+  [SugarColumn(ColumnName = "is_64bit_os", ColumnDescription = "是否64位操作系统", IsNullable = false, DefaultValue = "0", ColumnDataType = "bit")]
+  public bool Is64BitOperatingSystem { get; set; }
+
+  /// <summary>
+  /// 是否64位进程
+  /// </summary>
+  [SugarColumn(ColumnName = "is_64bit_process", ColumnDescription = "是否64位进程", IsNullable = false, DefaultValue = "0", ColumnDataType = "bit")]
+  public bool Is64BitProcess { get; set; }
 
   /// <summary>
   /// 用户

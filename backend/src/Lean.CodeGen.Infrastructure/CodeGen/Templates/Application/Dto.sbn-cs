@@ -1,0 +1,345 @@
+//===================================================
+// 项目名: {{ namespace }}
+// 文件名: {{ dto_name }}.cs
+// 功能描述: {{ description }}
+// 创建时间: {{ create_time }}
+// 作者: {{ author }}
+// 版本: {{ version }}
+//===================================================
+
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using Lean.CodeGen.Common.Enums;
+using Lean.CodeGen.Common.Models;
+using Lean.CodeGen.Common.Excel;
+
+namespace {{ namespace }};
+
+/// <summary>
+/// {{ description }}基础信息
+/// </summary>
+public class {{ dto_name }} : LeanBaseDto
+{
+    {{~ for property in properties ~}}
+    /// <summary>
+    /// {{ property.description }}
+    /// </summary>
+    {{~ if property.remarks ~}}
+    /// <remarks>
+    /// {{ property.remarks }}
+    /// </remarks>
+    {{~ end ~}}
+    {{~ if property.excel_column ~}}
+    [LeanExcelColumn("{{ property.description }}", DataType = LeanExcelDataType.{{ property.excel_data_type }})]
+    {{~ end ~}}
+    public {{ property.type }} {{ property.name }} { get; set; }{{ if property.default_value }} = {{ property.default_value }};{{ else if property.type == "string" }} = string.Empty;{{ end }}
+
+    {{~ end ~}}
+}
+
+/// <summary>
+/// {{ description }}查询参数
+/// </summary>
+public class LeanQuery{{ dto_name }} : LeanPage
+{
+    {{~ for property in properties ~}}
+    /// <summary>
+    /// {{ property.description }}
+    /// </summary>
+    public {{ property.type }}? {{ property.name }} { get; set; }
+
+    {{~ end ~}}
+    {{~ if has_time_range ~}}
+    /// <summary>
+    /// 创建时间范围-开始
+    /// </summary>
+    public DateTime? StartTime { get; set; }
+
+    /// <summary>
+    /// 创建时间范围-结束
+    /// </summary>
+    public DateTime? EndTime { get; set; }
+
+    /// <summary>
+    /// 更新时间范围-开始
+    /// </summary>
+    public DateTime? UpdateStartTime { get; set; }
+
+    /// <summary>
+    /// 更新时间范围-结束
+    /// </summary>
+    public DateTime? UpdateEndTime { get; set; }
+
+    /// <summary>
+    /// 审核时间范围-开始
+    /// </summary>
+    public DateTime? AuditStartTime { get; set; }
+
+    /// <summary>
+    /// 审核时间范围-结束
+    /// </summary>
+    public DateTime? AuditEndTime { get; set; }
+
+    /// <summary>
+    /// 撤销时间范围-开始
+    /// </summary>
+    public DateTime? RevokeStartTime { get; set; }
+
+    /// <summary>
+    /// 撤销时间范围-结束
+    /// </summary>
+    public DateTime? RevokeEndTime { get; set; }
+
+    /// <summary>
+    /// 删除时间范围-开始
+    /// </summary>
+    public DateTime? DeleteStartTime { get; set; }
+
+    /// <summary>
+    /// 删除时间范围-结束
+    /// </summary>
+    public DateTime? DeleteEndTime { get; set; }
+    {{~ end ~}}
+}
+
+{{~ if enable_create ~}}
+/// <summary>
+/// {{ description }}创建参数
+/// </summary>
+public class LeanCreate{{ dto_name }}
+{
+    {{~ for property in properties ~}}
+    {{~ if property.required ~}}
+    /// <summary>
+    /// {{ property.description }}
+    /// </summary>
+    {{~ if property.remarks ~}}
+    /// <remarks>
+    /// {{ property.remarks }}
+    /// </remarks>
+    {{~ end ~}}
+    [Required(ErrorMessage = "{{ property.description }}不能为空")]
+    {{~ if property.string_length ~}}
+    [StringLength({{ property.string_length }}, MinimumLength = {{ property.min_length }}, ErrorMessage = "{{ property.description }}长度必须在{{ property.min_length }}-{{ property.string_length }}个字符之间")]
+    {{~ end ~}}
+    {{~ if property.email ~}}
+    [EmailAddress(ErrorMessage = "邮箱格式不正确")]
+    {{~ end ~}}
+    {{~ if property.phone ~}}
+    [Phone(ErrorMessage = "手机号格式不正确")]
+    {{~ end ~}}
+    public {{ property.type }} {{ property.name }} { get; set; }{{ if property.default_value }} = {{ property.default_value }};{{ else if property.type == "string" }} = string.Empty;{{ end }}
+
+    {{~ end ~}}
+    {{~ end ~}}
+}
+{{~ end ~}}
+
+{{~ if enable_update ~}}
+/// <summary>
+/// {{ description }}更新参数
+/// </summary>
+public class LeanUpdate{{ dto_name }}
+{
+    /// <summary>
+    /// 主键
+    /// </summary>
+    [Required(ErrorMessage = "主键不能为空")]
+    public long Id { get; set; }
+
+    {{~ for property in properties ~}}
+    {{~ if property.required ~}}
+    /// <summary>
+    /// {{ property.description }}
+    /// </summary>
+    {{~ if property.remarks ~}}
+    /// <remarks>
+    /// {{ property.remarks }}
+    /// </remarks>
+    {{~ end ~}}
+    [Required(ErrorMessage = "{{ property.description }}不能为空")]
+    {{~ if property.string_length ~}}
+    [StringLength({{ property.string_length }}, MinimumLength = {{ property.min_length }}, ErrorMessage = "{{ property.description }}长度必须在{{ property.min_length }}-{{ property.string_length }}个字符之间")]
+    {{~ end ~}}
+    {{~ if property.email ~}}
+    [EmailAddress(ErrorMessage = "邮箱格式不正确")]
+    {{~ end ~}}
+    {{~ if property.phone ~}}
+    [Phone(ErrorMessage = "手机号格式不正确")]
+    {{~ end ~}}
+    public {{ property.type }} {{ property.name }} { get; set; }{{ if property.default_value }} = {{ property.default_value }};{{ else if property.type == "string" }} = string.Empty;{{ end }}
+
+    {{~ end ~}}
+    {{~ end ~}}
+}
+{{~ end ~}}
+
+{{~ if enable_export ~}}
+/// <summary>
+/// {{ description }}导出参数
+/// </summary>
+public class LeanExport{{ dto_name }}Param
+{
+    /// <summary>
+    /// 导出字段列表
+    /// </summary>
+    public List<string> ExportFields { get; set; } = new();
+
+    /// <summary>
+    /// 文件格式
+    /// </summary>
+    [Required(ErrorMessage = "文件格式不能为空")]
+    public string FileFormat { get; set; } = "xlsx";
+
+    /// <summary>
+    /// 是否导出全部
+    /// </summary>
+    public bool IsExportAll { get; set; }
+
+    /// <summary>
+    /// 选中的ID列表
+    /// </summary>
+    public List<long> SelectedIds { get; set; } = new();
+}
+
+/// <summary>
+/// {{ description }}导出数据
+/// </summary>
+public class LeanExport{{ dto_name }}
+{
+    {{~ for property in properties ~}}
+    {{~ if property.excel_column ~}}
+    /// <summary>
+    /// {{ property.description }}
+    /// </summary>
+    [LeanExcelColumn("{{ property.description }}", DataType = LeanExcelDataType.{{ property.excel_data_type }})]
+    public {{ property.type }} {{ property.name }} { get; set; }{{ if property.default_value }} = {{ property.default_value }};{{ else if property.type == "string" }} = default!;{{ end }}
+
+    {{~ end ~}}
+    {{~ end ~}}
+}
+{{~ end ~}}
+
+{{~ if enable_import ~}}
+/// <summary>
+/// {{ description }}导入参数
+/// </summary>
+public class LeanImport{{ dto_name }}Param
+{
+    /// <summary>
+    /// 文件格式
+    /// </summary>
+    [Required(ErrorMessage = "文件格式不能为空")]
+    public string FileFormat { get; set; } = "xlsx";
+
+    /// <summary>
+    /// 是否更新已存在数据
+    /// </summary>
+    public bool IsUpdateExists { get; set; }
+
+    /// <summary>
+    /// 是否导入示例数据
+    /// </summary>
+    public bool IsImportDemo { get; set; }
+}
+
+/// <summary>
+/// {{ description }}导入数据
+/// </summary>
+public class LeanImport{{ dto_name }}
+{
+    {{~ for property in properties ~}}
+    {{~ if property.excel_column ~}}
+    /// <summary>
+    /// {{ property.description }}
+    /// </summary>
+    [LeanExcelColumn("{{ property.description }}", DataType = LeanExcelDataType.{{ property.excel_data_type }})]
+    {{~ if property.required ~}}
+    [Required(ErrorMessage = "{{ property.description }}不能为空")]
+    {{~ end ~}}
+    public {{ property.type }} {{ property.name }} { get; set; }{{ if property.default_value }} = {{ property.default_value }};{{ else if property.type == "string" }} = default!;{{ end }}
+
+    {{~ end ~}}
+    {{~ end ~}}
+}
+{{~ end ~}}
+
+{{~ if enable_template ~}}
+/// <summary>
+/// {{ description }}导入模板参数
+/// </summary>
+public class LeanTemplate{{ dto_name }}Param
+{
+    /// <summary>
+    /// 文件格式
+    /// </summary>
+    [Required(ErrorMessage = "文件格式不能为空")]
+    public string FileFormat { get; set; } = "xlsx";
+
+    /// <summary>
+    /// 是否包含示例数据
+    /// </summary>
+    public bool IncludeDemo { get; set; }
+}
+
+/// <summary>
+/// {{ description }}导入模板数据
+/// </summary>
+public class LeanTemplate{{ dto_name }}
+{
+    {{~ for property in properties ~}}
+    {{~ if property.excel_column ~}}
+    /// <summary>
+    /// {{ property.description }}
+    /// </summary>
+    [LeanExcelColumn("{{ property.description }}", DataType = LeanExcelDataType.{{ property.excel_data_type }})]
+    {{~ if property.required ~}}
+    [Required(ErrorMessage = "{{ property.description }}不能为空")]
+    {{~ end ~}}
+    public {{ property.type }} {{ property.name }} { get; set; }{{ if property.default_value }} = {{ property.default_value }};{{ else if property.type == "string" }} = default!;{{ end }}
+
+    {{~ end ~}}
+    {{~ end ~}}
+}
+{{~ end ~}}
+
+{{~ if enable_status ~}}
+/// <summary>
+/// {{ description }}状态更新参数
+/// </summary>
+public class LeanChange{{ dto_name }}StatusDto
+{
+    /// <summary>
+    /// 主键
+    /// </summary>
+    [Required(ErrorMessage = "主键不能为空")]
+    public long Id { get; set; }
+
+    /// <summary>
+    /// 状态
+    /// </summary>
+    [Required(ErrorMessage = "状态不能为空")]
+    public LeanStatus Status { get; set; }
+}
+{{~ end ~}}
+
+{{~ if enable_sort ~}}
+/// <summary>
+/// {{ description }}排序参数
+/// </summary>
+public class LeanSort{{ dto_name }}Dto
+{
+    /// <summary>
+    /// 主键
+    /// </summary>
+    [Required(ErrorMessage = "主键不能为空")]
+    public long Id { get; set; }
+
+    /// <summary>
+    /// 排序号
+    /// </summary>
+    [Required(ErrorMessage = "排序号不能为空")]
+    public int OrderNum { get; set; }
+}
+{{~ end ~}} 
