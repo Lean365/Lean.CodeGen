@@ -100,4 +100,16 @@ public class LeanWorkflowHistory : LeanBaseEntity
   /// </summary>
   [Navigate(NavigateType.OneToMany, nameof(LeanWorkflowVariableData.Id))]
   public virtual List<LeanWorkflowVariableData> VariableDataList { get; set; } = new();
+
+  /// <summary>
+  /// 备注
+  /// </summary>
+  [SugarColumn(ColumnName = "comment", ColumnDescription = "备注", Length = 500, IsNullable = true)]
+  public string? Comment { get; set; }
+
+  /// <summary>
+  /// 操作时间
+  /// </summary>
+  [SugarColumn(ColumnName = "operate_time", ColumnDescription = "操作时间", IsNullable = false)]
+  public DateTime OperateTime { get; set; }
 }

@@ -1,15 +1,10 @@
 namespace Lean.CodeGen.Common.Enums;
 
 /// <summary>
-/// 工作流实例状态枚举
+/// 工作流实例状态
 /// </summary>
 public enum LeanWorkflowInstanceStatus
 {
-  /// <summary>
-  /// 未开始
-  /// </summary>
-  NotStarted = 0,
-
   /// <summary>
   /// 运行中
   /// </summary>
@@ -21,9 +16,9 @@ public enum LeanWorkflowInstanceStatus
   Completed = 2,
 
   /// <summary>
-  /// 已取消
+  /// 已终止
   /// </summary>
-  Cancelled = 3,
+  Terminated = 3,
 
   /// <summary>
   /// 已暂停
@@ -31,7 +26,7 @@ public enum LeanWorkflowInstanceStatus
   Suspended = 4,
 
   /// <summary>
-  /// 出错
+  /// 已取消
   /// </summary>
-  Faulted = 5
+  Cancelled = 5
 }

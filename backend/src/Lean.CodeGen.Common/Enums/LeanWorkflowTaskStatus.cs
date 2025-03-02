@@ -1,15 +1,10 @@
 namespace Lean.CodeGen.Common.Enums;
 
 /// <summary>
-/// 工作流任务状态枚举
+/// 工作流任务状态
 /// </summary>
 public enum LeanWorkflowTaskStatus
 {
-  /// <summary>
-  /// 待处理
-  /// </summary>
-  Pending = 0,
-
   /// <summary>
   /// 处理中
   /// </summary>
@@ -21,27 +16,22 @@ public enum LeanWorkflowTaskStatus
   Completed = 2,
 
   /// <summary>
-  /// 已取消
+  /// 已终止
   /// </summary>
-  Cancelled = 3,
+  Terminated = 3,
 
   /// <summary>
-  /// 已超时
+  /// 已驳回
   /// </summary>
-  Timeout = 4,
+  Rejected = 4,
 
   /// <summary>
-  /// 已拒绝
+  /// 已暂停
   /// </summary>
-  Rejected = 5,
+  Suspended = 5,
 
   /// <summary>
-  /// 已转交
+  /// 已转办
   /// </summary>
-  Transferred = 6,
-
-  /// <summary>
-  /// 已回退
-  /// </summary>
-  Rollback = 7
+  Transferred = 6
 }

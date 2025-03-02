@@ -6,11 +6,6 @@ namespace Lean.CodeGen.Common.Enums;
 public enum LeanWorkflowActivityStatus
 {
   /// <summary>
-  /// 未开始
-  /// </summary>
-  NotStarted = 0,
-
-  /// <summary>
   /// 运行中
   /// </summary>
   Running = 1,
@@ -21,17 +16,27 @@ public enum LeanWorkflowActivityStatus
   Completed = 2,
 
   /// <summary>
+  /// 已终止
+  /// </summary>
+  Terminated = 3,
+
+  /// <summary>
+  /// 已驳回
+  /// </summary>
+  Rejected = 4,
+
+  /// <summary>
   /// 已取消
   /// </summary>
-  Cancelled = 3,
+  Cancelled = 5,
+
+  /// <summary>
+  /// 已暂停
+  /// </summary>
+  Suspended = 6,
 
   /// <summary>
   /// 已补偿
   /// </summary>
-  Compensated = 4,
-
-  /// <summary>
-  /// 失败
-  /// </summary>
-  Failed = 5
+  Compensated = 7
 }

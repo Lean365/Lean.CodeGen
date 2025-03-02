@@ -105,4 +105,10 @@ public class LeanWorkflowDefinition : LeanBaseEntity
   /// </summary>
   [Navigate(NavigateType.OneToMany, nameof(LeanWorkflowTrigger.DefinitionId))]
   public virtual List<LeanWorkflowTrigger> Triggers { get; set; } = new();
+
+  /// <summary>
+  /// 连线列表
+  /// </summary>
+  [Navigate(NavigateType.OneToMany, nameof(LeanWorkflowFlow.DefinitionId))]
+  public virtual List<LeanWorkflowFlow> Flows { get; set; } = new();
 }

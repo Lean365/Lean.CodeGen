@@ -17,6 +17,12 @@ public class LeanWorkflowActivityInstance : LeanBaseEntity
   public long WorkflowInstanceId { get; set; }
 
   /// <summary>
+  /// 活动ID
+  /// </summary>
+  [SugarColumn(ColumnName = "activity_id", ColumnDescription = "活动ID", Length = 50, IsNullable = false)]
+  public string ActivityId { get; set; } = string.Empty;
+
+  /// <summary>
   /// 工作流实例
   /// </summary>
   [Navigate(NavigateType.OneToOne, nameof(WorkflowInstanceId))]
@@ -43,8 +49,8 @@ public class LeanWorkflowActivityInstance : LeanBaseEntity
   /// <summary>
   /// 开始时间
   /// </summary>
-  [SugarColumn(ColumnName = "start_time", ColumnDescription = "开始时间", IsNullable = true)]
-  public DateTime? StartTime { get; set; }
+  [SugarColumn(ColumnName = "start_time", ColumnDescription = "开始时间", IsNullable = false)]
+  public DateTime StartTime { get; set; }
 
   /// <summary>
   /// 结束时间

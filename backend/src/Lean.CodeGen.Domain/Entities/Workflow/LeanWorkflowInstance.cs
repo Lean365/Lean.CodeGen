@@ -11,25 +11,19 @@ namespace Lean.CodeGen.Domain.Entities.Workflow;
 public class LeanWorkflowInstance : LeanBaseEntity
 {
   /// <summary>
-  /// 工作流定义ID
+  /// 流程定义ID
   /// </summary>
-  [SugarColumn(ColumnName = "definition_id", ColumnDescription = "工作流定义ID", IsNullable = false)]
+  [SugarColumn(ColumnName = "definition_id", ColumnDescription = "流程定义ID", IsNullable = false)]
   public long DefinitionId { get; set; }
 
   /// <summary>
-  /// 工作流定义
+  /// 流程定义版本
   /// </summary>
-  [Navigate(NavigateType.OneToOne, nameof(DefinitionId))]
-  public virtual LeanWorkflowDefinition Definition { get; set; } = null!;
-
-  /// <summary>
-  /// 工作流定义版本号
-  /// </summary>
-  [SugarColumn(ColumnName = "definition_version", ColumnDescription = "工作流定义版本号", IsNullable = false)]
+  [SugarColumn(ColumnName = "definition_version", ColumnDescription = "流程定义版本", IsNullable = false)]
   public int DefinitionVersion { get; set; }
 
   /// <summary>
-  /// 业务主键(唯一标识)
+  /// 业务主键
   /// </summary>
   [SugarColumn(ColumnName = "business_key", ColumnDescription = "业务主键", Length = 50, IsNullable = false)]
   public string BusinessKey { get; set; } = string.Empty;
@@ -85,20 +79,8 @@ public class LeanWorkflowInstance : LeanBaseEntity
   /// <summary>
   /// 当前节点名称
   /// </summary>
-  [SugarColumn(ColumnName = "current_node_name", ColumnDescription = "当前节点名称", Length = 100, IsNullable = true)]
+  [SugarColumn(ColumnName = "current_node_name", ColumnDescription = "当前节点名称", Length = 50, IsNullable = true)]
   public string? CurrentNodeName { get; set; }
-
-  /// <summary>
-  /// 开始时间
-  /// </summary>
-  [SugarColumn(ColumnName = "start_time", ColumnDescription = "开始时间", IsNullable = true)]
-  public DateTime? StartTime { get; set; }
-
-  /// <summary>
-  /// 结束时间
-  /// </summary>
-  [SugarColumn(ColumnName = "end_time", ColumnDescription = "结束时间", IsNullable = true)]
-  public DateTime? EndTime { get; set; }
 
   /// <summary>
   /// 工作流状态
@@ -110,7 +92,7 @@ public class LeanWorkflowInstance : LeanBaseEntity
   /// 是否暂停(0=否,1=是)
   /// </summary>
   [SugarColumn(ColumnName = "is_suspended", ColumnDescription = "是否暂停", IsNullable = false, DefaultValue = "0")]
-  public int IsSuspended { get; set; } = 0;
+  public int IsSuspended { get; set; }
 
   /// <summary>
   /// 是否已归档(0=否,1=是)
@@ -119,16 +101,28 @@ public class LeanWorkflowInstance : LeanBaseEntity
   public int IsArchived { get; set; } = 0;
 
   /// <summary>
-  /// 表单数据
+  /// 开始时间
   /// </summary>
-  [Navigate(NavigateType.OneToMany, nameof(LeanWorkflowFormData.InstanceId))]
-  public virtual List<LeanWorkflowFormData> FormDataList { get; set; } = new();
+  [SugarColumn(ColumnName = "start_time", ColumnDescription = "开始时间", IsNullable = false)]
+  public DateTime StartTime { get; set; }
 
   /// <summary>
-  /// 变量数据
+  /// 结束时间
   /// </summary>
-  [Navigate(NavigateType.OneToMany, nameof(LeanWorkflowVariableData.InstanceId))]
-  public virtual List<LeanWorkflowVariableData> VariableDataList { get; set; } = new();
+  [SugarColumn(ColumnName = "end_time", ColumnDescription = "结束时间", IsNullable = true)]
+  public DateTime? EndTime { get; set; }
+
+  /// <summary>
+  /// 暂停时间
+  /// </summary>
+  [SugarColumn(ColumnName = "suspend_time", ColumnDescription = "暂停时间", IsNullable = true)]
+  public DateTime? SuspendTime { get; set; }
+
+  /// <summary>
+  /// 活动实例列表
+  /// </summary>
+  [Navigate(NavigateType.OneToMany, nameof(LeanWorkflowActivityInstance.WorkflowInstanceId))]
+  public virtual List<LeanWorkflowActivityInstance> Activities { get; set; } = new();
 
   /// <summary>
   /// 任务列表
@@ -137,8 +131,20 @@ public class LeanWorkflowInstance : LeanBaseEntity
   public virtual List<LeanWorkflowTask> Tasks { get; set; } = new();
 
   /// <summary>
-  /// 历史记录
+  /// 表单数据列表
+  /// </summary>
+  [Navigate(NavigateType.OneToMany, nameof(LeanWorkflowFormData.InstanceId))]
+  public virtual List<LeanWorkflowFormData> FormData { get; set; } = new();
+
+  /// <summary>
+  /// 变量数据列表
+  /// </summary>
+  [Navigate(NavigateType.OneToMany, nameof(LeanWorkflowVariableData.InstanceId))]
+  public virtual List<LeanWorkflowVariableData> Variables { get; set; } = new();
+
+  /// <summary>
+  /// 历史记录列表
   /// </summary>
   [Navigate(NavigateType.OneToMany, nameof(LeanWorkflowHistory.InstanceId))]
-  public virtual List<LeanWorkflowHistory> Histories { get; set; } = new();
+  public virtual List<LeanWorkflowHistory> History { get; set; } = new();
 }

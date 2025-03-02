@@ -19,6 +19,9 @@ using NLog;
 using ILogger = NLog.ILogger;
 using Microsoft.Extensions.Configuration;
 using Lean.CodeGen.Infrastructure.Configuration;
+using Lean.CodeGen.Application.Services.Workflow;
+using Lean.CodeGen.Application.Services.Workflow.Executors;
+using Lean.CodeGen.Application.Services.Workflow.Parsers;
 
 namespace Lean.CodeGen.Infrastructure.Extensions;
 
@@ -86,6 +89,12 @@ public static class LeanServiceCollectionExtensions
     // 添加在线服务
     services.AddScoped<ILeanOnlineUserService, LeanOnlineUserService>();
     services.AddScoped<ILeanOnlineMessageService, LeanOnlineMessageService>();
+
+    // 注册工作流服务
+    services.AddScoped<ILeanWorkflowEngine, LeanWorkflowEngine>();
+    services.AddScoped<LeanBpmnParser>();
+    services.AddScoped<LeanNodeExecutor>();
+    services.AddScoped<LeanConditionParser>();
 
     return services;
   }
