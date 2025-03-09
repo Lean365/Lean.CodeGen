@@ -106,12 +106,12 @@ public class LeanMenuSeed
         IsFrame = 0,
         IsCached = 0,
         Visible = 0,
-        MenuStatus = LeanMenuStatus.Normal,
-        MenuType = LeanMenuType.Directory,
+        MenuStatus = 1,
+        MenuType = 2,
         Icon = icon,
         TransKey = $"menu.{name.ToLower()}",
         Perms = $"{name.ToLower()}:list",
-        IsBuiltin = LeanBuiltinStatus.Yes
+        IsBuiltin = 1
       };
 
       var exists = await _db.Queryable<LeanMenu>()
@@ -268,12 +268,12 @@ public class LeanMenuSeed
       IsFrame = 0,
       IsCached = 0,
       Visible = 0,
-      MenuStatus = LeanMenuStatus.Normal,
-      MenuType = LeanMenuType.Directory,
+      MenuStatus = 1,
+      MenuType = 2,
       Icon = GetDirectoryIcon(dirName.ToLower()),
       TransKey = $"menu.{dirName.ToLower()}",
       Perms = $"{dirName.ToLower()}:list",
-      IsBuiltin = LeanBuiltinStatus.Yes
+      IsBuiltin = 1
     };
 
     var exists = await _db.Queryable<LeanMenu>()
@@ -345,12 +345,12 @@ public class LeanMenuSeed
       IsFrame = 0,
       IsCached = 0,
       Visible = 0,
-      MenuStatus = LeanMenuStatus.Normal,
-      MenuType = LeanMenuType.Menu,
+      MenuStatus = 1,
+      MenuType = 1,
       Icon = GetControllerIcon(menuName.ToLower()),
       TransKey = $"menu.{permPrefix.ToLower()}.{routeName}",
       Perms = $"{permPrefix.ToLower()}:{routeName}:list",
-      IsBuiltin = LeanBuiltinStatus.Yes
+      IsBuiltin = 1
     };
 
     // 检查是否存在（优先使用权限标识符检查）
@@ -499,11 +499,11 @@ public class LeanMenuSeed
         IsFrame = 0,
         IsCached = 0,
         Visible = 0,
-        MenuStatus = LeanMenuStatus.Normal,
-        MenuType = LeanMenuType.Button,
+        MenuStatus = 1,
+        MenuType = 2,
         Icon = icon,
         Perms = $"{permPrefix.ToLower()}:{routeName.Replace("lean", "")}:{action}",
-        IsBuiltin = LeanBuiltinStatus.Yes
+        IsBuiltin = 1
       };
 
       // 检查是否存在

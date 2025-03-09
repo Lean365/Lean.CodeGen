@@ -6,7 +6,7 @@ namespace Lean.CodeGen.Application.Dtos.Signalr;
 /// <summary>
 /// 在线用户查询参数
 /// </summary>
-public class LeanQueryOnlineUserDto : LeanPage
+public class LeanOnlineUserQueryDto : LeanPage
 {
   /// <summary>
   /// 用户ID
@@ -20,8 +20,10 @@ public class LeanQueryOnlineUserDto : LeanPage
 
   /// <summary>
   /// 是否在线
+  /// 0-离线
+  /// 1-在线
   /// </summary>
-  public bool? IsOnline { get; set; }
+  public int? IsOnline { get; set; }
 
   /// <summary>
   /// 开始时间
@@ -61,8 +63,10 @@ public class LeanOnlineUserDto
 
   /// <summary>
   /// 是否在线
+  /// 0-离线
+  /// 1-在线
   /// </summary>
-  public bool IsOnline { get; set; }
+  public int IsOnline { get; set; }
 
   /// <summary>
   /// 最后活动时间
@@ -81,9 +85,9 @@ public class LeanOnlineUserDto
 }
 
 /// <summary>
-/// 更新用户信息DTO
+/// 在线用户更新参数
 /// </summary>
-public class LeanUpdateOnlineUserDto
+public class LeanOnlineUserUpdateDto
 {
   /// <summary>
   /// 用户ID

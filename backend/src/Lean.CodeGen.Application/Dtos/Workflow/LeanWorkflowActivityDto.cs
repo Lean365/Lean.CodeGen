@@ -42,8 +42,10 @@ public class LeanWorkflowActivityDto
 
   /// <summary>
   /// 是否启用
+  /// 0-停用
+  /// 1-启用
   /// </summary>
-  public bool Status { get; set; }
+  public int Status { get; set; }
 
   /// <summary>
   /// 活动属性JSON

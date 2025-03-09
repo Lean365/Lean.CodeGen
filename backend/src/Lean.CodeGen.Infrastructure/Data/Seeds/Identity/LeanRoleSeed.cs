@@ -34,9 +34,9 @@ public class LeanRoleSeed
                 RoleName = "超级管理员",
                 RoleDescription = "系统超级管理员，拥有所有权限",
                 OrderNum = 1,
-                RoleStatus = LeanRoleStatus.Normal,
-                DataScope = LeanDataScopeType.All,
-                IsBuiltin = LeanBuiltinStatus.Yes
+                RoleStatus = 1,
+                DataScope = 0,
+                IsBuiltin = 1
             },
             new()
             {
@@ -44,9 +44,9 @@ public class LeanRoleSeed
                 RoleName = "普通用户",
                 RoleDescription = "普通用户，拥有基本权限",
                 OrderNum = 2,
-                RoleStatus = LeanRoleStatus.Normal,
-                DataScope = LeanDataScopeType.Self,
-                IsBuiltin = LeanBuiltinStatus.Yes
+                RoleStatus = 1,
+                DataScope = 2,
+                IsBuiltin = 1
             }
         };
 

@@ -40,21 +40,21 @@ public interface ILeanWorkflowDefinitionService
   /// </summary>
   /// <param name="dto">工作流定义</param>
   /// <returns>是否成功</returns>
-  Task<bool> UpdateAsync(LeanWorkflowDefinitionDto dto);
+  Task<LeanApiResult> UpdateAsync(LeanWorkflowDefinitionDto dto);
 
   /// <summary>
   /// 删除工作流定义
   /// </summary>
   /// <param name="id">工作流定义ID</param>
   /// <returns>是否成功</returns>
-  Task<bool> DeleteAsync(long id);
+  Task<LeanApiResult> DeleteAsync(long id);
 
   /// <summary>
   /// 发布工作流定义
   /// </summary>
   /// <param name="id">工作流定义ID</param>
   /// <returns>是否成功</returns>
-  Task<bool> PublishAsync(long id);
+  Task<LeanApiResult> PublishAsync(long id);
 
   /// <summary>
   /// 停用工作流定义

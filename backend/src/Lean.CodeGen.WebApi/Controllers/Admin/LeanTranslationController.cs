@@ -4,14 +4,17 @@ using Lean.CodeGen.Common.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.IO;
 using Lean.CodeGen.Common.Enums;
+using Lean.CodeGen.Common.Attributes;
 using Microsoft.Extensions.Configuration;
+
 namespace Lean.CodeGen.WebApi.Controllers.Admin;
 
 /// <summary>
 /// 翻译控制器
 /// </summary>
-[Route("api/admin/translation")]
 [ApiController]
+[Route("api/[controller]")]
+[ApiExplorerSettings(GroupName = "admin")]
 public class LeanTranslationController : LeanBaseController
 {
   private readonly ILeanTranslationService _translationService;
@@ -32,7 +35,7 @@ public class LeanTranslationController : LeanBaseController
   /// 创建翻译
   /// </summary>
   [HttpPost]
-  public async Task<IActionResult> CreateAsync([FromBody] LeanCreateTranslationDto input)
+  public async Task<IActionResult> CreateAsync([FromBody] LeanTranslationCreateDto input)
   {
     var result = await _translationService.CreateAsync(input);
     return Success(result, LeanBusinessType.Create);
@@ -42,7 +45,7 @@ public class LeanTranslationController : LeanBaseController
   /// 更新翻译
   /// </summary>
   [HttpPut]
-  public async Task<IActionResult> UpdateAsync([FromBody] LeanUpdateTranslationDto input)
+  public async Task<IActionResult> UpdateAsync([FromBody] LeanTranslationUpdateDto input)
   {
     var result = await _translationService.UpdateAsync(input);
     return Success(result, LeanBusinessType.Update);
@@ -82,7 +85,7 @@ public class LeanTranslationController : LeanBaseController
   /// 分页查询翻译
   /// </summary>
   [HttpGet("page")]
-  public async Task<IActionResult> GetPageAsync([FromQuery] LeanQueryTranslationDto input)
+  public async Task<IActionResult> GetPageAsync([FromQuery] LeanTranslationQueryDto input)
   {
     var result = await _translationService.GetPageAsync(input);
     return Success(result, LeanBusinessType.Query);
@@ -92,7 +95,7 @@ public class LeanTranslationController : LeanBaseController
   /// 修改翻译状态
   /// </summary>
   [HttpPut("status")]
-  public async Task<IActionResult> SetStatusAsync([FromBody] LeanChangeTranslationStatusDto input)
+  public async Task<IActionResult> SetStatusAsync([FromBody] LeanTranslationChangeStatusDto input)
   {
     var result = await _translationService.SetStatusAsync(input);
     return Success(result, LeanBusinessType.Update);
@@ -132,7 +135,7 @@ public class LeanTranslationController : LeanBaseController
   /// 导出翻译数据
   /// </summary>
   [HttpGet("export")]
-  public async Task<IActionResult> ExportAsync([FromQuery] LeanQueryTranslationDto input)
+  public async Task<IActionResult> ExportAsync([FromQuery] LeanTranslationQueryDto input)
   {
     var bytes = await _translationService.ExportAsync(input);
     return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "translations.xlsx");
@@ -142,7 +145,7 @@ public class LeanTranslationController : LeanBaseController
   /// 导出转置的翻译数据（按翻译键分组）
   /// </summary>
   [HttpGet("export/transpose")]
-  public async Task<IActionResult> ExportTransposeAsync([FromQuery] LeanQueryTranslationDto input)
+  public async Task<IActionResult> ExportTransposeAsync([FromQuery] LeanTranslationQueryDto input)
   {
     var bytes = await _translationService.ExportTransposeAsync(input);
     return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "translations-transpose.xlsx");
@@ -151,38 +154,26 @@ public class LeanTranslationController : LeanBaseController
   /// <summary>
   /// 导入翻译
   /// </summary>
+  /// <param name="file">Excel文件</param>
+  /// <returns>导入结果</returns>
   [HttpPost("import")]
-  public async Task<IActionResult> ImportAsync([FromForm] IFormFile file)
+  [LeanPermission("system:translation:import", "导入翻译")]
+  public async Task<IActionResult> ImportAsync([FromForm] LeanFileInfo file)
   {
-    using var ms = new MemoryStream();
-    await file.CopyToAsync(ms);
-    ms.Position = 0;
-    var fileInfo = new LeanFileInfo
-    {
-      Stream = ms,
-      FileName = file.FileName,
-      ContentType = file.ContentType
-    };
-    var result = await _translationService.ImportAsync(fileInfo);
+    var result = await _translationService.ImportAsync(file);
     return Success(result, LeanBusinessType.Import);
   }
 
   /// <summary>
   /// 导入转置的翻译数据（按翻译键分组）
   /// </summary>
+  /// <param name="file">Excel文件</param>
+  /// <returns>导入结果</returns>
   [HttpPost("import/transpose")]
-  public async Task<IActionResult> ImportTransposeAsync([FromForm] IFormFile file)
+  [LeanPermission("system:translation:import", "导入翻译")]
+  public async Task<IActionResult> ImportTransposeAsync([FromForm] LeanFileInfo file)
   {
-    using var ms = new MemoryStream();
-    await file.CopyToAsync(ms);
-    ms.Position = 0;
-    var fileInfo = new LeanFileInfo
-    {
-      Stream = ms,
-      FileName = file.FileName,
-      ContentType = file.ContentType
-    };
-    var result = await _translationService.ImportTransposeAsync(fileInfo);
+    var result = await _translationService.ImportTransposeAsync(file);
     return Success(result, LeanBusinessType.Import);
   }
 
@@ -210,7 +201,7 @@ public class LeanTranslationController : LeanBaseController
   /// 获取转置的翻译列表（分页）
   /// </summary>
   [HttpGet("page/transpose")]
-  public async Task<IActionResult> GetTransposePageAsync([FromQuery] LeanQueryTranslationDto input)
+  public async Task<IActionResult> GetTransposePageAsync([FromQuery] LeanTranslationQueryDto input)
   {
     var result = await _translationService.GetTransposePageAsync(input);
     return Success(result, LeanBusinessType.Query);

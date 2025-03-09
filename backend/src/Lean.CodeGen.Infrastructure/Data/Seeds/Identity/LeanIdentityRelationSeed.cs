@@ -185,7 +185,7 @@ public class LeanIdentityRelationSeed
       {
         UserId = adminUser.Id,
         DeptId = headDept.Id,
-        IsPrimary = LeanPrimaryStatus.Yes
+        IsPrimary = 1
       }.InitAuditFields();
 
       var exists = await _db.Queryable<LeanUserDept>()
@@ -204,7 +204,7 @@ public class LeanIdentityRelationSeed
       {
         UserId = testUser.Id,
         DeptId = devDept.Id,
-        IsPrimary = LeanPrimaryStatus.Yes
+        IsPrimary = 1
       }.InitAuditFields();
 
       var exists = await _db.Queryable<LeanUserDept>()

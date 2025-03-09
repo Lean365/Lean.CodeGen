@@ -31,9 +31,11 @@ public class LeanWorkflowTriggerDto
   public string? TriggerConfig { get; set; }
 
   /// <summary>
-  /// 触发器状态
+  /// 是否启用
+  /// 0-停用
+  /// 1-启用
   /// </summary>
-  public bool Status { get; set; }
+  public int Status { get; set; }
 
   /// <summary>
   /// 上次触发时间

@@ -39,28 +39,36 @@ public class LeanWorkflowDefinitionDto
 
   /// <summary>
   /// 是否为最新版本
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public bool IsLatest { get; set; }
+  public int IsLatest { get; set; }
 
   /// <summary>
   /// 是否已发布
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public bool IsPublished { get; set; }
+  public int IsPublished { get; set; }
 
   /// <summary>
   /// 工作流状态
   /// </summary>
-  public LeanWorkflowStatus WorkflowStatus { get; set; }
+  public int WorkflowStatus { get; set; }
 
   /// <summary>
   /// 是否启用
+  /// 0-停用
+  /// 1-启用
   /// </summary>
-  public bool Status { get; set; }
+  public int Status { get; set; }
 
   /// <summary>
   /// 是否删除已完成实例
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public bool DeleteCompletedInstances { get; set; }
+  public int DeleteCompletedInstances { get; set; }
 
   /// <summary>
   /// 排序号
@@ -69,8 +77,10 @@ public class LeanWorkflowDefinitionDto
 
   /// <summary>
   /// 是否内置
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public bool IsBuiltin { get; set; }
+  public int IsBuiltin { get; set; }
 
   /// <summary>
   /// 表单定义列表

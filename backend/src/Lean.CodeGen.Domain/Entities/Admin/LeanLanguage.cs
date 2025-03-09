@@ -6,7 +6,7 @@ namespace Lean.CodeGen.Domain.Entities.Admin;
 /// <summary>
 /// 语言实体
 /// </summary>
-[SugarTable("lean_admin_language", "语言表")]
+[SugarTable("lean_adm_language", "语言表")]
 [SugarIndex("uk_lang_code", nameof(LangCode), OrderByType.Asc, true)]
 public class LeanLanguage : LeanBaseEntity
 {
@@ -44,7 +44,7 @@ public class LeanLanguage : LeanBaseEntity
     /// 是否为默认语言：No-否，Yes-是
     /// </remarks>
     [SugarColumn(ColumnName = "is_default", ColumnDescription = "是否默认", IsNullable = false, DefaultValue = "0", ColumnDataType = "int")]
-    public LeanYesNo IsDefault { get; set; }
+    public int IsDefault { get; set; }
 
     /// <summary>
     /// 排序号
@@ -61,17 +61,17 @@ public class LeanLanguage : LeanBaseEntity
     /// <remarks>
     /// 语言状态：0-正常，1-停用
     /// </remarks>
-    [SugarColumn(ColumnName = "status", ColumnDescription = "状态", IsNullable = false, DefaultValue = "0", ColumnDataType = "int")]
-    public LeanStatus Status { get; set; }
+    [SugarColumn(ColumnName = "lang_status", ColumnDescription = "状态", IsNullable = false, DefaultValue = "0", ColumnDataType = "int")]
+    public int LangStatus { get; set; }
 
     /// <summary>
     /// 是否内置
     /// </summary>
     /// <remarks>
-    /// 是否为系统内置语言：No-否，Yes-是
+    /// 是否为系统内置语言：0-否，1-是
     /// </remarks>
     [SugarColumn(ColumnName = "is_builtin", ColumnDescription = "是否内置", IsNullable = false, DefaultValue = "0", ColumnDataType = "int")]
-    public LeanBuiltinStatus IsBuiltin { get; set; }
+    public int IsBuiltin { get; set; }
 
     /// <summary>
     /// 翻译列表

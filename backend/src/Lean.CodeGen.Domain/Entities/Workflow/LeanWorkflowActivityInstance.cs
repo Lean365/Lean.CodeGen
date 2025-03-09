@@ -6,7 +6,7 @@ namespace Lean.CodeGen.Domain.Entities.Workflow;
 /// <summary>
 /// 工作流活动实例实体
 /// </summary>
-[SugarTable("lean_workflow_activity_instance", "工作流活动实例表")]
+[SugarTable("lean_wk_activity_instance", "工作流活动实例表")]
 [SugarIndex("idx_workflow_instance", nameof(WorkflowInstanceId), OrderByType.Asc)]
 public class LeanWorkflowActivityInstance : LeanBaseEntity
 {
@@ -44,7 +44,7 @@ public class LeanWorkflowActivityInstance : LeanBaseEntity
   /// 活动状态
   /// </summary>
   [SugarColumn(ColumnName = "activity_status", ColumnDescription = "活动状态", IsNullable = false)]
-  public LeanWorkflowActivityStatus ActivityStatus { get; set; }
+  public int ActivityStatus { get; set; }
 
   /// <summary>
   /// 开始时间

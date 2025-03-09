@@ -46,7 +46,7 @@ public class LeanDictDataService : LeanBaseService, ILeanDictDataService
   /// <summary>
   /// 创建字典数据
   /// </summary>
-  public async Task<LeanApiResult<long>> CreateAsync(LeanCreateDictDataDto input)
+  public async Task<LeanApiResult<long>> CreateAsync(LeanDictDataCreateDto input)
   {
     try
     {
@@ -58,14 +58,14 @@ public class LeanDictDataService : LeanBaseService, ILeanDictDataService
       }
 
       // 检查字典键是否存在
-      var exists = await _dictDataRepository.AnyAsync(x => x.TypeId == input.TypeId && x.DictValue == input.DictValue);
+      var exists = await _dictDataRepository.AnyAsync(x => x.TypeId == input.TypeId && x.DictDataValue == input.DictDataValue);
       if (exists)
       {
-        return LeanApiResult<long>.Error($"字典键值 {input.DictValue} 已存在");
+        return LeanApiResult<long>.Error($"字典键值 {input.DictDataValue} 已存在");
       }
 
       var entity = input.Adapt<LeanDictData>();
-      entity.Status = LeanStatus.Normal;
+      entity.DictDataStatus = 2;
       await _dictDataRepository.CreateAsync(entity);
 
       return LeanApiResult<long>.Ok(entity.Id);
@@ -79,7 +79,7 @@ public class LeanDictDataService : LeanBaseService, ILeanDictDataService
   /// <summary>
   /// 更新字典数据
   /// </summary>
-  public async Task<LeanApiResult> UpdateAsync(LeanUpdateDictDataDto input)
+  public async Task<LeanApiResult> UpdateAsync(LeanDictDataUpdateDto input)
   {
     try
     {
@@ -89,7 +89,7 @@ public class LeanDictDataService : LeanBaseService, ILeanDictDataService
         return LeanApiResult.Error($"字典数据 {input.Id} 不存在");
       }
 
-      if (entity.IsBuiltin == LeanBuiltinStatus.Yes)
+      if (entity.IsBuiltin == 1)
       {
         return LeanApiResult.Error("内置字典数据不允许修改");
       }
@@ -102,10 +102,10 @@ public class LeanDictDataService : LeanBaseService, ILeanDictDataService
       }
 
       // 检查字典键是否存在
-      var exists = await _dictDataRepository.AnyAsync(x => x.TypeId == input.TypeId && x.DictValue == input.DictValue && x.Id != input.Id);
+      var exists = await _dictDataRepository.AnyAsync(x => x.TypeId == input.TypeId && x.DictDataValue == input.DictDataValue && x.Id != input.Id);
       if (exists)
       {
-        return LeanApiResult.Error($"字典键值 {input.DictValue} 已存在");
+        return LeanApiResult.Error($"字典键值 {input.DictDataValue} 已存在");
       }
 
       input.Adapt(entity);
@@ -132,7 +132,7 @@ public class LeanDictDataService : LeanBaseService, ILeanDictDataService
         return LeanApiResult.Error($"字典数据 {id} 不存在");
       }
 
-      if (entity.IsBuiltin == LeanBuiltinStatus.Yes)
+      if (entity.IsBuiltin == 1)
       {
         return LeanApiResult.Error("内置字典数据不允许删除");
       }
@@ -155,7 +155,7 @@ public class LeanDictDataService : LeanBaseService, ILeanDictDataService
     try
     {
       var entities = await _dictDataRepository.GetListAsync(x => ids.Contains(x.Id));
-      if (entities.Any(x => x.IsBuiltin == LeanBuiltinStatus.Yes))
+      if (entities.Any(x => x.IsBuiltin == 1))
       {
         return LeanApiResult.Error("选中的字典数据中包含内置字典数据，不允许删除");
       }
@@ -195,7 +195,7 @@ public class LeanDictDataService : LeanBaseService, ILeanDictDataService
   /// <summary>
   /// 分页查询字典数据
   /// </summary>
-  public async Task<LeanApiResult<LeanPageResult<LeanDictDataDto>>> GetPageAsync(LeanQueryDictDataDto input)
+  public async Task<LeanApiResult<LeanPageResult<LeanDictDataDto>>> GetPageAsync(LeanDictDataQueryDto input)
   {
     try
     {
@@ -206,21 +206,21 @@ public class LeanDictDataService : LeanBaseService, ILeanDictDataService
         predicate = LeanExpressionExtensions.And(predicate, x => x.TypeId == input.TypeId.Value);
       }
 
-      if (!string.IsNullOrEmpty(input.DictLabel))
+      if (!string.IsNullOrEmpty(input.DictDataLabel))
       {
-        var label = CleanInput(input.DictLabel);
-        predicate = LeanExpressionExtensions.And(predicate, x => x.DictLabel.Contains(label));
+        var label = CleanInput(input.DictDataLabel);
+        predicate = LeanExpressionExtensions.And(predicate, x => x.DictDataLabel.Contains(label));
       }
 
-      if (!string.IsNullOrEmpty(input.DictValue))
+      if (!string.IsNullOrEmpty(input.DictDataValue))
       {
-        var value = CleanInput(input.DictValue);
-        predicate = LeanExpressionExtensions.And(predicate, x => x.DictValue.Contains(value));
+        var value = CleanInput(input.DictDataValue);
+        predicate = LeanExpressionExtensions.And(predicate, x => x.DictDataValue.Contains(value));
       }
 
-      if (input.Status.HasValue)
+      if (input.DictDataStatus.HasValue)
       {
-        predicate = LeanExpressionExtensions.And(predicate, x => x.Status == input.Status.Value);
+        predicate = LeanExpressionExtensions.And(predicate, x => x.DictDataStatus == (int)input.DictDataStatus.Value);
       }
 
       if (input.StartTime.HasValue)
@@ -255,7 +255,7 @@ public class LeanDictDataService : LeanBaseService, ILeanDictDataService
   /// <summary>
   /// 设置字典数据状态
   /// </summary>
-  public async Task<LeanApiResult> SetStatusAsync(LeanChangeDictDataStatusDto input)
+  public async Task<LeanApiResult> SetStatusAsync(LeanDictDataChangeStatusDto input)
   {
     try
     {
@@ -265,12 +265,12 @@ public class LeanDictDataService : LeanBaseService, ILeanDictDataService
         return LeanApiResult.Error($"字典数据 {input.Id} 不存在");
       }
 
-      if (entity.IsBuiltin == LeanBuiltinStatus.Yes)
+      if (entity.IsBuiltin == 1)
       {
         return LeanApiResult.Error("内置字典数据不允许修改状态");
       }
 
-      entity.Status = input.Status;
+      entity.DictDataStatus = (int)input.DictDataStatus;
       await _dictDataRepository.UpdateAsync(entity);
 
       return LeanApiResult.Ok();
@@ -288,13 +288,13 @@ public class LeanDictDataService : LeanBaseService, ILeanDictDataService
   {
     try
     {
-      var dictType = await _dictTypeRepository.FirstOrDefaultAsync(x => x.DictCode == typeCode);
+      var dictType = await _dictTypeRepository.FirstOrDefaultAsync(x => x.DictTypeCode == typeCode);
       if (dictType == null)
       {
         return LeanApiResult<List<LeanDictDataDto>>.Error($"字典类型编码 {typeCode} 不存在");
       }
 
-      var items = await _dictDataRepository.GetListAsync(x => x.TypeId == dictType.Id && x.Status == LeanStatus.Normal);
+      var items = await _dictDataRepository.GetListAsync(x => x.TypeId == dictType.Id && x.DictDataStatus == 2);
       var dtos = items.Select(t => t.Adapt<LeanDictDataDto>()).ToList();
 
       return LeanApiResult<List<LeanDictDataDto>>.Ok(dtos);
@@ -308,7 +308,7 @@ public class LeanDictDataService : LeanBaseService, ILeanDictDataService
   /// <summary>
   /// 导出字典数据
   /// </summary>
-  public async Task<byte[]> ExportAsync(LeanQueryDictDataDto input)
+  public async Task<byte[]> ExportAsync(LeanDictDataQueryDto input)
   {
     var predicate = BuildQueryPredicate(input);
     var items = await _dictDataRepository.GetListAsync(predicate);
@@ -346,20 +346,20 @@ public class LeanDictDataService : LeanBaseService, ILeanDictDataService
         }
 
         // 验证字典键值是否已存在
-        var existingData = await _dictDataRepository.FirstOrDefaultAsync(x => x.TypeId == dto.TypeId && x.DictValue == dto.DictValue);
+        var existingData = await _dictDataRepository.FirstOrDefaultAsync(x => x.TypeId == dto.TypeId && x.DictDataValue == dto.DictDataValue);
         if (existingData != null)
         {
           result.Errors.Add(new LeanExcelImportError
           {
             RowIndex = importDtos.Data.IndexOf(dto) + 2,
-            ErrorMessage = $"字典键值 {dto.DictValue} 已存在"
+            ErrorMessage = $"字典键值 {dto.DictDataValue} 已存在"
           });
           continue;
         }
 
         // 创建新的字典数据
         var entity = dto.Adapt<LeanDictData>();
-        entity.Status = LeanStatus.Normal;
+        entity.DictDataStatus = 2;
         await _dictDataRepository.CreateAsync(entity);
         result.Data.Add(dto);
       }
@@ -391,7 +391,7 @@ public class LeanDictDataService : LeanBaseService, ILeanDictDataService
   /// <summary>
   /// 构建查询条件
   /// </summary>
-  private Expression<Func<LeanDictData, bool>> BuildQueryPredicate(LeanQueryDictDataDto input)
+  private Expression<Func<LeanDictData, bool>> BuildQueryPredicate(LeanDictDataQueryDto input)
   {
     Expression<Func<LeanDictData, bool>> predicate = x => true;
 
@@ -400,21 +400,21 @@ public class LeanDictDataService : LeanBaseService, ILeanDictDataService
       predicate = LeanExpressionExtensions.And(predicate, x => x.TypeId == input.TypeId.Value);
     }
 
-    if (!string.IsNullOrEmpty(input.DictLabel))
+    if (!string.IsNullOrEmpty(input.DictDataLabel))
     {
-      var label = CleanInput(input.DictLabel);
-      predicate = LeanExpressionExtensions.And(predicate, x => x.DictLabel.Contains(label));
+      var label = CleanInput(input.DictDataLabel);
+      predicate = LeanExpressionExtensions.And(predicate, x => x.DictDataLabel.Contains(label));
     }
 
-    if (!string.IsNullOrEmpty(input.DictValue))
+    if (!string.IsNullOrEmpty(input.DictDataValue))
     {
-      var value = CleanInput(input.DictValue);
-      predicate = LeanExpressionExtensions.And(predicate, x => x.DictValue.Contains(value));
+      var value = CleanInput(input.DictDataValue);
+      predicate = LeanExpressionExtensions.And(predicate, x => x.DictDataValue.Contains(value));
     }
 
-    if (input.Status.HasValue)
+    if (input.DictDataStatus.HasValue)
     {
-      predicate = LeanExpressionExtensions.And(predicate, x => x.Status == input.Status.Value);
+      predicate = LeanExpressionExtensions.And(predicate, x => x.DictDataStatus == (int)input.DictDataStatus.Value);
     }
 
     if (input.StartTime.HasValue)

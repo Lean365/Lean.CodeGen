@@ -11,53 +11,53 @@ namespace Lean.CodeGen.Application.Services.Signalr;
 /// </summary>
 public interface ILeanOnlineMessageService
 {
-  /// <summary>
-  /// 获取在线消息列表（分页）
-  /// </summary>
-  Task<LeanPageResult<LeanOnlineMessageDto>> GetPageListAsync(LeanQueryOnlineMessageDto queryDto);
+    /// <summary>
+    /// 获取在线消息列表（分页）
+    /// </summary>
+    Task<LeanPageResult<LeanOnlineMessageDto>> GetPageListAsync(LeanOnlineMessageQueryDto queryDto);
 
-  /// <summary>
-  /// 获取在线消息详情
-  /// </summary>
-  Task<LeanOnlineMessageDto> GetAsync(long id);
+    /// <summary>
+    /// 获取在线消息详情
+    /// </summary>
+    Task<LeanOnlineMessageDto> GetAsync(long id);
 
-  /// <summary>
-  /// 导出在线消息
-  /// </summary>
-  Task<LeanFileResult> ExportAsync(LeanQueryOnlineMessageDto queryDto);
+    /// <summary>
+    /// 导出在线消息
+    /// </summary>
+    Task<LeanFileResult> ExportAsync(LeanOnlineMessageQueryDto queryDto);
 
-  /// <summary>
-  /// 发送消息
-  /// </summary>
-  Task<LeanOnlineMessageDto> SendMessageAsync(LeanSendMessageDto input);
+    /// <summary>
+    /// 发送消息
+    /// </summary>
+    Task<LeanOnlineMessageDto> SendMessageAsync(LeanOnlineMessageSendDto input);
 
-  /// <summary>
-  /// 获取用户未读消息列表
-  /// </summary>
-  Task<List<LeanOnlineMessageDto>> GetUnreadMessagesAsync(string userId);
+    /// <summary>
+    /// 获取用户未读消息列表
+    /// </summary>
+    Task<List<LeanOnlineMessageDto>> GetUnreadMessagesAsync(string userId);
 
-  /// <summary>
-  /// 获取用户消息历史
-  /// </summary>
-  Task<LeanPageResult<LeanOnlineMessageDto>> GetMessageHistoryAsync(string userId, int pageSize, int pageIndex);
+    /// <summary>
+    /// 获取用户消息历史
+    /// </summary>
+    Task<LeanPageResult<LeanOnlineMessageDto>> GetMessageHistoryAsync(string userId, int pageSize, int pageIndex);
 
-  /// <summary>
-  /// 标记消息已读
-  /// </summary>
-  Task MarkMessageAsReadAsync(long messageId);
+    /// <summary>
+    /// 标记消息已读
+    /// </summary>
+    Task MarkMessageAsReadAsync(long messageId);
 
-  /// <summary>
-  /// 批量标记消息已读
-  /// </summary>
-  Task MarkMessagesAsReadAsync(LeanMarkMessagesAsReadDto input);
+    /// <summary>
+    /// 批量标记消息已读
+    /// </summary>
+    Task MarkMessagesAsReadAsync(LeanOnlineMessageMarkAsReadDto input);
 
-  /// <summary>
-  /// 删除消息
-  /// </summary>
-  Task DeleteMessageAsync(long messageId);
+    /// <summary>
+    /// 删除消息
+    /// </summary>
+    Task DeleteMessageAsync(long messageId);
 
-  /// <summary>
-  /// 清理过期消息
-  /// </summary>
-  Task CleanExpiredMessagesAsync(int days = 30);
+    /// <summary>
+    /// 清理过期消息
+    /// </summary>
+    Task CleanExpiredMessagesAsync(int days = 30);
 }

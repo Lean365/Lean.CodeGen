@@ -58,24 +58,21 @@ public class LeanDeptDto : LeanBaseDto
   public int OrderNum { get; set; }
 
   /// <summary>
-  /// 部门状态
+  /// 部门状态（0-正常，1-停用）
   /// </summary>
-  public LeanDeptStatus DeptStatus { get; set; }
+  public int DeptStatus { get; set; }
 
   /// <summary>
-  /// 是否内置
+  /// 是否内置（0-否，1-是）
   /// </summary>
-  public LeanBuiltinStatus IsBuiltin { get; set; }
+  public int IsBuiltin { get; set; }
 
   /// <summary>
-  /// 数据权限范围
+  /// 数据权限范围（0-全部数据权限，1-自定义数据权限，2-本部门数据权限，3-本部门及以下数据权限，4-仅本人数据权限）
   /// </summary>
-  public LeanDataScopeType DataScope { get; set; }
+  public int DataScope { get; set; }
 
-  /// <summary>
-  /// 状态
-  /// </summary>
-  public LeanStatus Status { get; set; }
+
 
   /// <summary>
   /// 子部门列表
@@ -96,7 +93,7 @@ public class LeanDeptDto : LeanBaseDto
 /// <summary>
 /// 部门查询参数
 /// </summary>
-public class LeanQueryDeptDto : LeanPage
+public class LeanDeptQueryDto : LeanPage
 {
   /// <summary>
   /// ID
@@ -149,24 +146,24 @@ public class LeanQueryDeptDto : LeanPage
   public int? OrderNum { get; set; }
 
   /// <summary>
-  /// 部门状态
+  /// 部门状态（0-正常，1-停用）
   /// </summary>
-  public LeanDeptStatus? DeptStatus { get; set; }
+  public int? DeptStatus { get; set; }
 
   /// <summary>
-  /// 是否内置
+  /// 是否内置（0-否，1-是）
   /// </summary>
-  public LeanBuiltinStatus? IsBuiltin { get; set; }
+  public int? IsBuiltin { get; set; }
 
   /// <summary>
-  /// 数据权限范围
+  /// 数据权限范围（0-全部数据权限，1-自定义数据权限，2-本部门数据权限，3-本部门及以下数据权限，4-仅本人数据权限）
   /// </summary>
-  public LeanDataScopeType? DataScope { get; set; }
+  public int? DataScope { get; set; }
 
   /// <summary>
-  /// 状态
+  /// 状态（0-正常，1-停用）
   /// </summary>
-  public LeanStatus? Status { get; set; }
+
 
   /// <summary>
   /// 创建者ID
@@ -209,9 +206,9 @@ public class LeanQueryDeptDto : LeanPage
   public DateTime? UpdateEndTime { get; set; }
 
   /// <summary>
-  /// 审核状态
+  /// 审核状态（0-未审核，1-已审核，2-已驳回）
   /// </summary>
-  public LeanAuditStatus? AuditStatus { get; set; }
+  public int? AuditStatus { get; set; }
 
   /// <summary>
   /// 审核人员ID
@@ -297,7 +294,7 @@ public class LeanQueryDeptDto : LeanPage
 /// <summary>
 /// 部门创建参数
 /// </summary>
-public class LeanCreateDeptDto
+public class LeanDeptCreateDto
 {
   /// <summary>
   /// 父级ID
@@ -350,25 +347,25 @@ public class LeanCreateDeptDto
   public int OrderNum { get; set; }
 
   /// <summary>
-  /// 部门状态
+  /// 部门状态（0-正常，1-停用）
   /// </summary>
-  public LeanDeptStatus DeptStatus { get; set; } = LeanDeptStatus.Normal;
+  public int DeptStatus { get; set; } = 0;
 
   /// <summary>
-  /// 是否内置
+  /// 是否内置（0-否，1-是）
   /// </summary>
-  public LeanBuiltinStatus IsBuiltin { get; set; } = LeanBuiltinStatus.No;
+  public int IsBuiltin { get; set; } = 0;
 
   /// <summary>
-  /// 数据权限范围
+  /// 数据权限范围（0-全部数据权限，1-自定义数据权限，2-本部门数据权限，3-本部门及以下数据权限，4-仅本人数据权限）
   /// </summary>
-  public LeanDataScopeType DataScope { get; set; } = LeanDataScopeType.Self;
+  public int DataScope { get; set; } = 4;
 }
 
 /// <summary>
 /// 部门更新参数
 /// </summary>
-public class LeanUpdateDeptDto
+public class LeanDeptUpdateDto
 {
   /// <summary>
   /// 部门ID
@@ -420,20 +417,20 @@ public class LeanUpdateDeptDto
   public int OrderNum { get; set; }
 
   /// <summary>
-  /// 部门状态
+  /// 部门状态（0-正常，1-停用）
   /// </summary>
-  public LeanDeptStatus DeptStatus { get; set; }
+  public int DeptStatus { get; set; }
 
   /// <summary>
-  /// 数据权限范围
+  /// 数据权限范围（0-全部数据权限，1-自定义数据权限，2-本部门数据权限，3-本部门及以下数据权限，4-仅本人数据权限）
   /// </summary>
-  public LeanDataScopeType DataScope { get; set; }
+  public int DataScope { get; set; }
 }
 
 /// <summary>
 /// 部门状态变更参数
 /// </summary>
-public class LeanChangeDeptStatusDto
+public class LeanDeptChangeStatusDto
 {
   /// <summary>
   /// 部门ID
@@ -442,16 +439,16 @@ public class LeanChangeDeptStatusDto
   public long Id { get; set; }
 
   /// <summary>
-  /// 部门状态
+  /// 部门状态（0-正常，1-停用）
   /// </summary>
   [Required(ErrorMessage = "部门状态不能为空")]
-  public LeanDeptStatus DeptStatus { get; set; }
+  public int DeptStatus { get; set; }
 }
 
 /// <summary>
 /// 部门删除参数
 /// </summary>
-public class LeanDeleteDeptDto
+public class LeanDeptDeleteDto
 {
   /// <summary>
   /// 部门ID
@@ -461,9 +458,9 @@ public class LeanDeleteDeptDto
 }
 
 /// <summary>
-/// 部门导入模板
+/// 部门导入模板参数
 /// </summary>
-public class LeanImportTemplateDeptDto
+public class LeanDeptImportTemplateDto
 {
   /// <summary>
   /// 部门编码
@@ -518,9 +515,9 @@ public class LeanImportTemplateDeptDto
 }
 
 /// <summary>
-/// 部门导入错误信息
+/// 部门导入错误参数
 /// </summary>
-public class LeanImportDeptErrorDto : LeanImportError
+public class LeanDeptImportErrorDto : LeanImportError
 {
   /// <summary>
   /// 部门编码
@@ -533,14 +530,14 @@ public class LeanImportDeptErrorDto : LeanImportError
 }
 
 /// <summary>
-/// 部门导入结果
+/// 部门导入结果参数
 /// </summary>
-public class LeanImportDeptResultDto : LeanImportResult
+public class LeanDeptImportResultDto : LeanImportResult
 {
   /// <summary>
   /// 错误信息列表
   /// </summary>
-  public new List<LeanImportDeptErrorDto> Errors { get; set; } = new();
+  public new List<LeanDeptImportErrorDto> Errors { get; set; } = new();
 
   /// <summary>
   /// 错误信息
@@ -553,7 +550,7 @@ public class LeanImportDeptResultDto : LeanImportResult
   public override void AddError(string deptCode, string errorMessage)
   {
     base.AddError(deptCode, errorMessage);
-    Errors.Add(new LeanImportDeptErrorDto
+    Errors.Add(new LeanDeptImportErrorDto
     {
       RowIndex = TotalCount,
       DeptCode = deptCode,
@@ -563,9 +560,9 @@ public class LeanImportDeptResultDto : LeanImportResult
 }
 
 /// <summary>
-/// 部门导出参数
+/// 部门导出查询参数
 /// </summary>
-public class LeanExportDeptDto : LeanQueryDeptDto
+public class LeanDeptExportQueryDto : LeanDeptQueryDto
 {
   /// <summary>
   /// 导出字段列表
@@ -583,8 +580,10 @@ public class LeanExportDeptDto : LeanQueryDeptDto
 
   /// <summary>
   /// 是否导出全部
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public bool IsExportAll { get; set; }
+  public int IsExportAll { get; set; }
 
   /// <summary>
   /// 选中的ID列表，当IsExportAll为false时使用
@@ -593,7 +592,7 @@ public class LeanExportDeptDto : LeanQueryDeptDto
 }
 
 /// <summary>
-/// 部门树形结构
+/// 部门树形结构参数
 /// </summary>
 public class LeanDeptTreeDto : LeanDeptDto
 {
@@ -604,7 +603,7 @@ public class LeanDeptTreeDto : LeanDeptDto
 }
 
 /// <summary>
-/// 部门导入DTO
+/// 部门导入参数
 /// </summary>
 public class LeanDeptImportDto
 {
@@ -657,9 +656,9 @@ public class LeanDeptImportDto
 }
 
 /// <summary>
-/// 设置角色菜单DTO
+/// 角色菜单设置参数
 /// </summary>
-public class LeanSetRoleMenusDto
+public class LeanRoleMenuSetDto
 {
   /// <summary>
   /// 角色ID
@@ -673,73 +672,33 @@ public class LeanSetRoleMenusDto
 }
 
 /// <summary>
-/// 部门导出DTO
+/// 部门导出参数
 /// </summary>
-public class LeanDeptExportDto
+public class LeanDeptExportDto : LeanDeptQueryDto
 {
   /// <summary>
-  /// 部门编码
+  /// 导出字段列表
   /// </summary>
-  [LeanExcelColumn("部门编码", DataType = LeanExcelDataType.String)]
-  public string DeptCode { get; set; } = default!;
+  public List<string> ExportFields { get; set; } = new();
 
   /// <summary>
-  /// 部门名称
+  /// 文件格式
   /// </summary>
-  [LeanExcelColumn("部门名称", DataType = LeanExcelDataType.String)]
-  public string DeptName { get; set; } = default!;
+  /// <remarks>
+  /// 支持的格式：xlsx、csv
+  /// </remarks>
+  [Required(ErrorMessage = "文件格式不能为空")]
+  public string FileFormat { get; set; } = "xlsx";
 
   /// <summary>
-  /// 父级部门ID
+  /// 是否导出全部
+  /// 0-否
+  /// 1-是
   /// </summary>
-  [LeanExcelColumn("父级部门ID", DataType = LeanExcelDataType.Long)]
-  public long? ParentId { get; set; }
+  public int IsExportAll { get; set; }
 
   /// <summary>
-  /// 部门描述
+  /// 选中的ID列表，当IsExportAll为false时使用
   /// </summary>
-  [LeanExcelColumn("部门描述", DataType = LeanExcelDataType.String)]
-  public string? DeptDescription { get; set; }
-
-  /// <summary>
-  /// 负责人
-  /// </summary>
-  [LeanExcelColumn("负责人", DataType = LeanExcelDataType.String)]
-  public string? Leader { get; set; }
-
-  /// <summary>
-  /// 联系电话
-  /// </summary>
-  [LeanExcelColumn("联系电话", DataType = LeanExcelDataType.String)]
-  public string? Phone { get; set; }
-
-  /// <summary>
-  /// 邮箱
-  /// </summary>
-  [LeanExcelColumn("邮箱", DataType = LeanExcelDataType.String)]
-  public string? Email { get; set; }
-
-  /// <summary>
-  /// 排序号
-  /// </summary>
-  [LeanExcelColumn("排序号", DataType = LeanExcelDataType.Int)]
-  public int OrderNum { get; set; }
-
-  /// <summary>
-  /// 部门状态
-  /// </summary>
-  [LeanExcelColumn("部门状态", DataType = LeanExcelDataType.Int)]
-  public LeanDeptStatus DeptStatus { get; set; }
-
-  /// <summary>
-  /// 是否内置
-  /// </summary>
-  [LeanExcelColumn("是否内置", DataType = LeanExcelDataType.Int)]
-  public LeanBuiltinStatus IsBuiltin { get; set; }
-
-  /// <summary>
-  /// 创建时间
-  /// </summary>
-  [LeanExcelColumn("创建时间", DataType = LeanExcelDataType.DateTime, Format = "yyyy-MM-dd HH:mm:ss")]
-  public DateTime CreateTime { get; set; }
+  public List<long> SelectedIds { get; set; } = new();
 }

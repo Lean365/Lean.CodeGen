@@ -1,4 +1,5 @@
 using Lean.CodeGen.Domain.Entities;
+using SqlSugar;
 
 namespace Lean.CodeGen.Infrastructure.Data.Seeds.Extensions;
 
@@ -38,5 +39,15 @@ public static class LeanSeedDataExtensions
     target.CreateUserName = source.CreateUserName;
     target.TenantId = source.TenantId; // 复制租户ID
     return target;
+  }
+
+  /// <summary>
+  /// 初始化种子数据
+  /// </summary>
+  public static async Task SeedDataAsync<T>(this T entity, ISqlSugarClient db)
+      where T : LeanBaseEntity, new()
+  {
+    entity.InitAuditFields();
+    await db.Insertable(entity).ExecuteCommandAsync();
   }
 }

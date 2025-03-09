@@ -5,7 +5,7 @@ namespace Lean.CodeGen.Domain.Entities.Workflow;
 /// <summary>
 /// 工作流书签实体
 /// </summary>
-[SugarTable("lean_workflow_bookmark", "工作流书签表")]
+[SugarTable("lean_wk_bookmark", "工作流书签表")]
 [SugarIndex("idx_instance", nameof(InstanceId), OrderByType.Asc)]
 public class LeanWorkflowBookmark : LeanBaseEntity
 {

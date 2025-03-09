@@ -34,391 +34,391 @@ public class LeanDictTypeSeed
             // 系统状态
             new()
             {
-                DictCode = "sys_status",
-                DictName = "系统状态",
+                DictTypeCode = "sys_status",
+                DictTypeName = "系统状态",
                 OrderNum = 1,
-                Status = LeanStatus.Enable,
-                IsBuiltin = LeanBuiltinStatus.Yes,
+                DictTypeStatus=1,
+                IsBuiltin = 1,
                 Remark = "系统通用状态"
             },
             // 用户性别
             new()
             {
-                DictCode = "sys_gender",
-                DictName = "用户性别",
+                DictTypeCode = "sys_gender",
+                DictTypeName = "用户性别",
                 OrderNum = 2,
-                Status = LeanStatus.Enable,
-                IsBuiltin = LeanBuiltinStatus.Yes,
+                DictTypeStatus=1,
+                IsBuiltin = 1,
                 Remark = "用户性别列表"
             },
             // 用户类型
             new()
             {
-                DictCode = "sys_user_type",
-                DictName = "用户类型",
+                DictTypeCode = "sys_user_type",
+                DictTypeName = "用户类型",
                 OrderNum = 3,
-                Status = LeanStatus.Enable,
-                IsBuiltin = LeanBuiltinStatus.Yes,
+                DictTypeStatus=1,
+                IsBuiltin = 1,
                 Remark = "用户类型列表"
             },
             // 用户状态
             new()
             {
-                DictCode = "sys_user_status",
-                DictName = "用户状态",
+                DictTypeCode = "sys_user_status",
+                DictTypeName = "用户状态",
                 OrderNum = 4,
-                Status = LeanStatus.Enable,
-                IsBuiltin = LeanBuiltinStatus.Yes,
+                DictTypeStatus=1,
+                IsBuiltin = 1,
                 Remark = "用户状态列表"
             },
             // 角色状态
             new()
             {
-                DictCode = "sys_role_status",
-                DictName = "角色状态",
+                DictTypeCode = "sys_role_status",
+                DictTypeName = "角色状态",
                 OrderNum = 5,
-                Status = LeanStatus.Enable,
-                IsBuiltin = LeanBuiltinStatus.Yes,
+                DictTypeStatus=1,
+                IsBuiltin = 1,
                 Remark = "角色状态列表"
             },
             // 部门状态
             new()
             {
-                DictCode = "sys_dept_status",
-                DictName = "部门状态",
+                DictTypeCode = "sys_dept_status",
+                DictTypeName = "部门状态",
                 OrderNum = 6,
-                Status = LeanStatus.Enable,
-                IsBuiltin = LeanBuiltinStatus.Yes,
+                DictTypeStatus=1,
+                IsBuiltin = 1,
                 Remark = "部门状态列表"
             },
             // 菜单状态
             new()
             {
-                DictCode = "sys_menu_status",
-                DictName = "菜单状态",
+                DictTypeCode = "sys_menu_status",
+                DictTypeName = "菜单状态",
                 OrderNum = 7,
-                Status = LeanStatus.Enable,
-                IsBuiltin = LeanBuiltinStatus.Yes,
+                DictTypeStatus=1,
+                IsBuiltin = 1,
                 Remark = "菜单状态列表"
             },
             // 菜单类型
             new()
             {
-                DictCode = "sys_menu_type",
-                DictName = "菜单类型",
+                DictTypeCode = "sys_menu_type",
+                DictTypeName = "菜单类型",
                 OrderNum = 8,
-                Status = LeanStatus.Enable,
-                IsBuiltin = LeanBuiltinStatus.Yes,
+                DictTypeStatus=1,
+                IsBuiltin = 1,
                 Remark = "菜单类型列表"
             },
             // 操作类型
             new()
             {
-                DictCode = "sys_oper_type",
-                DictName = "操作类型",
+                DictTypeCode = "sys_oper_type",
+                DictTypeName = "操作类型",
                 OrderNum = 9,
-                Status = LeanStatus.Enable,
-                IsBuiltin = LeanBuiltinStatus.Yes,
+                DictTypeStatus=1,
+                IsBuiltin = 1,
                 Remark = "操作类型列表"
             },
             // 操作状态
             new()
             {
-                DictCode = "sys_oper_status",
-                DictName = "操作状态",
+                DictTypeCode = "sys_oper_status",
+                DictTypeName = "操作状态",
                 OrderNum = 10,
-                Status = LeanStatus.Enable,
-                IsBuiltin = LeanBuiltinStatus.Yes,
+                DictTypeStatus=1,
+                IsBuiltin = 1,
                 Remark = "操作状态列表"
             },
             // 登录类型
             new()
             {
-                DictCode = "sys_login_type",
-                DictName = "登录类型",
+                DictTypeCode = "sys_login_type",
+                DictTypeName = "登录类型",
                 OrderNum = 11,
-                Status = LeanStatus.Enable,
-                IsBuiltin = LeanBuiltinStatus.Yes,
+                DictTypeStatus=1,
+                IsBuiltin = 1,
                 Remark = "登录类型列表"
             },
             // 登录状态
             new()
             {
-                DictCode = "sys_login_status",
-                DictName = "登录状态",
+                DictTypeCode = "sys_login_status",
+                DictTypeName = "登录状态",
                 OrderNum = 12,
-                Status = LeanStatus.Enable,
-                IsBuiltin = LeanBuiltinStatus.Yes,
+                DictTypeStatus=1,
+                IsBuiltin = 1,
                 Remark = "登录状态列表"
             },
             // 日志级别
             new()
             {
-                DictCode = "sys_log_level",
-                DictName = "日志级别",
+                DictTypeCode = "sys_log_level",
+                DictTypeName = "日志级别",
                 OrderNum = 13,
-                Status = LeanStatus.Enable,
-                IsBuiltin = LeanBuiltinStatus.Yes,
+                DictTypeStatus=1,
+                IsBuiltin = 1,
                 Remark = "日志级别列表"
             },
             // 设备状态
             new()
             {
-                DictCode = "sys_device_status",
-                DictName = "设备状态",
+                DictTypeCode = "sys_device_status",
+                DictTypeName = "设备状态",
                 OrderNum = 14,
-                Status = LeanStatus.Enable,
-                IsBuiltin = LeanBuiltinStatus.Yes,
+                DictTypeStatus=1,
+                IsBuiltin = 1,
                 Remark = "设备状态列表"
             },
             // 设备类型
             new()
             {
-                DictCode = "sys_device_type",
-                DictName = "设备类型",
+                DictTypeCode = "sys_device_type",
+                DictTypeName = "设备类型",
                 OrderNum = 15,
-                Status = LeanStatus.Enable,
-                IsBuiltin = LeanBuiltinStatus.Yes,
+                DictTypeStatus=1,
+                IsBuiltin = 1,
                 Remark = "设备类型列表"
             },
             // 字典类型分类
             new()
             {
-                DictCode = "sys_dict_type_category",
-                DictName = "字典类型分类",
+                DictTypeCode = "sys_dict_type_category",
+                DictTypeName = "字典类型分类",
                 OrderNum = 16,
-                Status = LeanStatus.Enable,
-                IsBuiltin = LeanBuiltinStatus.Yes,
+                DictTypeStatus=1,
+                IsBuiltin = 1,
                 Remark = "字典类型分类列表"
             },
             // 差异类型
             new()
             {
-                DictCode = "sys_diff_type",
-                DictName = "差异类型",
+                DictTypeCode = "sys_diff_type",
+                DictTypeName = "差异类型",
                 OrderNum = 17,
-                Status = LeanStatus.Enable,
-                IsBuiltin = LeanBuiltinStatus.Yes,
+                DictTypeStatus=1,
+                IsBuiltin = 1,
                 Remark = "差异类型列表"
             },
             // 处理状态
             new()
             {
-                DictCode = "sys_handle_status",
-                DictName = "处理状态",
+                DictTypeCode = "sys_handle_status",
+                DictTypeName = "处理状态",
                 OrderNum = 18,
-                Status = LeanStatus.Enable,
-                IsBuiltin = LeanBuiltinStatus.Yes,
+                DictTypeStatus=1,
+                IsBuiltin = 1,
                 Remark = "处理状态列表"
             },
             // 业务类型
             new()
             {
-                DictCode = "sys_business_type",
-                DictName = "业务类型",
+                DictTypeCode = "sys_business_type",
+                DictTypeName = "业务类型",
                 OrderNum = 19,
-                Status = LeanStatus.Enable,
-                IsBuiltin = LeanBuiltinStatus.Yes,
+                DictTypeStatus=1,
+                IsBuiltin = 1,
                 Remark = "业务类型列表"
             },
             // 配置类型
             new()
             {
-                DictCode = "sys_config_type",
-                DictName = "配置类型",
+                DictTypeCode = "sys_config_type",
+                DictTypeName = "配置类型",
                 OrderNum = 20,
-                Status = LeanStatus.Enable,
-                IsBuiltin = LeanBuiltinStatus.Yes,
+                DictTypeStatus=1,
+                IsBuiltin = 1,
                 Remark = "配置类型列表"
             },
             // 数据权限类型
             new()
             {
-                DictCode = "sys_data_scope_type",
-                DictName = "数据权限类型",
+                DictTypeCode = "sys_data_scope_type",
+                DictTypeName = "数据权限类型",
                 OrderNum = 21,
-                Status = LeanStatus.Enable,
-                IsBuiltin = LeanBuiltinStatus.Yes,
+                DictTypeStatus=1,
+                IsBuiltin = 1,
                 Remark = "数据权限类型列表"
             },
             // API状态
             new()
             {
-                DictCode = "sys_api_status",
-                DictName = "API状态",
+                DictTypeCode = "sys_api_status",
+                DictTypeName = "API状态",
                 OrderNum = 22,
-                Status = LeanStatus.Enable,
-                IsBuiltin = LeanBuiltinStatus.Yes,
+                DictTypeStatus=1,
+                IsBuiltin = 1,
                 Remark = "API状态列表"
             },
             // 审计操作类型
             new()
             {
-                DictCode = "sys_audit_oper_type",
-                DictName = "审计操作类型",
+                DictTypeCode = "sys_audit_oper_type",
+                DictTypeName = "审计操作类型",
                 OrderNum = 23,
-                Status = LeanStatus.Enable,
-                IsBuiltin = LeanBuiltinStatus.Yes,
+                DictTypeStatus=1,
+                IsBuiltin = 1,
                 Remark = "审计操作类型列表"
             },
             // 审计状态
             new()
             {
-                DictCode = "sys_audit_status",
-                DictName = "审计状态",
+                DictTypeCode = "sys_audit_status",
+                DictTypeName = "审计状态",
                 OrderNum = 24,
-                Status = LeanStatus.Enable,
-                IsBuiltin = LeanBuiltinStatus.Yes,
+                DictTypeStatus=1,
+                IsBuiltin = 1,
                 Remark = "审计状态列表"
             },
             // 内置状态
             new()
             {
-                DictCode = "sys_builtin_status",
-                DictName = "内置状态",
+                DictTypeCode = "sys_builtin_status",
+                DictTypeName = "内置状态",
                 OrderNum = 25,
-                Status = LeanStatus.Enable,
-                IsBuiltin = LeanBuiltinStatus.Yes,
+                DictTypeStatus=1,
+                IsBuiltin = 1,
                 Remark = "内置状态列表"
             },
             // 工作流任务结果
             new()
             {
-                DictCode = "sys_workflow_task_result",
-                DictName = "工作流任务结果",
+                DictTypeCode = "sys_workflow_task_result",
+                DictTypeName = "工作流任务结果",
                 OrderNum = 26,
-                Status = LeanStatus.Enable,
-                IsBuiltin = LeanBuiltinStatus.Yes,
+                DictTypeStatus=1,
+                IsBuiltin = 1,
                 Remark = "工作流任务结果列表"
             },
             // 工作流任务状态
             new()
             {
-                DictCode = "sys_workflow_task_status",
-                DictName = "工作流任务状态",
+                DictTypeCode = "sys_workflow_task_status",
+                DictTypeName = "工作流任务状态",
                 OrderNum = 27,
-                Status = LeanStatus.Enable,
-                IsBuiltin = LeanBuiltinStatus.Yes,
+                DictTypeStatus=1,
+                IsBuiltin = 1,
                 Remark = "工作流任务状态列表"
             },
             // 工作流任务类型
             new()
             {
-                DictCode = "sys_workflow_task_type",
-                DictName = "工作流任务类型",
+                DictTypeCode = "sys_workflow_task_type",
+                DictTypeName = "工作流任务类型",
                 OrderNum = 28,
-                Status = LeanStatus.Enable,
-                IsBuiltin = LeanBuiltinStatus.Yes,
+                DictTypeStatus=1,
+                IsBuiltin = 1,
                 Remark = "工作流任务类型列表"
             },
             // 工作流活动状态
             new()
             {
-                DictCode = "sys_workflow_activity_status",
-                DictName = "工作流活动状态",
+                DictTypeCode = "sys_workflow_activity_status",
+                DictTypeName = "工作流活动状态",
                 OrderNum = 29,
-                Status = LeanStatus.Enable,
-                IsBuiltin = LeanBuiltinStatus.Yes,
+                DictTypeStatus=1,
+                IsBuiltin = 1,
                 Remark = "工作流活动状态列表"
             },
             // 工作流实例状态
             new()
             {
-                DictCode = "sys_workflow_instance_status",
-                DictName = "工作流实例状态",
+                DictTypeCode = "sys_workflow_instance_status",
+                DictTypeName = "工作流实例状态",
                 OrderNum = 30,
-                Status = LeanStatus.Enable,
-                IsBuiltin = LeanBuiltinStatus.Yes,
+                DictTypeStatus=1,
+                IsBuiltin = 1,
                 Remark = "工作流实例状态列表"
             },
             // 工作流节点类型
             new()
             {
-                DictCode = "sys_workflow_node_type",
-                DictName = "工作流节点类型",
+                DictTypeCode = "sys_workflow_node_type",
+                DictTypeName = "工作流节点类型",
                 OrderNum = 31,
-                Status = LeanStatus.Enable,
-                IsBuiltin = LeanBuiltinStatus.Yes,
+                DictTypeStatus=1,
+                IsBuiltin = 1,
                 Remark = "工作流节点类型列表"
             },
             // 工作流操作类型
             new()
             {
-                DictCode = "sys_workflow_operation_type",
-                DictName = "工作流操作类型",
+                DictTypeCode = "sys_workflow_operation_type",
+                DictTypeName = "工作流操作类型",
                 OrderNum = 32,
-                Status = LeanStatus.Enable,
-                IsBuiltin = LeanBuiltinStatus.Yes,
+                DictTypeStatus=1,
+                IsBuiltin = 1,
                 Remark = "工作流操作类型列表"
             },
             // 工作流状态
             new()
             {
-                DictCode = "sys_workflow_status",
-                DictName = "工作流状态",
+                DictTypeCode = "sys_workflow_status",
+                DictTypeName = "工作流状态",
                 OrderNum = 33,
-                Status = LeanStatus.Enable,
-                IsBuiltin = LeanBuiltinStatus.Yes,
+                DictTypeStatus=1,
+                IsBuiltin = 1,
                 Remark = "工作流状态列表"
             },
             // 主体类型
             new()
             {
-                DictCode = "sys_subject_type",
-                DictName = "主体类型",
+                DictTypeCode = "sys_subject_type",
+                DictTypeName = "主体类型",
                 OrderNum = 34,
-                Status = LeanStatus.Enable,
-                IsBuiltin = LeanBuiltinStatus.Yes,
+                DictTypeStatus=1,
+                IsBuiltin = 1,
                 Remark = "主体类型列表"
             },
             // 权限类型
             new()
             {
-                DictCode = "sys_permission_type",
-                DictName = "权限类型",
+                DictTypeCode = "sys_permission_type",
+                DictTypeName = "权限类型",
                 OrderNum = 35,
-                Status = LeanStatus.Enable,
-                IsBuiltin = LeanBuiltinStatus.Yes,
+                DictTypeStatus=1,
+                IsBuiltin = 1,
                 Remark = "权限类型列表"
             },
             // 岗位状态
             new()
             {
-                DictCode = "sys_post_status",
-                DictName = "岗位状态",
+                DictTypeCode = "sys_post_status",
+                DictTypeName = "岗位状态",
                 OrderNum = 36,
-                Status = LeanStatus.Enable,
-                IsBuiltin = LeanBuiltinStatus.Yes,
+                DictTypeStatus=1,
+                IsBuiltin = 1,
                 Remark = "岗位状态列表"
             },
             // 主要状态
             new()
             {
-                DictCode = "sys_primary_status",
-                DictName = "主要状态",
+                DictTypeCode = "sys_primary_status",
+                DictTypeName = "主要状态",
                 OrderNum = 37,
-                Status = LeanStatus.Enable,
-                IsBuiltin = LeanBuiltinStatus.Yes,
+                DictTypeStatus=1,
+                IsBuiltin = 1,
                 Remark = "主要状态列表"
             },
             // 资源类型
             new()
             {
-                DictCode = "sys_resource_type",
-                DictName = "资源类型",
+                DictTypeCode = "sys_resource_type",
+                DictTypeName = "资源类型",
                 OrderNum = 38,
-                Status = LeanStatus.Enable,
-                IsBuiltin = LeanBuiltinStatus.Yes,
+                DictTypeStatus=1,
+                IsBuiltin = 1,
                 Remark = "资源类型列表"
             },
             // 系统是否
             new()
             {
-                DictCode = "sys_yes_no",
-                DictName = "系统是否",
+                DictTypeCode = "sys_yes_no",
+                DictTypeName = "系统是否",
                 OrderNum = 39,
-                Status = LeanStatus.Enable,
-                IsBuiltin = LeanBuiltinStatus.Yes,
+                DictTypeStatus=1,
+                IsBuiltin = 1,
                 Remark = "系统是否列表"
             }
         };
@@ -426,7 +426,7 @@ public class LeanDictTypeSeed
     foreach (var dictType in defaultDictTypes)
     {
       var exists = await _db.Queryable<LeanDictType>()
-          .FirstAsync(x => x.DictCode == dictType.DictCode);
+          .FirstAsync(x => x.DictTypeCode == dictType.DictTypeCode);
 
       if (exists != null)
       {
@@ -434,14 +434,14 @@ public class LeanDictTypeSeed
         // 复制原有审计信息并初始化更新信息
         dictType.CopyAuditFields(exists).InitAuditFields(true);
         await _db.Updateable(dictType).ExecuteCommandAsync();
-        _logger.Info($"更新字典类型: {dictType.DictName}");
+        _logger.Info($"更新字典类型: {dictType.DictTypeName}");
       }
       else
       {
         // 初始化审计字段
         dictType.InitAuditFields();
         await _db.Insertable(dictType).ExecuteCommandAsync();
-        _logger.Info($"新增字典类型: {dictType.DictName}");
+        _logger.Info($"新增字典类型: {dictType.DictTypeName}");
       }
     }
 

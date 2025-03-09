@@ -3,6 +3,7 @@ using NLog;
 using Lean.CodeGen.Infrastructure.Data.Context;
 using Lean.CodeGen.Infrastructure.Data.Seeds.Admin;
 using Lean.CodeGen.Infrastructure.Data.Seeds.Identity;
+using Lean.CodeGen.Infrastructure.Data.Seeds.Routine;
 using ILogger = NLog.ILogger;
 using Microsoft.Extensions.Options;
 using Lean.CodeGen.Common.Options;
@@ -79,6 +80,24 @@ public class LeanDbInitializer
 
       // 11. 初始化配置数据
       await new LeanConfigSeed(db).InitializeAsync();
+
+      // 12. 初始化文件数据
+      await new LeanFileSeed(db).InitializeAsync();
+
+      // 13. 初始化邮件模板数据
+      await new LeanMailTmplSeed(db).InitializeAsync();
+
+      // 14. 初始化邮件数据
+      await new LeanMailSeed(db).InitializeAsync();
+
+      // 15. 初始化通知数据
+      await new LeanNotificationSeed(db).InitializeAsync();
+
+      // 16. 初始化任务数据
+      await new LeanQuartzTaskSeed(db).InitializeAsync();
+
+      // 17. 初始化任务日志数据
+      await new LeanTaskLogSeed(db).InitializeAsync();
 
       _logger.Info("种子数据初始化完成");
     }

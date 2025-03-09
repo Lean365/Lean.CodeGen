@@ -31,9 +31,11 @@ public class LeanWorkflowCorrelationDto
   public string? CorrelationValue { get; set; }
 
   /// <summary>
-  /// 关联状态
+  /// 是否启用
+  /// 0-停用
+  /// 1-启用
   /// </summary>
-  public bool Status { get; set; }
+  public int Status { get; set; }
 
   /// <summary>
   /// 关联数据JSON

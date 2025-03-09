@@ -32,8 +32,10 @@ public class LeanWorkflowInputDto
 
   /// <summary>
   /// 是否必填
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public bool IsRequired { get; set; }
+  public int IsRequired { get; set; }
 
   /// <summary>
   /// 验证规则JSON

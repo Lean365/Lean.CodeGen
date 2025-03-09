@@ -51,7 +51,7 @@ public class LeanOnlineMessageService : LeanBaseService, ILeanOnlineMessageServi
   /// </summary>
   /// <param name="input">发送消息参数</param>
   /// <returns>发送的消息</returns>
-  public async Task<LeanOnlineMessageDto> SendMessageAsync(LeanSendMessageDto input)
+  public async Task<LeanOnlineMessageDto> SendMessageAsync(LeanOnlineMessageSendDto input)
   {
     var message = new LeanOnlineMessage
     {
@@ -61,7 +61,7 @@ public class LeanOnlineMessageService : LeanBaseService, ILeanOnlineMessageServi
       MessageType = input.MessageType,
       SendTime = DateTime.Now,
       CreateTime = DateTime.Now,
-      IsRead = false
+      IsRead = 0
     };
 
     var messageId = await _messageRepository.CreateAsync(message);
@@ -78,7 +78,7 @@ public class LeanOnlineMessageService : LeanBaseService, ILeanOnlineMessageServi
   {
     var messages = await _messageRepository.GetListAsync(m =>
         m.ReceiverId == userId &&
-        !m.IsRead);
+        m.IsRead == 0);
     return messages.Adapt<List<LeanOnlineMessageDto>>();
   }
 
@@ -115,9 +115,9 @@ public class LeanOnlineMessageService : LeanBaseService, ILeanOnlineMessageServi
   public async Task MarkMessageAsReadAsync(long messageId)
   {
     var message = await _messageRepository.GetByIdAsync(messageId);
-    if (message != null && !message.IsRead)
+    if (message != null && message.IsRead == 0)
     {
-      message.IsRead = true;
+      message.IsRead = 1;
       message.UpdateTime = DateTime.Now;
       await _messageRepository.UpdateAsync(message);
     }
@@ -127,16 +127,16 @@ public class LeanOnlineMessageService : LeanBaseService, ILeanOnlineMessageServi
   /// 批量标记消息为已读
   /// </summary>
   /// <param name="input">批量标记参数</param>
-  public async Task MarkMessagesAsReadAsync(LeanMarkMessagesAsReadDto input)
+  public async Task MarkMessagesAsReadAsync(LeanOnlineMessageMarkAsReadDto input)
   {
     var messages = await _messageRepository.GetListAsync(m =>
         m.ReceiverId == input.UserId &&
         m.SenderId == input.SenderId &&
-        !m.IsRead);
+        m.IsRead == 0);
 
     foreach (var message in messages)
     {
-      message.IsRead = true;
+      message.IsRead = 1;
       message.UpdateTime = DateTime.Now;
     }
 
@@ -168,7 +168,7 @@ public class LeanOnlineMessageService : LeanBaseService, ILeanOnlineMessageServi
   /// <summary>
   /// 获取在线消息列表（分页）
   /// </summary>
-  public async Task<LeanPageResult<LeanOnlineMessageDto>> GetPageListAsync(LeanQueryOnlineMessageDto queryDto)
+  public async Task<LeanPageResult<LeanOnlineMessageDto>> GetPageListAsync(LeanOnlineMessageQueryDto queryDto)
   {
     Expression<Func<LeanOnlineMessage, bool>> predicate = m => true;
 
@@ -228,7 +228,7 @@ public class LeanOnlineMessageService : LeanBaseService, ILeanOnlineMessageServi
   /// <summary>
   /// 导出在线消息
   /// </summary>
-  public async Task<LeanFileResult> ExportAsync(LeanQueryOnlineMessageDto queryDto)
+  public async Task<LeanFileResult> ExportAsync(LeanOnlineMessageQueryDto queryDto)
   {
     var messages = await GetPageListAsync(queryDto);
     var stream = new MemoryStream();

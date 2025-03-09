@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using Lean.CodeGen.Common.Enums;
 using Lean.CodeGen.Common.Excel;
 using Lean.CodeGen.Common.Models;
 
@@ -34,18 +33,27 @@ public class LeanRoleDto
 
   /// <summary>
   /// 角色状态
+  /// 0-正常
+  /// 1-停用
   /// </summary>
-  public LeanRoleStatus RoleStatus { get; set; }
+  public int RoleStatus { get; set; }
 
   /// <summary>
   /// 是否内置
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public LeanBuiltinStatus IsBuiltin { get; set; }
+  public int IsBuiltin { get; set; }
 
   /// <summary>
   /// 数据权限类型
+  /// 0-全部数据权限
+  /// 1-自定义数据权限
+  /// 2-本部门数据权限
+  /// 3-本部门及以下数据权限
+  /// 4-仅本人数据权限
   /// </summary>
-  public LeanDataScopeType DataScope { get; set; }
+  public int DataScope { get; set; }
 
   /// <summary>
   /// 备注
@@ -76,7 +84,7 @@ public class LeanRoleDto
 /// <summary>
 /// 角色查询参数
 /// </summary>
-public class LeanQueryRoleDto : LeanPage
+public class LeanRoleQueryDto : LeanPage
 {
   /// <summary>
   /// 父级ID
@@ -95,18 +103,27 @@ public class LeanQueryRoleDto : LeanPage
 
   /// <summary>
   /// 状态
+  /// 0-正常
+  /// 1-停用
   /// </summary>
-  public LeanRoleStatus? RoleStatus { get; set; }
+  public int? RoleStatus { get; set; }
 
   /// <summary>
   /// 数据权限范围
+  /// 0-全部数据权限
+  /// 1-自定义数据权限
+  /// 2-本部门数据权限
+  /// 3-本部门及以下数据权限
+  /// 4-仅本人数据权限
   /// </summary>
-  public LeanDataScopeType? DataScope { get; set; }
+  public int? DataScope { get; set; }
 
   /// <summary>
   /// 是否内置
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public LeanBuiltinStatus? IsBuiltin { get; set; }
+  public int? IsBuiltin { get; set; }
 
   /// <summary>
   /// 创建时间范围-开始
@@ -122,7 +139,7 @@ public class LeanQueryRoleDto : LeanPage
 /// <summary>
 /// 角色创建参数
 /// </summary>
-public class LeanCreateRoleDto
+public class LeanRoleCreateDto
 {
   /// <summary>
   /// 父级ID
@@ -156,18 +173,27 @@ public class LeanCreateRoleDto
 
   /// <summary>
   /// 状态
+  /// 0-正常
+  /// 1-停用
   /// </summary>
-  public LeanRoleStatus RoleStatus { get; set; } = LeanRoleStatus.Normal;
+  public int RoleStatus { get; set; } = 0;
 
   /// <summary>
   /// 数据权限范围
+  /// 0-全部数据权限
+  /// 1-自定义数据权限
+  /// 2-本部门数据权限
+  /// 3-本部门及以下数据权限
+  /// 4-仅本人数据权限
   /// </summary>
-  public LeanDataScopeType DataScope { get; set; } = LeanDataScopeType.Self;
+  public int DataScope { get; set; } = 4;
 
   /// <summary>
   /// 是否内置
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public LeanBuiltinStatus IsBuiltin { get; set; } = LeanBuiltinStatus.No;
+  public int IsBuiltin { get; set; } = 0;
 
   /// <summary>
   /// 部门ID列表
@@ -183,7 +209,7 @@ public class LeanCreateRoleDto
 /// <summary>
 /// 角色更新参数
 /// </summary>
-public class LeanUpdateRoleDto
+public class LeanRoleUpdateDto
 {
   /// <summary>
   /// 角色ID
@@ -223,13 +249,21 @@ public class LeanUpdateRoleDto
 
   /// <summary>
   /// 状态
+  /// 0-正常
+  /// 1-停用
   /// </summary>
-  public LeanRoleStatus RoleStatus { get; set; }
+  [Required(ErrorMessage = "状态不能为空")]
+  public int RoleStatus { get; set; }
 
   /// <summary>
   /// 数据权限范围
+  /// 0-全部数据权限
+  /// 1-自定义数据权限
+  /// 2-本部门数据权限
+  /// 3-本部门及以下数据权限
+  /// 4-仅本人数据权限
   /// </summary>
-  public LeanDataScopeType DataScope { get; set; }
+  public int DataScope { get; set; }
 
   /// <summary>
   /// 部门ID列表
@@ -245,7 +279,7 @@ public class LeanUpdateRoleDto
 /// <summary>
 /// 角色状态变更参数
 /// </summary>
-public class LeanChangeRoleStatusDto
+public class LeanRoleChangeStatusDto
 {
   /// <summary>
   /// 角色ID
@@ -255,15 +289,17 @@ public class LeanChangeRoleStatusDto
 
   /// <summary>
   /// 状态
+  /// 0-正常
+  /// 1-停用
   /// </summary>
   [Required(ErrorMessage = "状态不能为空")]
-  public LeanRoleStatus RoleStatus { get; set; }
+  public int RoleStatus { get; set; }
 }
 
 /// <summary>
-/// 角色导出参数
+/// 角色导出查询参数
 /// </summary>
-public class LeanExportRoleDto : LeanQueryRoleDto
+public class LeanRoleExportQueryDto : LeanRoleQueryDto
 {
   /// <summary>
   /// 导出字段列表
@@ -274,12 +310,14 @@ public class LeanExportRoleDto : LeanQueryRoleDto
   /// 文件格式
   /// </summary>
   [Required(ErrorMessage = "文件格式不能为空")]
-  public string FileFormat { get; set; } = "xlsx";
+  public string FileType { get; set; } = default!;
 
   /// <summary>
   /// 是否导出全部
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public bool IsExportAll { get; set; }
+  public int IsExportAll { get; set; }
 
   /// <summary>
   /// 选中的ID列表
@@ -290,7 +328,7 @@ public class LeanExportRoleDto : LeanQueryRoleDto
 /// <summary>
 /// 角色删除参数
 /// </summary>
-public class LeanDeleteRoleDto
+public class LeanRoleDeleteDto
 {
   /// <summary>
   /// 角色ID
@@ -300,23 +338,23 @@ public class LeanDeleteRoleDto
 }
 
 /// <summary>
-/// 角色导入DTO
+/// 角色导入参数
 /// </summary>
 public class LeanRoleImportDto
 {
   /// <summary>
   /// 角色名称
   /// </summary>
+  [Required(ErrorMessage = "角色名称不能为空")]
   [LeanExcelColumn("角色名称")]
-  [Required]
-  public string RoleName { get; set; }
+  public string RoleName { get; set; } = default!;
 
   /// <summary>
   /// 角色编码
   /// </summary>
+  [Required(ErrorMessage = "角色编码不能为空")]
   [LeanExcelColumn("角色编码")]
-  [Required]
-  public string RoleCode { get; set; }
+  public string RoleCode { get; set; } = default!;
 
   /// <summary>
   /// 显示顺序
@@ -326,35 +364,40 @@ public class LeanRoleImportDto
 
   /// <summary>
   /// 数据范围
+  /// 0-全部数据权限
+  /// 1-自定义数据权限
+  /// 2-本部门数据权限
+  /// 3-本部门及以下数据权限
+  /// 4-仅本人数据权限
   /// </summary>
   [LeanExcelColumn("数据范围")]
-  public string DataScope { get; set; }
+  public int DataScope { get; set; }
 
   /// <summary>
   /// 备注
   /// </summary>
   [LeanExcelColumn("备注")]
-  public string Remark { get; set; }
+  public string? Remark { get; set; }
 }
 
 /// <summary>
-/// 角色导入模板
+/// 角色导入模板参数
 /// </summary>
-public class LeanImportTemplateRoleDto
+public class LeanRoleImportTemplateDto
 {
   /// <summary>
   /// 角色名称
   /// </summary>
   [Required(ErrorMessage = "角色名称不能为空")]
   [StringLength(50, MinimumLength = 2, ErrorMessage = "角色名称长度必须在2-50个字符之间")]
-  public string RoleName { get; set; } = string.Empty;
+  public string RoleName { get; set; } = default!;
 
   /// <summary>
   /// 角色编码
   /// </summary>
   [Required(ErrorMessage = "角色编码不能为空")]
   [StringLength(50, MinimumLength = 2, ErrorMessage = "角色编码长度必须在2-50个字符之间")]
-  public string RoleCode { get; set; } = string.Empty;
+  public string RoleCode { get; set; } = default!;
 
   /// <summary>
   /// 角色描述
@@ -369,44 +412,45 @@ public class LeanImportTemplateRoleDto
 
   /// <summary>
   /// 数据权限范围
+  /// 0-全部数据权限
+  /// 1-自定义数据权限
+  /// 2-本部门数据权限
+  /// 3-本部门及以下数据权限
+  /// 4-仅本人数据权限
   /// </summary>
-  public LeanDataScopeType DataScope { get; set; } = LeanDataScopeType.Self;
+  public int DataScope { get; set; } = 4;
 }
 
 /// <summary>
-/// 角色导入错误信息
+/// 角色导入错误参数
 /// </summary>
-public class LeanImportRoleErrorDto : LeanImportError
+public class LeanRoleImportErrorDto : LeanImportError
 {
   /// <summary>
   /// 角色编码
   /// </summary>
-  public string RoleCode
-  {
-    get => Key;
-    set => Key = value;
-  }
+  public string RoleCode { get; set; } = default!;
 }
 
 /// <summary>
-/// 角色导入结果
+/// 角色导入结果参数
 /// </summary>
-public class LeanImportRoleResultDto : LeanImportResult
+public class LeanRoleImportResultDto : LeanImportResult
 {
   /// <summary>
-  /// 错误信息列表
+  /// 错误列表
   /// </summary>
-  public new List<LeanImportRoleErrorDto> Errors { get; set; } = new();
+  public new List<LeanRoleImportErrorDto> Errors { get; set; } = new();
 
   /// <summary>
-  /// 添加错误信息
+  /// 添加错误
   /// </summary>
+  /// <param name="roleCode">角色编码</param>
+  /// <param name="errorMessage">错误消息</param>
   public override void AddError(string roleCode, string errorMessage)
   {
-    base.AddError(roleCode, errorMessage);
-    Errors.Add(new LeanImportRoleErrorDto
+    Errors.Add(new LeanRoleImportErrorDto
     {
-      RowIndex = TotalCount,
       RoleCode = roleCode,
       ErrorMessage = errorMessage
     });
@@ -414,7 +458,7 @@ public class LeanImportRoleResultDto : LeanImportResult
 }
 
 /// <summary>
-/// 角色导出数据
+/// 角色导出参数
 /// </summary>
 public class LeanRoleExportDto
 {
@@ -432,9 +476,11 @@ public class LeanRoleExportDto
 
   /// <summary>
   /// 角色状态
+  /// 0-正常
+  /// 1-停用
   /// </summary>
   [LeanExcelColumn("角色状态", DataType = LeanExcelDataType.Int)]
-  public LeanRoleStatus RoleStatus { get; set; }
+  public int RoleStatus { get; set; }
 
   /// <summary>
   /// 显示顺序
@@ -444,25 +490,48 @@ public class LeanRoleExportDto
 
   /// <summary>
   /// 是否内置
+  /// 0-否
+  /// 1-是
   /// </summary>
   [LeanExcelColumn("是否内置", DataType = LeanExcelDataType.Int)]
-  public LeanBuiltinStatus IsBuiltin { get; set; }
+  public int IsBuiltin { get; set; }
 
   /// <summary>
   /// 数据权限
+  /// 0-全部数据权限
+  /// 1-自定义数据权限
+  /// 2-本部门数据权限
+  /// 3-本部门及以下数据权限
+  /// 4-仅本人数据权限
   /// </summary>
   [LeanExcelColumn("数据权限", DataType = LeanExcelDataType.Int)]
-  public LeanDataScopeType DataScope { get; set; }
+  public int DataScope { get; set; }
 
   /// <summary>
   /// 角色描述
   /// </summary>
   [LeanExcelColumn("角色描述", DataType = LeanExcelDataType.String)]
-  public string? Description { get; set; }
+  public string? RoleDescription { get; set; }
 
   /// <summary>
   /// 创建时间
   /// </summary>
   [LeanExcelColumn("创建时间", DataType = LeanExcelDataType.DateTime)]
   public DateTime CreateTime { get; set; }
+}
+
+/// <summary>
+/// 角色菜单分配参数
+/// </summary>
+public class LeanRoleSetMenusDto
+{
+  /// <summary>
+  /// 角色ID
+  /// </summary>
+  public long RoleId { get; set; }
+
+  /// <summary>
+  /// 菜单ID列表
+  /// </summary>
+  public List<long> MenuIds { get; set; } = new();
 }

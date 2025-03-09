@@ -5,7 +5,7 @@ namespace Lean.CodeGen.Domain.Entities.Workflow;
 /// <summary>
 /// 工作流活动类型实体
 /// </summary>
-[SugarTable("lean_workflow_activity_type", "工作流活动类型表")]
+[SugarTable("lean_wk_activity_type", "工作流活动类型表")]
 [SugarIndex("uk_type_name", nameof(TypeName), OrderByType.Asc, true)]
 public class LeanWorkflowActivityType : LeanBaseEntity
 {

@@ -3,6 +3,7 @@ using Lean.CodeGen.Application.Dtos.Identity;
 using Lean.CodeGen.Application.Services.Identity;
 using Lean.CodeGen.Common.Models;
 using Lean.CodeGen.Common.Enums;
+using Lean.CodeGen.Common.Attributes;
 using Microsoft.Extensions.Configuration;
 using Lean.CodeGen.Application.Services.Admin;
 
@@ -18,8 +19,9 @@ namespace Lean.CodeGen.WebApi.Controllers.Identity;
 /// 3. 角色菜单管理
 /// 4. 角色数据权限管理
 /// </remarks>
-[Route("api/admin/roles")]
 [ApiController]
+[Route("api/[controller]")]
+[ApiExplorerSettings(GroupName = "identity")]
 public class LeanRoleController : LeanBaseController
 {
   private readonly ILeanRoleService _roleService;
@@ -45,7 +47,7 @@ public class LeanRoleController : LeanBaseController
   /// <param name="input">角色创建参数</param>
   /// <returns>创建成功的角色信息</returns>
   [HttpPost]
-  public async Task<IActionResult> CreateAsync([FromBody] LeanCreateRoleDto input)
+  public async Task<IActionResult> CreateAsync([FromBody] LeanRoleCreateDto input)
   {
     var result = await _roleService.CreateAsync(input);
     return Success(result, LeanBusinessType.Create);
@@ -57,7 +59,7 @@ public class LeanRoleController : LeanBaseController
   /// <param name="input">角色更新参数</param>
   /// <returns>更新后的角色信息</returns>
   [HttpPut]
-  public async Task<IActionResult> UpdateAsync([FromBody] LeanUpdateRoleDto input)
+  public async Task<IActionResult> UpdateAsync([FromBody] LeanRoleUpdateDto input)
   {
     var result = await _roleService.UpdateAsync(input);
     return Success(result, LeanBusinessType.Update);
@@ -105,7 +107,7 @@ public class LeanRoleController : LeanBaseController
   /// <param name="input">查询参数</param>
   /// <returns>分页查询结果</returns>
   [HttpGet]
-  public async Task<IActionResult> GetPageAsync([FromQuery] LeanQueryRoleDto input)
+  public async Task<IActionResult> GetPageAsync([FromQuery] LeanRoleQueryDto input)
   {
     var result = await _roleService.GetPageAsync(input);
     return Success(result, LeanBusinessType.Query);
@@ -117,7 +119,7 @@ public class LeanRoleController : LeanBaseController
   /// <param name="input">状态修改参数</param>
   /// <returns>修改后的角色信息</returns>
   [HttpPut("status")]
-  public async Task<IActionResult> SetStatusAsync([FromBody] LeanChangeRoleStatusDto input)
+  public async Task<IActionResult> SetStatusAsync([FromBody] LeanRoleChangeStatusDto input)
   {
     var result = await _roleService.SetStatusAsync(input);
     return Success(result, LeanBusinessType.Update);
@@ -141,7 +143,7 @@ public class LeanRoleController : LeanBaseController
   /// <param name="input">菜单分配参数</param>
   /// <returns>设置后的角色信息</returns>
   [HttpPut("menus")]
-  public async Task<IActionResult> SetRoleMenusAsync([FromBody] LeanSetRoleMenusDto input)
+  public async Task<IActionResult> SetRoleMenusAsync([FromBody] LeanRoleSetMenusDto input)
   {
     var result = await _roleService.SetRoleMenusAsync(input);
     return Success(result, LeanBusinessType.Update);
@@ -153,7 +155,7 @@ public class LeanRoleController : LeanBaseController
   /// <param name="input">查询参数</param>
   /// <returns>角色数据导出结果</returns>
   [HttpGet("export")]
-  public async Task<IActionResult> ExportAsync([FromQuery] LeanQueryRoleDto input)
+  public async Task<IActionResult> ExportAsync([FromQuery] LeanRoleQueryDto input)
   {
     var bytes = await _roleService.ExportAsync(input);
     return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "roles.xlsx");
@@ -162,21 +164,13 @@ public class LeanRoleController : LeanBaseController
   /// <summary>
   /// 导入角色数据
   /// </summary>
-  /// <param name="file">角色数据文件</param>
+  /// <param name="file">Excel文件</param>
   /// <returns>角色数据导入结果</returns>
   [HttpPost("import")]
-  public async Task<IActionResult> ImportAsync([FromForm] IFormFile file)
+  [LeanPermission("system:role:import", "导入角色")]
+  public async Task<IActionResult> ImportAsync([FromForm] LeanFileInfo file)
   {
-    using var ms = new MemoryStream();
-    await file.CopyToAsync(ms);
-    ms.Position = 0;
-    var fileInfo = new LeanFileInfo
-    {
-      Stream = ms,
-      FileName = file.FileName,
-      ContentType = file.ContentType
-    };
-    var result = await _roleService.ImportAsync(fileInfo);
+    var result = await _roleService.ImportAsync(file);
     return Success(result, LeanBusinessType.Import);
   }
 

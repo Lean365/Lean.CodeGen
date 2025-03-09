@@ -27,42 +27,42 @@ public interface ILeanWorkflowActivityInstanceService
   /// </summary>
   /// <param name="dto">活动实例</param>
   /// <returns>是否成功</returns>
-  Task<bool> UpdateAsync(LeanWorkflowActivityInstanceDto dto);
+  Task<LeanApiResult> UpdateAsync(LeanWorkflowActivityInstanceDto dto);
 
   /// <summary>
   /// 删除活动实例
   /// </summary>
   /// <param name="id">实例ID</param>
   /// <returns>是否成功</returns>
-  Task<bool> DeleteAsync(long id);
+  Task<LeanApiResult> DeleteAsync(long id);
 
   /// <summary>
   /// 启动活动实例
   /// </summary>
   /// <param name="id">实例ID</param>
   /// <returns>是否成功</returns>
-  Task<bool> StartAsync(long id);
+  Task<LeanApiResult> StartAsync(long id);
 
   /// <summary>
   /// 完成活动实例
   /// </summary>
   /// <param name="id">实例ID</param>
   /// <returns>是否成功</returns>
-  Task<bool> CompleteAsync(long id);
+  Task<LeanApiResult> CompleteAsync(long id);
 
   /// <summary>
   /// 取消活动实例
   /// </summary>
   /// <param name="id">实例ID</param>
   /// <returns>是否成功</returns>
-  Task<bool> CancelAsync(long id);
+  Task<LeanApiResult> CancelAsync(long id);
 
   /// <summary>
   /// 补偿活动实例
   /// </summary>
   /// <param name="id">实例ID</param>
   /// <returns>是否成功</returns>
-  Task<bool> CompensateAsync(long id);
+  Task<LeanApiResult> CompensateAsync(long id);
 
   /// <summary>
   /// 分页查询活动实例

@@ -2,7 +2,7 @@ using System.Text.Json;
 using Lean.CodeGen.Application.Dtos.Workflow;
 using Lean.CodeGen.Application.Services.Workflow.Executors;
 using Lean.CodeGen.Application.Services.Workflow.Parsers;
-using Lean.CodeGen.Common.Enums;
+using Lean.CodeGen.Common.Models;
 using Lean.CodeGen.Domain.Entities.Workflow;
 using Lean.CodeGen.Domain.Extensions;
 using Lean.CodeGen.Domain.Interfaces.Repositories;
@@ -122,7 +122,7 @@ public class LeanWorkflowEngine : ILeanWorkflowEngine
       InitiatorName = initiatorName,
       InitiatorDeptId = initiatorDeptId,
       InitiatorDeptName = initiatorDeptName,
-      WorkflowStatus = LeanWorkflowInstanceStatus.Running,
+      WorkflowStatus = 1, // Running
       StartTime = DateTime.Now
     };
 
@@ -149,7 +149,7 @@ public class LeanWorkflowEngine : ILeanWorkflowEngine
         WorkflowInstanceId = instance.Id,
         ActivityType = startActivity.ActivityType,
         ActivityName = startActivity.ActivityName,
-        ActivityStatus = LeanWorkflowActivityStatus.Completed,
+        ActivityStatus = 1, // Running
         StartTime = DateTime.Now,
         EndTime = DateTime.Now
       };
@@ -183,9 +183,9 @@ public class LeanWorkflowEngine : ILeanWorkflowEngine
           {
             InstanceId = instance.Id,
             TaskName = activity.ActivityName,
-            TaskType = LeanWorkflowTaskType.Approval,
+            TaskType = 1,
             TaskNode = activity.ActivityId,
-            TaskStatus = LeanWorkflowTaskStatus.Processing,
+            TaskStatus = 1,
             StartTime = DateTime.Now
           };
 
@@ -205,7 +205,7 @@ public class LeanWorkflowEngine : ILeanWorkflowEngine
     }
 
     // 9. 记录历史
-    await CreateHistoryAsync(instance.Id, null, LeanWorkflowOperationType.Start, initiatorId, initiatorName);
+    await CreateHistoryAsync(instance.Id, null, 1, initiatorId, initiatorName);
 
     return instance;
   }
@@ -220,7 +220,7 @@ public class LeanWorkflowEngine : ILeanWorkflowEngine
     }
 
     // 2. 检查实例状态
-    if (instance.WorkflowStatus != LeanWorkflowInstanceStatus.Running)
+    if (instance.WorkflowStatus != 1)
     {
       throw new Exception($"流程实例[{processInstanceId}]不在运行状态");
     }
@@ -238,22 +238,22 @@ public class LeanWorkflowEngine : ILeanWorkflowEngine
     // 4. 暂停当前所有运行中的活动实例
     var runningActivities = await _activityInstanceRepository.GetListAsync(x =>
         x.WorkflowInstanceId == processInstanceId &&
-        x.ActivityStatus == LeanWorkflowActivityStatus.Running);
+        x.ActivityStatus == 1);
 
     foreach (var activity in runningActivities)
     {
-      activity.ActivityStatus = LeanWorkflowActivityStatus.Suspended;
+      activity.ActivityStatus = 5;
       await _activityInstanceRepository.UpdateAsync(activity);
     }
 
     // 5. 暂停当前所有运行中的任务
     var runningTasks = await _taskRepository.GetListAsync(x =>
         x.InstanceId == processInstanceId &&
-        x.TaskStatus == LeanWorkflowTaskStatus.Processing);
+        x.TaskStatus == 1);
 
     foreach (var task in runningTasks)
     {
-      task.TaskStatus = LeanWorkflowTaskStatus.Suspended;
+      task.TaskStatus = 5;
       await _taskRepository.UpdateAsync(task);
     }
 
@@ -261,7 +261,7 @@ public class LeanWorkflowEngine : ILeanWorkflowEngine
     await CreateHistoryAsync(
         processInstanceId,
         null,
-        LeanWorkflowOperationType.Suspend,
+        1,
         instance.InitiatorId,
         instance.InitiatorName,
         "流程已暂停");
@@ -279,7 +279,7 @@ public class LeanWorkflowEngine : ILeanWorkflowEngine
     }
 
     // 2. 检查实例状态
-    if (instance.WorkflowStatus != LeanWorkflowInstanceStatus.Running)
+    if (instance.WorkflowStatus != 1)
     {
       throw new Exception($"流程实例[{processInstanceId}]不在运行状态");
     }
@@ -297,22 +297,22 @@ public class LeanWorkflowEngine : ILeanWorkflowEngine
     // 4. 恢复当前所有暂停的活动实例
     var suspendedActivities = await _activityInstanceRepository.GetListAsync(x =>
         x.WorkflowInstanceId == processInstanceId &&
-        x.ActivityStatus == LeanWorkflowActivityStatus.Suspended);
+        x.ActivityStatus == 5);
 
     foreach (var activity in suspendedActivities)
     {
-      activity.ActivityStatus = LeanWorkflowActivityStatus.Running;
+      activity.ActivityStatus = 1;
       await _activityInstanceRepository.UpdateAsync(activity);
     }
 
     // 5. 恢复当前所有暂停的任务
     var suspendedTasks = await _taskRepository.GetListAsync(x =>
         x.InstanceId == processInstanceId &&
-        x.TaskStatus == LeanWorkflowTaskStatus.Suspended);
+        x.TaskStatus == 5);
 
     foreach (var task in suspendedTasks)
     {
-      task.TaskStatus = LeanWorkflowTaskStatus.Processing;
+      task.TaskStatus = 1;
       await _taskRepository.UpdateAsync(task);
     }
 
@@ -320,7 +320,7 @@ public class LeanWorkflowEngine : ILeanWorkflowEngine
     await CreateHistoryAsync(
         processInstanceId,
         null,
-        LeanWorkflowOperationType.Resume,
+        1,
         instance.InitiatorId,
         instance.InitiatorName,
         "流程已恢复");
@@ -338,25 +338,25 @@ public class LeanWorkflowEngine : ILeanWorkflowEngine
     }
 
     // 2. 检查实例状态
-    if (instance.WorkflowStatus != LeanWorkflowInstanceStatus.Running)
+    if (instance.WorkflowStatus != 1)
     {
       throw new Exception($"流程实例[{processInstanceId}]不在运行状态");
     }
 
     // 3. 更新实例状态
-    instance.WorkflowStatus = LeanWorkflowInstanceStatus.Terminated;
+    instance.WorkflowStatus = 3;
     instance.EndTime = DateTime.Now;
     await _instanceRepository.UpdateAsync(instance);
 
     // 4. 终止当前所有运行中的活动实例
     var runningActivities = await _activityInstanceRepository.GetListAsync(x =>
         x.WorkflowInstanceId == processInstanceId &&
-        (x.ActivityStatus == LeanWorkflowActivityStatus.Running ||
-         x.ActivityStatus == LeanWorkflowActivityStatus.Suspended));
+        (x.ActivityStatus == 1 ||
+         x.ActivityStatus == 5));
 
     foreach (var activity in runningActivities)
     {
-      activity.ActivityStatus = LeanWorkflowActivityStatus.Terminated;
+      activity.ActivityStatus = 3;
       activity.EndTime = DateTime.Now;
       await _activityInstanceRepository.UpdateAsync(activity);
     }
@@ -364,12 +364,12 @@ public class LeanWorkflowEngine : ILeanWorkflowEngine
     // 5. 终止当前所有运行中的任务
     var runningTasks = await _taskRepository.GetListAsync(x =>
         x.InstanceId == processInstanceId &&
-        (x.TaskStatus == LeanWorkflowTaskStatus.Processing ||
-         x.TaskStatus == LeanWorkflowTaskStatus.Suspended));
+        (x.TaskStatus == 1 ||
+         x.TaskStatus == 5));
 
     foreach (var task in runningTasks)
     {
-      task.TaskStatus = LeanWorkflowTaskStatus.Terminated;
+      task.TaskStatus = 3;
       task.EndTime = DateTime.Now;
       await _taskRepository.UpdateAsync(task);
     }
@@ -378,7 +378,7 @@ public class LeanWorkflowEngine : ILeanWorkflowEngine
     await CreateHistoryAsync(
         processInstanceId,
         null,
-        LeanWorkflowOperationType.Terminate,
+        1,
         instance.InitiatorId,
         instance.InitiatorName,
         $"流程已终止，原因：{reason}");
@@ -565,7 +565,7 @@ public class LeanWorkflowEngine : ILeanWorkflowEngine
     }
 
     // 2. 检查实例状态
-    if (instance.WorkflowStatus != LeanWorkflowInstanceStatus.Running)
+    if (instance.WorkflowStatus != 1)
     {
       throw new Exception($"流程实例[{processInstanceId}]不在运行状态");
     }
@@ -578,28 +578,24 @@ public class LeanWorkflowEngine : ILeanWorkflowEngine
   #endregion
 
   #region 流程状态管理
-  public async Task<LeanWorkflowInstanceStatus> GetProcessStatusAsync(long processInstanceId)
+  public async Task<int> GetProcessStatusAsync(long processInstanceId)
   {
-    // 1. 获取流程实例
     var instance = await _instanceRepository.GetByIdAsync(processInstanceId);
     if (instance == null)
     {
-      throw new Exception($"流程实例[{processInstanceId}]不存在");
+      return 0;
     }
-
     return instance.WorkflowStatus;
   }
 
-  public async Task<LeanWorkflowActivityStatus> GetNodeStatusAsync(string nodeId)
+  public async Task<int> GetNodeStatusAsync(string nodeId)
   {
-    // 1. 获取活动实例
-    var activityInstance = await _activityInstanceRepository.GetFirstAsync(x => x.ActivityId == nodeId);
-    if (activityInstance == null)
+    var activity = await _activityInstanceRepository.FirstOrDefaultAsync(x => x.ActivityId == nodeId);
+    if (activity == null)
     {
-      throw new Exception($"活动节点[{nodeId}]不存在");
+      return 0;
     }
-
-    return activityInstance.ActivityStatus;
+    return activity.ActivityStatus;
   }
   #endregion
 
@@ -613,7 +609,7 @@ public class LeanWorkflowEngine : ILeanWorkflowEngine
       long taskId,
       long operatorId,
       string operatorName,
-      string? comment = null,
+      string comment,
       Dictionary<string, object>? variables = null,
       Dictionary<string, object>? formData = null)
   {
@@ -631,7 +627,7 @@ public class LeanWorkflowEngine : ILeanWorkflowEngine
       throw new Exception($"工作流实例[{task.InstanceId}]不存在");
     }
 
-    if (instance.WorkflowStatus != LeanWorkflowInstanceStatus.Running)
+    if (instance.WorkflowStatus != 1)
     {
       throw new Exception($"工作流实例[{task.InstanceId}]已结束");
     }
@@ -641,59 +637,51 @@ public class LeanWorkflowEngine : ILeanWorkflowEngine
       throw new Exception($"工作流实例[{task.InstanceId}]已暂停");
     }
 
-    if (task.TaskStatus != LeanWorkflowTaskStatus.Processing)
+    if (task.TaskStatus != 1)
     {
       throw new Exception($"任务[{taskId}]已结束");
     }
 
-    // 3. 保存变量数据
+    // 3. 获取当前活动实例
+    var activityInstance = await _activityInstanceRepository.FirstOrDefaultAsync(x =>
+        x.WorkflowInstanceId == instance.Id &&
+        x.ActivityId == task.TaskNode &&
+        x.ActivityStatus == 1);
+
+    if (activityInstance == null)
+    {
+      throw new Exception($"活动实例[{task.TaskNode}]不存在");
+    }
+
+    // 4. 保存变量数据
     if (variables != null)
     {
       await SaveVariablesAsync(instance.Id, variables);
     }
 
-    // 4. 保存表单数据
+    // 5. 保存表单数据
     if (formData != null)
     {
-      await SaveFormDataAsync(instance.Id, taskId, formData);
+      await SaveFormDataAsync(instance.Id, string.IsNullOrEmpty(task.TaskNode) ? null : Convert.ToInt64(task.TaskNode), formData);
     }
 
-    // 5. 结束当前任务
-    task.TaskStatus = LeanWorkflowTaskStatus.Completed;
+    // 6. 完成当前活动实例
+    activityInstance.ActivityStatus = 2; // Completed
+    activityInstance.EndTime = DateTime.Now;
+    await _activityInstanceRepository.UpdateAsync(activityInstance);
+
+    // 7. 完成当前任务
+    task.TaskStatus = 2; // Completed
     task.EndTime = DateTime.Now;
+    task.OperatorId = operatorId;
+    task.OperatorName = operatorName;
     await _taskRepository.UpdateAsync(task);
 
-    // 6. 结束当前活动实例
-    var activityInstance = await _activityInstanceRepository.GetFirstAsync(x =>
-        x.WorkflowInstanceId == instance.Id &&
-        x.ActivityId == task.TaskNode &&
-        x.ActivityStatus == LeanWorkflowActivityStatus.Running);
-
-    if (activityInstance != null)
-    {
-      activityInstance.ActivityStatus = LeanWorkflowActivityStatus.Completed;
-      activityInstance.EndTime = DateTime.Now;
-      await _activityInstanceRepository.UpdateAsync(activityInstance);
-    }
-
-    // 7. 获取下一个节点
-    var context = new Dictionary<string, object>
-    {
-        { "ProcessInstanceId", instance.Id },
-        { "BusinessKey", instance.BusinessKey },
-        { "BusinessType", instance.BusinessType }
-    };
-    if (variables != null)
-    {
-      foreach (var variable in variables)
-      {
-        context[variable.Key] = variable.Value;
-      }
-    }
-
+    // 8. 获取下一个节点
+    var context = await GetProcessContextAsync(instance.Id);
     var nextNodes = await GetNextNodesAsync(task.TaskNode, context);
 
-    // 8. 创建下一个节点的活动实例和任务
+    // 9. 创建下一个节点的活动实例和任务
     foreach (var nodeId in nextNodes)
     {
       var activity = await GetActivityByIdAsync(nodeId);
@@ -709,7 +697,7 @@ public class LeanWorkflowEngine : ILeanWorkflowEngine
         ActivityId = activity.ActivityId,
         ActivityType = activity.ActivityType,
         ActivityName = activity.ActivityName,
-        ActivityStatus = LeanWorkflowActivityStatus.Running,
+        ActivityStatus = 1, // Running
         StartTime = DateTime.Now
       };
 
@@ -722,9 +710,9 @@ public class LeanWorkflowEngine : ILeanWorkflowEngine
         {
           InstanceId = instance.Id,
           TaskName = activity.ActivityName,
-          TaskType = LeanWorkflowTaskType.Approval,
+          TaskType = 1,
           TaskNode = activity.ActivityId,
-          TaskStatus = LeanWorkflowTaskStatus.Processing,
+          TaskStatus = 1,
           StartTime = DateTime.Now
         };
 
@@ -742,8 +730,8 @@ public class LeanWorkflowEngine : ILeanWorkflowEngine
       }
     }
 
-    // 9. 记录历史
-    await CreateHistoryAsync(instance.Id, taskId, LeanWorkflowOperationType.Complete, operatorId, operatorName, comment);
+    // 10. 记录历史
+    await CreateHistoryAsync(instance.Id, taskId, 1, operatorId, operatorName, comment);
 
     return true;
   }
@@ -769,7 +757,7 @@ public class LeanWorkflowEngine : ILeanWorkflowEngine
       throw new Exception($"工作流实例[{task.InstanceId}]不存在");
     }
 
-    if (instance.WorkflowStatus != LeanWorkflowInstanceStatus.Running)
+    if (instance.WorkflowStatus != 1)
     {
       throw new Exception($"工作流实例[{task.InstanceId}]已结束");
     }
@@ -779,69 +767,87 @@ public class LeanWorkflowEngine : ILeanWorkflowEngine
       throw new Exception($"工作流实例[{task.InstanceId}]已暂停");
     }
 
-    if (task.TaskStatus != LeanWorkflowTaskStatus.Processing)
+    if (task.TaskStatus != 1)
     {
       throw new Exception($"任务[{taskId}]已结束");
     }
 
-    // 3. 获取目标活动节点
-    var targetActivity = await GetActivityByIdAsync(targetActivityId);
-    if (targetActivity == null)
-    {
-      throw new Exception($"目标活动节点[{targetActivityId}]不存在");
-    }
-
-    // 4. 结束当前任务
-    task.TaskStatus = LeanWorkflowTaskStatus.Terminated;
-    task.EndTime = DateTime.Now;
-    await _taskRepository.UpdateAsync(task);
-
-    // 5. 结束当前活动实例
-    var activityInstance = await _activityInstanceRepository.GetFirstAsync(x =>
+    // 3. 获取当前活动实例
+    var activityInstance = await _activityInstanceRepository.FirstOrDefaultAsync(x =>
         x.WorkflowInstanceId == instance.Id &&
         x.ActivityId == task.TaskNode &&
-        x.ActivityStatus == LeanWorkflowActivityStatus.Running);
+        x.ActivityStatus == 1);
 
-    if (activityInstance != null)
+    if (activityInstance == null)
     {
-      activityInstance.ActivityStatus = LeanWorkflowActivityStatus.Terminated;
-      activityInstance.EndTime = DateTime.Now;
-      await _activityInstanceRepository.UpdateAsync(activityInstance);
+      throw new Exception($"活动实例[{task.TaskNode}]不存在");
     }
 
-    // 6. 创建新的活动实例
+    // 4. 完成当前活动实例
+    activityInstance.ActivityStatus = 3; // Rejected
+    activityInstance.EndTime = DateTime.Now;
+    await _activityInstanceRepository.UpdateAsync(activityInstance);
+
+    // 5. 完成当前任务
+    task.TaskStatus = 3; // Rejected
+    task.EndTime = DateTime.Now;
+    task.OperatorId = operatorId;
+    task.OperatorName = operatorName;
+    await _taskRepository.UpdateAsync(task);
+
+    // 6. 获取目标活动
+    var previousActivity = await GetActivityByIdAsync(targetActivityId);
+    if (previousActivity == null)
+    {
+      throw new Exception($"目标活动[{targetActivityId}]不存在");
+    }
+
+    // 7. 创建新的活动实例
     var newActivityInstance = new LeanWorkflowActivityInstance
     {
       WorkflowInstanceId = instance.Id,
-      ActivityId = targetActivity.ActivityId,
-      ActivityType = targetActivity.ActivityType,
-      ActivityName = targetActivity.ActivityName,
-      ActivityStatus = LeanWorkflowActivityStatus.Running,
+      ActivityId = previousActivity.ActivityId,
+      ActivityType = previousActivity.ActivityType,
+      ActivityName = previousActivity.ActivityName,
+      ActivityStatus = 1, // Running
       StartTime = DateTime.Now
     };
 
     await _activityInstanceRepository.CreateAsync(newActivityInstance);
 
-    // 7. 创建新的任务
+    // 8. 获取上一个任务
+    var previousTask = await _taskRepository.FirstOrDefaultAsync(x =>
+        x.InstanceId == instance.Id &&
+        x.TaskNode == targetActivityId &&
+        x.TaskStatus == 2);
+
+    if (previousTask == null)
+    {
+      throw new Exception($"上一个任务[{targetActivityId}]不存在");
+    }
+
+    // 9. 创建新的任务
     var newTask = new LeanWorkflowTask
     {
       InstanceId = instance.Id,
-      TaskName = targetActivity.ActivityName,
-      TaskType = LeanWorkflowTaskType.Approval,
-      TaskNode = targetActivity.ActivityId,
-      TaskStatus = LeanWorkflowTaskStatus.Processing,
-      StartTime = DateTime.Now
+      TaskName = previousActivity.ActivityName,
+      TaskType = 1,
+      TaskNode = previousActivity.ActivityId,
+      TaskStatus = 1,
+      StartTime = DateTime.Now,
+      AssigneeId = previousTask.AssigneeId,
+      AssigneeName = previousTask.AssigneeName
     };
 
     await _taskRepository.CreateAsync(newTask);
 
-    // 8. 更新实例当前节点信息
-    instance.CurrentNodeId = targetActivity.ActivityId;
-    instance.CurrentNodeName = targetActivity.ActivityName;
+    // 10. 更新实例当前节点信息
+    instance.CurrentNodeId = previousActivity.ActivityId;
+    instance.CurrentNodeName = previousActivity.ActivityName;
     await _instanceRepository.UpdateAsync(instance);
 
-    // 9. 记录历史
-    await CreateHistoryAsync(instance.Id, taskId, LeanWorkflowOperationType.Reject, operatorId, operatorName, comment);
+    // 11. 记录历史
+    await CreateHistoryAsync(instance.Id, taskId, 2, operatorId, operatorName, comment);
 
     return true;
   }
@@ -868,7 +874,7 @@ public class LeanWorkflowEngine : ILeanWorkflowEngine
       throw new Exception($"工作流实例[{task.InstanceId}]不存在");
     }
 
-    if (instance.WorkflowStatus != LeanWorkflowInstanceStatus.Running)
+    if (instance.WorkflowStatus != 1)
     {
       throw new Exception($"工作流实例[{task.InstanceId}]已结束");
     }
@@ -878,7 +884,7 @@ public class LeanWorkflowEngine : ILeanWorkflowEngine
       throw new Exception($"工作流实例[{task.InstanceId}]已暂停");
     }
 
-    if (task.TaskStatus != LeanWorkflowTaskStatus.Processing)
+    if (task.TaskStatus != 1)
     {
       throw new Exception($"任务[{taskId}]已结束");
     }
@@ -890,7 +896,7 @@ public class LeanWorkflowEngine : ILeanWorkflowEngine
     await _taskRepository.UpdateAsync(task);
 
     // 4. 记录历史
-    await CreateHistoryAsync(instance.Id, taskId, LeanWorkflowOperationType.Transfer, operatorId, operatorName, comment);
+    await CreateHistoryAsync(instance.Id, taskId, 1, operatorId, operatorName, comment);
 
     return true;
   }
@@ -917,7 +923,7 @@ public class LeanWorkflowEngine : ILeanWorkflowEngine
       throw new Exception($"工作流实例[{task.InstanceId}]不存在");
     }
 
-    if (instance.WorkflowStatus != LeanWorkflowInstanceStatus.Running)
+    if (instance.WorkflowStatus != 1)
     {
       throw new Exception($"工作流实例[{task.InstanceId}]已结束");
     }
@@ -927,7 +933,7 @@ public class LeanWorkflowEngine : ILeanWorkflowEngine
       throw new Exception($"工作流实例[{task.InstanceId}]已暂停");
     }
 
-    if (task.TaskStatus != LeanWorkflowTaskStatus.Processing)
+    if (task.TaskStatus != 1)
     {
       throw new Exception($"任务[{taskId}]已结束");
     }
@@ -939,7 +945,7 @@ public class LeanWorkflowEngine : ILeanWorkflowEngine
     await _taskRepository.UpdateAsync(task);
 
     // 4. 记录历史
-    await CreateHistoryAsync(instance.Id, taskId, LeanWorkflowOperationType.Delegate, operatorId, operatorName, comment);
+    await CreateHistoryAsync(instance.Id, taskId, 1, operatorId, operatorName, comment);
 
     return true;
   }
@@ -964,7 +970,7 @@ public class LeanWorkflowEngine : ILeanWorkflowEngine
       throw new Exception($"工作流实例[{task.InstanceId}]不存在");
     }
 
-    if (instance.WorkflowStatus != LeanWorkflowInstanceStatus.Running)
+    if (instance.WorkflowStatus != 1)
     {
       throw new Exception($"工作流实例[{task.InstanceId}]已结束");
     }
@@ -977,7 +983,7 @@ public class LeanWorkflowEngine : ILeanWorkflowEngine
     // 3. 获取上一个任务
     var previousTask = await _taskRepository.GetFirstAsync(x =>
         x.InstanceId == instance.Id &&
-        x.TaskStatus == LeanWorkflowTaskStatus.Completed &&
+        x.TaskStatus == 2 &&
         x.EndTime < task.StartTime);
 
     if (previousTask == null)
@@ -986,7 +992,7 @@ public class LeanWorkflowEngine : ILeanWorkflowEngine
     }
 
     // 4. 结束当前任务
-    task.TaskStatus = LeanWorkflowTaskStatus.Terminated;
+    task.TaskStatus = 3;
     task.EndTime = DateTime.Now;
     await _taskRepository.UpdateAsync(task);
 
@@ -994,11 +1000,11 @@ public class LeanWorkflowEngine : ILeanWorkflowEngine
     var activityInstance = await _activityInstanceRepository.GetFirstAsync(x =>
         x.WorkflowInstanceId == instance.Id &&
         x.ActivityId == task.TaskNode &&
-        x.ActivityStatus == LeanWorkflowActivityStatus.Running);
+        x.ActivityStatus == 1);
 
     if (activityInstance != null)
     {
-      activityInstance.ActivityStatus = LeanWorkflowActivityStatus.Terminated;
+      activityInstance.ActivityStatus = 3;
       activityInstance.EndTime = DateTime.Now;
       await _activityInstanceRepository.UpdateAsync(activityInstance);
     }
@@ -1016,7 +1022,7 @@ public class LeanWorkflowEngine : ILeanWorkflowEngine
       ActivityId = previousActivity.ActivityId,
       ActivityType = previousActivity.ActivityType,
       ActivityName = previousActivity.ActivityName,
-      ActivityStatus = LeanWorkflowActivityStatus.Running,
+      ActivityStatus = 1,
       StartTime = DateTime.Now
     };
 
@@ -1027,9 +1033,9 @@ public class LeanWorkflowEngine : ILeanWorkflowEngine
     {
       InstanceId = instance.Id,
       TaskName = previousActivity.ActivityName,
-      TaskType = LeanWorkflowTaskType.Approval,
+      TaskType = 1,
       TaskNode = previousActivity.ActivityId,
-      TaskStatus = LeanWorkflowTaskStatus.Processing,
+      TaskStatus = 1,
       StartTime = DateTime.Now,
       AssigneeId = previousTask.AssigneeId,
       AssigneeName = previousTask.AssigneeName
@@ -1043,7 +1049,7 @@ public class LeanWorkflowEngine : ILeanWorkflowEngine
     await _instanceRepository.UpdateAsync(instance);
 
     // 9. 记录历史
-    await CreateHistoryAsync(instance.Id, taskId, LeanWorkflowOperationType.Withdraw, operatorId, operatorName, comment);
+    await CreateHistoryAsync(instance.Id, taskId, 1, operatorId, operatorName, comment);
 
     return true;
   }
@@ -1060,7 +1066,7 @@ public class LeanWorkflowEngine : ILeanWorkflowEngine
     // 2. 获取当前运行中的活动实例
     return await _activityInstanceRepository.GetListAsync(x =>
         x.WorkflowInstanceId == instanceId &&
-        x.ActivityStatus == LeanWorkflowActivityStatus.Running);
+        x.ActivityStatus == 1);
   }
 
   public async Task<List<LeanWorkflowTask>> GetCurrentTasksAsync(long instanceId)
@@ -1075,7 +1081,7 @@ public class LeanWorkflowEngine : ILeanWorkflowEngine
     // 2. 获取当前处理中的任务
     return await _taskRepository.GetListAsync(x =>
         x.InstanceId == instanceId &&
-        x.TaskStatus == LeanWorkflowTaskStatus.Processing);
+        x.TaskStatus == 1);
   }
 
   public async Task<Dictionary<string, object>> GetVariablesAsync(long instanceId)
@@ -1206,7 +1212,7 @@ public class LeanWorkflowEngine : ILeanWorkflowEngine
   private async Task CreateHistoryAsync(
     long instanceId,
     long? taskId,
-    LeanWorkflowOperationType operationType,
+    int operationType,
     long operatorId,
     string operatorName,
     string? comment = null)
@@ -1223,6 +1229,32 @@ public class LeanWorkflowEngine : ILeanWorkflowEngine
     };
 
     await _historyRepository.CreateAsync(history);
+  }
+
+  private async Task<Dictionary<string, object>> GetProcessContextAsync(long instanceId)
+  {
+    var context = new Dictionary<string, object>();
+
+    // 1. 获取流程实例
+    var instance = await _instanceRepository.GetByIdAsync(instanceId);
+    if (instance == null)
+    {
+      return context;
+    }
+
+    // 2. 添加基本信息
+    context["ProcessInstanceId"] = instance.Id;
+    context["BusinessKey"] = instance.BusinessKey;
+    context["BusinessType"] = instance.BusinessType;
+
+    // 3. 获取变量数据
+    var variables = await GetProcessVariablesAsync(instanceId);
+    foreach (var variable in variables)
+    {
+      context[variable.Key] = variable.Value;
+    }
+
+    return context;
   }
   #endregion
 }

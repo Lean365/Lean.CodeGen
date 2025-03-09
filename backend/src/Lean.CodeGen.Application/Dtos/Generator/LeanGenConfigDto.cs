@@ -50,14 +50,16 @@ namespace Lean.CodeGen.Application.Dtos.Generator
     public string FrontendTool { get; set; } = default!;
 
     /// <summary>
-    /// 是否覆盖已有文件
+    /// 是否覆盖已有文件（0：否 1：是）
     /// </summary>
-    public bool IsOverride { get; set; }
+    [LeanExcelColumn("是否覆盖已有文件", DataType = LeanExcelDataType.Int)]
+    public int IsOverride { get; set; }
 
     /// <summary>
-    /// 是否移除表前缀
+    /// 是否移除表前缀（0：否 1：是）
     /// </summary>
-    public bool IsRemovePrefix { get; set; }
+    [LeanExcelColumn("是否移除表前缀", DataType = LeanExcelDataType.Int)]
+    public int IsRemovePrefix { get; set; }
 
     /// <summary>
     /// 表前缀
@@ -126,9 +128,9 @@ namespace Lean.CodeGen.Application.Dtos.Generator
     public string Language { get; set; } = default!;
 
     /// <summary>
-    /// 是否启用
+    /// 是否启用（0：禁用 1：启用）
     /// </summary>
-    public bool IsEnabled { get; set; }
+    public int IsEnabled { get; set; }
 
     /// <summary>
     /// 备注
@@ -172,14 +174,16 @@ namespace Lean.CodeGen.Application.Dtos.Generator
     public string FrontendTool { get; set; } = default!;
 
     /// <summary>
-    /// 是否覆盖已有文件
+    /// 是否覆盖已有文件（0：否 1：是）
     /// </summary>
-    public bool IsOverride { get; set; }
+    [LeanExcelColumn("是否覆盖已有文件", DataType = LeanExcelDataType.Int)]
+    public int IsOverride { get; set; }
 
     /// <summary>
-    /// 是否移除表前缀
+    /// 是否移除表前缀（0：否 1：是）
     /// </summary>
-    public bool IsRemovePrefix { get; set; }
+    [LeanExcelColumn("是否移除表前缀", DataType = LeanExcelDataType.Int)]
+    public int IsRemovePrefix { get; set; }
 
     /// <summary>
     /// 表前缀
@@ -238,9 +242,9 @@ namespace Lean.CodeGen.Application.Dtos.Generator
     public string Language { get; set; } = default!;
 
     /// <summary>
-    /// 是否启用
+    /// 是否启用（0：禁用 1：启用）
     /// </summary>
-    public bool IsEnabled { get; set; }
+    public int IsEnabled { get; set; }
 
     /// <summary>
     /// 备注
@@ -331,16 +335,16 @@ namespace Lean.CodeGen.Application.Dtos.Generator
     public string FrontendTool { get; set; } = default!;
 
     /// <summary>
-    /// 是否覆盖已有文件
+    /// 是否覆盖已有文件（0：否 1：是）
     /// </summary>
-    [LeanExcelColumn("是否覆盖已有文件", DataType = LeanExcelDataType.Boolean)]
-    public bool IsOverride { get; set; }
+    [LeanExcelColumn("是否覆盖已有文件", DataType = LeanExcelDataType.Int)]
+    public int IsOverride { get; set; }
 
     /// <summary>
-    /// 是否移除表前缀
+    /// 是否移除表前缀（0：否 1：是）
     /// </summary>
-    [LeanExcelColumn("是否移除表前缀", DataType = LeanExcelDataType.Boolean)]
-    public bool IsRemovePrefix { get; set; }
+    [LeanExcelColumn("是否移除表前缀", DataType = LeanExcelDataType.Int)]
+    public int IsRemovePrefix { get; set; }
 
     /// <summary>
     /// 表前缀
@@ -397,16 +401,16 @@ namespace Lean.CodeGen.Application.Dtos.Generator
     public string FrontendTool { get; set; } = default!;
 
     /// <summary>
-    /// 是否覆盖已有文件
+    /// 是否覆盖已有文件（0：否 1：是）
     /// </summary>
-    [LeanExcelColumn("是否覆盖已有文件", DataType = LeanExcelDataType.Boolean)]
-    public bool IsOverride { get; set; }
+    [LeanExcelColumn("是否覆盖已有文件", DataType = LeanExcelDataType.Int)]
+    public int IsOverride { get; set; }
 
     /// <summary>
-    /// 是否移除表前缀
+    /// 是否移除表前缀（0：否 1：是）
     /// </summary>
-    [LeanExcelColumn("是否移除表前缀", DataType = LeanExcelDataType.Boolean)]
-    public bool IsRemovePrefix { get; set; }
+    [LeanExcelColumn("是否移除表前缀", DataType = LeanExcelDataType.Int)]
+    public int IsRemovePrefix { get; set; }
 
     /// <summary>
     /// 表前缀
@@ -457,16 +461,16 @@ namespace Lean.CodeGen.Application.Dtos.Generator
     public string FrontendTool { get; set; } = "Vue3";
 
     /// <summary>
-    /// 是否覆盖已有文件
+    /// 是否覆盖已有文件（0：否 1：是）
     /// </summary>
-    [LeanExcelColumn("是否覆盖已有文件", DataType = LeanExcelDataType.Boolean)]
-    public bool IsOverride { get; set; } = false;
+    [LeanExcelColumn("是否覆盖已有文件", DataType = LeanExcelDataType.Int)]
+    public int IsOverride { get; set; } = 0;
 
     /// <summary>
-    /// 是否移除表前缀
+    /// 是否移除表前缀（0：否 1：是）
     /// </summary>
-    [LeanExcelColumn("是否移除表前缀", DataType = LeanExcelDataType.Boolean)]
-    public bool IsRemovePrefix { get; set; } = true;
+    [LeanExcelColumn("是否移除表前缀", DataType = LeanExcelDataType.Int)]
+    public int IsRemovePrefix { get; set; } = 1;
 
     /// <summary>
     /// 表前缀

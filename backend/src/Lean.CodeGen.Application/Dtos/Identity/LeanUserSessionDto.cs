@@ -43,18 +43,27 @@ public class LeanUserSessionDto : LeanBaseDto
 
   /// <summary>
   /// 设备类型
+  /// 0-PC
+  /// 1-Mobile
+  /// 2-Tablet
+  /// 3-Other
   /// </summary>
-  public LeanDeviceType DeviceType { get; set; }
+  public int DeviceType { get; set; }
 
   /// <summary>
   /// 是否信任设备
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public bool IsTrusted { get; set; }
+  public int IsTrusted { get; set; }
 
   /// <summary>
   /// 设备状态
+  /// 0-正常
+  /// 1-禁用
+  /// 2-锁定
   /// </summary>
-  public LeanDeviceStatus DeviceStatus { get; set; }
+  public int DeviceStatus { get; set; }
 
   /// <summary>
   /// 登录IP
@@ -78,13 +87,20 @@ public class LeanUserSessionDto : LeanBaseDto
 
   /// <summary>
   /// 登录方式
+  /// 0-账号密码
+  /// 1-手机验证码
+  /// 2-邮箱验证码
+  /// 3-第三方登录
   /// </summary>
-  public LeanLoginType? LoginType { get; set; }
+  public int? LoginType { get; set; }
 
   /// <summary>
   /// 登录状态
+  /// 0-正常
+  /// 1-锁定
+  /// 2-禁用
   /// </summary>
-  public LeanLoginStatus LoginStatus { get; set; }
+  public int LoginStatus { get; set; }
 
   /// <summary>
   /// 密码错误次数
@@ -115,7 +131,7 @@ public class LeanUserSessionDto : LeanBaseDto
 /// <summary>
 /// 用户会话查询参数
 /// </summary>
-public class LeanQueryUserSessionDto : LeanPage
+public class LeanUserSessionQueryDto : LeanPage
 {
   /// <summary>
   /// 用户ID
@@ -130,12 +146,12 @@ public class LeanQueryUserSessionDto : LeanPage
   /// <summary>
   /// 设备类型
   /// </summary>
-  public LeanDeviceType? DeviceType { get; set; }
+  public int? DeviceType { get; set; }
 
   /// <summary>
   /// 设备状态
   /// </summary>
-  public LeanDeviceStatus? DeviceStatus { get; set; }
+  public int? DeviceStatus { get; set; }
 
   /// <summary>
   /// 登录IP
@@ -145,7 +161,7 @@ public class LeanQueryUserSessionDto : LeanPage
   /// <summary>
   /// 登录状态
   /// </summary>
-  public LeanLoginStatus? LoginStatus { get; set; }
+  public int? LoginStatus { get; set; }
 
   /// <summary>
   /// 创建时间范围-开始
@@ -161,7 +177,7 @@ public class LeanQueryUserSessionDto : LeanPage
 /// <summary>
 /// 用户会话创建参数
 /// </summary>
-public class LeanCreateUserSessionDto
+public class LeanUserSessionCreateDto
 {
   /// <summary>
   /// 用户ID
@@ -185,12 +201,14 @@ public class LeanCreateUserSessionDto
   /// <summary>
   /// 设备类型
   /// </summary>
-  public LeanDeviceType DeviceType { get; set; }
+  public int DeviceType { get; set; }
 
   /// <summary>
   /// 是否信任设备
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public bool IsTrusted { get; set; }
+  public int IsTrusted { get; set; }
 
   /// <summary>
   /// 登录IP
@@ -219,7 +237,7 @@ public class LeanCreateUserSessionDto
   /// <summary>
   /// 登录方式
   /// </summary>
-  public LeanLoginType? LoginType { get; set; }
+  public int? LoginType { get; set; }
 
   /// <summary>
   /// 活动角色列表
@@ -230,7 +248,7 @@ public class LeanCreateUserSessionDto
 /// <summary>
 /// 用户会话更新参数
 /// </summary>
-public class LeanUpdateUserSessionDto
+public class LeanUserSessionUpdateDto
 {
   /// <summary>
   /// 会话ID
@@ -246,13 +264,15 @@ public class LeanUpdateUserSessionDto
 
   /// <summary>
   /// 是否信任设备
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public bool IsTrusted { get; set; }
+  public int IsTrusted { get; set; }
 
   /// <summary>
   /// 设备状态
   /// </summary>
-  public LeanDeviceStatus DeviceStatus { get; set; }
+  public int DeviceStatus { get; set; }
 
   /// <summary>
   /// 活动角色列表
@@ -263,7 +283,7 @@ public class LeanUpdateUserSessionDto
 /// <summary>
 /// 用户会话状态变更参数
 /// </summary>
-public class LeanChangeUserSessionStatusDto
+public class LeanUserSessionChangeStatusDto
 {
   /// <summary>
   /// 会话ID
@@ -275,13 +295,13 @@ public class LeanChangeUserSessionStatusDto
   /// 设备状态
   /// </summary>
   [Required(ErrorMessage = "设备状态不能为空")]
-  public LeanDeviceStatus DeviceStatus { get; set; }
+  public int DeviceStatus { get; set; }
 }
 
 /// <summary>
-/// 用户会话导出参数
+/// 用户会话导出查询参数
 /// </summary>
-public class LeanExportUserSessionDto : LeanQueryUserSessionDto
+public class LeanUserSessionExportQueryDto : LeanUserSessionQueryDto
 {
   /// <summary>
   /// 导出字段列表
@@ -296,8 +316,10 @@ public class LeanExportUserSessionDto : LeanQueryUserSessionDto
 
   /// <summary>
   /// 是否导出全部
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public bool IsExportAll { get; set; }
+  public int IsExportAll { get; set; }
 
   /// <summary>
   /// 选中的ID列表
@@ -308,7 +330,7 @@ public class LeanExportUserSessionDto : LeanQueryUserSessionDto
 /// <summary>
 /// 用户会话删除参数
 /// </summary>
-public class LeanDeleteUserSessionDto
+public class LeanUserSessionDeleteDto
 {
   /// <summary>
   /// 会话ID

@@ -59,7 +59,7 @@ public class LeanMenuService : LeanBaseService, ILeanMenuService
   /// </summary>
   /// <param name="input">菜单创建参数</param>
   /// <returns>创建成功的菜单信息</returns>
-  public async Task<LeanApiResult<long>> CreateAsync(LeanCreateMenuDto input)
+  public async Task<LeanApiResult<long>> CreateAsync(LeanMenuCreateDto input)
   {
     return await ExecuteInTransactionAsync(async () =>
     {
@@ -86,7 +86,7 @@ public class LeanMenuService : LeanBaseService, ILeanMenuService
   /// </summary>
   /// <param name="input">菜单更新参数</param>
   /// <returns>更新后的菜单信息</returns>
-  public async Task<LeanApiResult> UpdateAsync(LeanUpdateMenuDto input)
+  public async Task<LeanApiResult> UpdateAsync(LeanMenuUpdateDto input)
   {
     return await ExecuteInTransactionAsync(async () =>
     {
@@ -96,7 +96,7 @@ public class LeanMenuService : LeanBaseService, ILeanMenuService
         throw new LeanException("菜单不存在");
       }
 
-      if (menu.IsBuiltin == LeanBuiltinStatus.Yes)
+      if (menu.IsBuiltin == 1)
       {
         throw new LeanException("内置菜单不能修改");
       }
@@ -134,7 +134,7 @@ public class LeanMenuService : LeanBaseService, ILeanMenuService
         throw new LeanException("菜单不存在");
       }
 
-      if (menu.IsBuiltin == LeanBuiltinStatus.Yes)
+      if (menu.IsBuiltin == 1)
       {
         throw new LeanException("内置菜单不能删除");
       }
@@ -178,7 +178,7 @@ public class LeanMenuService : LeanBaseService, ILeanMenuService
   /// </summary>
   /// <param name="input">查询参数</param>
   /// <returns>菜单列表</returns>
-  public async Task<List<LeanMenuDto>> QueryAsync(LeanQueryMenuDto input)
+  public async Task<List<LeanMenuDto>> QueryAsync(LeanMenuQueryDto input)
   {
     using (LogPerformance("查询菜单列表"))
     {
@@ -223,7 +223,7 @@ public class LeanMenuService : LeanBaseService, ILeanMenuService
   /// </summary>
   /// <param name="input">查询参数</param>
   /// <returns>菜单树形结构</returns>
-  public async Task<List<LeanMenuTreeDto>> GetTreeAsync(LeanQueryMenuDto input)
+  public async Task<List<LeanMenuTreeDto>> GetTreeAsync(LeanMenuQueryDto input)
   {
     // 获取菜单列表
     var menus = await QueryAsync(input);
@@ -236,7 +236,7 @@ public class LeanMenuService : LeanBaseService, ILeanMenuService
   /// 修改菜单状态
   /// </summary>
   /// <param name="input">状态修改参数</param>
-  public async Task ChangeStatusAsync(LeanChangeMenuStatusDto input)
+  public async Task ChangeStatusAsync(LeanMenuChangeStatusDto input)
   {
     await ExecuteInTransactionAsync(async () =>
     {
@@ -246,12 +246,12 @@ public class LeanMenuService : LeanBaseService, ILeanMenuService
         throw new LeanException("菜单不存在");
       }
 
-      if (menu.IsBuiltin == LeanBuiltinStatus.Yes)
+      if (menu.IsBuiltin == 1)
       {
         throw new LeanException("内置菜单不能修改状态");
       }
 
-      menu.MenuStatus = input.MenuStatus;
+      menu.MenuStatus = 2;
       await _menuRepository.UpdateAsync(menu);
 
       LogAudit("ChangeMenuStatus", $"修改菜单状态: {menu.MenuName}, 状态: {input.MenuStatus}");
@@ -271,7 +271,7 @@ public class LeanMenuService : LeanBaseService, ILeanMenuService
 
     // 获取菜单列表
     var menus = await _menuRepository.GetListAsync(
-        x => menuIds.Contains(x.Id) && x.MenuStatus == LeanMenuStatus.Normal);
+        x => menuIds.Contains(x.Id) && x.MenuStatus == 2);
 
     // 转换为DTO并构建树形结构
     var menuDtos = menus.OrderBy(x => x.OrderNum)
@@ -297,7 +297,7 @@ public class LeanMenuService : LeanBaseService, ILeanMenuService
 
     // 获取菜单列表
     var menus = await _menuRepository.GetListAsync(
-        x => menuIds.Contains(x.Id) && x.MenuStatus == LeanMenuStatus.Normal);
+        x => menuIds.Contains(x.Id) && x.MenuStatus == 2);
     var menuDtos = menus.OrderBy(x => x.OrderNum)
                        .Select(x => x.Adapt<LeanMenuDto>())
                        .ToList();
@@ -322,7 +322,7 @@ public class LeanMenuService : LeanBaseService, ILeanMenuService
     // 获取菜单权限
     var menus = await _menuRepository.GetListAsync(
         x => menuIds.Contains(x.Id) &&
-             x.MenuStatus == LeanMenuStatus.Normal &&
+             x.MenuStatus == 2 &&
              !string.IsNullOrEmpty(x.Perms));
 
     return menus.Select(x => x.Perms)
@@ -391,7 +391,7 @@ public class LeanMenuService : LeanBaseService, ILeanMenuService
   /// <summary>
   /// 分页查询菜单
   /// </summary>
-  public async Task<LeanApiResult<LeanPageResult<LeanMenuDto>>> GetPageAsync(LeanQueryMenuDto input)
+  public async Task<LeanApiResult<LeanPageResult<LeanMenuDto>>> GetPageAsync(LeanMenuQueryDto input)
   {
     Expression<Func<LeanMenu, bool>> predicate = x => true;
 
@@ -428,7 +428,7 @@ public class LeanMenuService : LeanBaseService, ILeanMenuService
   /// <summary>
   /// 设置菜单状态
   /// </summary>
-  public async Task<LeanApiResult> SetStatusAsync(LeanChangeMenuStatusDto input)
+  public async Task<LeanApiResult> SetStatusAsync(LeanMenuChangeStatusDto input)
   {
     await ChangeStatusAsync(input);
     return LeanApiResult.Ok();
@@ -437,7 +437,7 @@ public class LeanMenuService : LeanBaseService, ILeanMenuService
   /// <summary>
   /// 导出菜单数据
   /// </summary>
-  public async Task<byte[]> ExportAsync(LeanQueryMenuDto input)
+  public async Task<byte[]> ExportAsync(LeanMenuQueryDto input)
   {
     var menus = await QueryAsync(input);
     var exportDtos = menus.Select(x => new LeanMenuExportDto
@@ -461,9 +461,9 @@ public class LeanMenuService : LeanBaseService, ILeanMenuService
   /// <summary>
   /// 导入菜单数据
   /// </summary>
-  public async Task<LeanImportMenuResultDto> ImportAsync(LeanFileInfo file)
+  public async Task<LeanMenuImportResultDto> ImportAsync(LeanFileInfo file)
   {
-    var result = new LeanImportMenuResultDto();
+    var result = new LeanMenuImportResultDto();
     try
     {
       var bytes = new byte[file.Stream.Length];
@@ -478,8 +478,8 @@ public class LeanMenuService : LeanBaseService, ILeanMenuService
           continue;
         }
         var menu = item.Adapt<LeanMenu>();
-        menu.MenuStatus = LeanMenuStatus.Normal;
-        menu.IsBuiltin = LeanBuiltinStatus.No;
+        menu.MenuStatus = 2;
+        menu.IsBuiltin = 0;
         await _menuRepository.CreateAsync(menu);
         LogAudit("ImportMenu", $"导入菜单: {menu.MenuName}");
         result.SuccessCount++;
@@ -503,8 +503,8 @@ public class LeanMenuService : LeanBaseService, ILeanMenuService
       new LeanMenuImportDto
       {
         MenuName = "示例菜单",
-        MenuType = LeanMenuType.Menu,
-        MenuStatus = LeanMenuStatus.Normal,
+        MenuType = 1,
+        MenuStatus = 2,
         ParentId = 0,
         OrderNum = 1,
         Perms = "system:menu:list",

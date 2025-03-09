@@ -156,24 +156,24 @@ namespace Lean.CodeGen.Application.Dtos.Generator
     public string TsType { get; set; } = default!;
 
     /// <summary>
-    /// 是否主键
+    /// 是否主键（0：否 1：是）
     /// </summary>
-    public bool IsPk { get; set; }
+    public int IsPk { get; set; }
 
     /// <summary>
-    /// 是否自增
+    /// 是否自增（0：否 1：是）
     /// </summary>
-    public bool IsIncrement { get; set; }
+    public int IsIncrement { get; set; }
 
     /// <summary>
-    /// 是否必填
+    /// 是否必填（0：否 1：是）
     /// </summary>
-    public bool IsRequired { get; set; }
+    public int IsRequired { get; set; }
 
     /// <summary>
-    /// 是否为空
+    /// 是否为空（0：否 1：是）
     /// </summary>
-    public bool IsNullable { get; set; }
+    public int IsNullable { get; set; }
 
     /// <summary>
     /// 列长度
@@ -206,14 +206,14 @@ namespace Lean.CodeGen.Application.Dtos.Generator
     public long TableId { get; set; }
 
     /// <summary>
-    /// 是否为插入字段
+    /// 是否为插入字段（0：否 1：是）
     /// </summary>
-    public bool IsInsert { get; set; }
+    public int IsInsert { get; set; }
 
     /// <summary>
-    /// 是否编辑字段
+    /// 是否编辑字段（0：否 1：是）
     /// </summary>
-    public bool IsEdit { get; set; }
+    public int IsEdit { get; set; }
 
     /// <summary>
     /// 显示类型
@@ -231,14 +231,14 @@ namespace Lean.CodeGen.Application.Dtos.Generator
     public string? ValidateRule { get; set; }
 
     /// <summary>
-    /// 是否列表显示
+    /// 是否列表显示（0：否 1：是）
     /// </summary>
-    public bool IsList { get; set; }
+    public int IsList { get; set; }
 
     /// <summary>
-    /// 是否查询字段
+    /// 是否查询字段（0：否 1：是）
     /// </summary>
-    public bool IsQuery { get; set; }
+    public int IsQuery { get; set; }
 
     /// <summary>
     /// 查询方式
@@ -246,24 +246,24 @@ namespace Lean.CodeGen.Application.Dtos.Generator
     public string? QueryType { get; set; }
 
     /// <summary>
-    /// 是否导入字段
+    /// 是否导入字段（0：否 1：是）
     /// </summary>
-    public bool IsImport { get; set; }
+    public int IsImport { get; set; }
 
     /// <summary>
-    /// 是否导出字段
+    /// 是否导出字段（0：否 1：是）
     /// </summary>
-    public bool IsExport { get; set; }
+    public int IsExport { get; set; }
 
     /// <summary>
-    /// 是否业务键
+    /// 是否业务键（0：否 1：是）
     /// </summary>
-    public bool IsBusinessKey { get; set; }
+    public int IsBusinessKey { get; set; }
 
     /// <summary>
-    /// 是否版本字段
+    /// 是否版本字段（0：否 1：是）
     /// </summary>
-    public bool IsVersion { get; set; }
+    public int IsVersion { get; set; }
   }
 
   /// <summary>
@@ -388,24 +388,24 @@ namespace Lean.CodeGen.Application.Dtos.Generator
     public string TsType { get; set; } = default!;
 
     /// <summary>
-    /// 是否主键
+    /// 是否主键（0：否 1：是）
     /// </summary>
-    public bool IsPk { get; set; }
+    public int IsPk { get; set; }
 
     /// <summary>
-    /// 是否自增
+    /// 是否自增（0：否 1：是）
     /// </summary>
-    public bool IsIncrement { get; set; }
+    public int IsIncrement { get; set; }
 
     /// <summary>
-    /// 是否必填
+    /// 是否必填（0：否 1：是）
     /// </summary>
-    public bool IsRequired { get; set; }
+    public int IsRequired { get; set; }
 
     /// <summary>
-    /// 是否为空
+    /// 是否为空（0：否 1：是）
     /// </summary>
-    public bool IsNullable { get; set; }
+    public int IsNullable { get; set; }
 
     /// <summary>
     /// 列长度
@@ -433,14 +433,14 @@ namespace Lean.CodeGen.Application.Dtos.Generator
     public int Sort { get; set; }
 
     /// <summary>
-    /// 是否为插入字段
+    /// 是否为插入字段（0：否 1：是）
     /// </summary>
-    public bool IsInsert { get; set; }
+    public int IsInsert { get; set; }
 
     /// <summary>
-    /// 是否编辑字段
+    /// 是否编辑字段（0：否 1：是）
     /// </summary>
-    public bool IsEdit { get; set; }
+    public int IsEdit { get; set; }
 
     /// <summary>
     /// 显示类型
@@ -458,14 +458,14 @@ namespace Lean.CodeGen.Application.Dtos.Generator
     public string? ValidateRule { get; set; }
 
     /// <summary>
-    /// 是否列表显示
+    /// 是否列表显示（0：否 1：是）
     /// </summary>
-    public bool IsList { get; set; }
+    public int IsList { get; set; }
 
     /// <summary>
-    /// 是否查询字段
+    /// 是否查询字段（0：否 1：是）
     /// </summary>
-    public bool IsQuery { get; set; }
+    public int IsQuery { get; set; }
 
     /// <summary>
     /// 查询方式
@@ -473,24 +473,24 @@ namespace Lean.CodeGen.Application.Dtos.Generator
     public string? QueryType { get; set; }
 
     /// <summary>
-    /// 是否导入字段
+    /// 是否导入字段（0：否 1：是）
     /// </summary>
-    public bool IsImport { get; set; }
+    public int IsImport { get; set; }
 
     /// <summary>
-    /// 是否导出字段
+    /// 是否导出字段（0：否 1：是）
     /// </summary>
-    public bool IsExport { get; set; }
+    public int IsExport { get; set; }
 
     /// <summary>
-    /// 是否业务键
+    /// 是否业务键（0：否 1：是）
     /// </summary>
-    public bool IsBusinessKey { get; set; }
+    public int IsBusinessKey { get; set; }
 
     /// <summary>
-    /// 是否版本字段
+    /// 是否版本字段（0：否 1：是）
     /// </summary>
-    public bool IsVersion { get; set; }
+    public int IsVersion { get; set; }
   }
 
   /// <summary>

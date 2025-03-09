@@ -36,7 +36,7 @@ public class LeanPostService : LeanBaseService, ILeanPostService
   /// <summary>
   /// 创建岗位
   /// </summary>
-  public async Task<LeanApiResult<long>> CreateAsync(LeanCreatePostDto input)
+  public async Task<LeanApiResult<long>> CreateAsync(LeanPostCreateDto input)
   {
     // 验证岗位编码唯一性
     await _uniqueValidator.ValidateAsync<string>(x => x.PostCode, input.PostCode);
@@ -51,7 +51,7 @@ public class LeanPostService : LeanBaseService, ILeanPostService
   /// <summary>
   /// 更新岗位
   /// </summary>
-  public async Task<LeanApiResult> UpdateAsync(LeanUpdatePostDto input)
+  public async Task<LeanApiResult> UpdateAsync(LeanPostUpdateDto input)
   {
     // 获取岗位
     var post = await _postRepository.GetByIdAsync(input.Id);
@@ -61,7 +61,7 @@ public class LeanPostService : LeanBaseService, ILeanPostService
     }
 
     // 验证内置岗位
-    if (post.IsBuiltin == Common.Enums.LeanBuiltinStatus.Yes)
+    if (post.IsBuiltin == 1)
     {
       throw new LeanException("内置岗位不允许修改");
     }
@@ -86,7 +86,7 @@ public class LeanPostService : LeanBaseService, ILeanPostService
     }
 
     // 验证内置岗位
-    if (post.IsBuiltin == Common.Enums.LeanBuiltinStatus.Yes)
+    if (post.IsBuiltin == 1)
     {
       throw new LeanException("内置岗位不允许删除");
     }
@@ -120,7 +120,7 @@ public class LeanPostService : LeanBaseService, ILeanPostService
   /// <summary>
   /// 查询岗位列表
   /// </summary>
-  public async Task<List<LeanPostDto>> QueryAsync(LeanQueryPostDto input)
+  public async Task<List<LeanPostDto>> QueryAsync(LeanPostQueryDto input)
   {
     // 构建查询条件
     var posts = await _postRepository.GetListAsync(x =>
@@ -139,7 +139,7 @@ public class LeanPostService : LeanBaseService, ILeanPostService
   /// <summary>
   /// 修改岗位状态
   /// </summary>
-  public async Task ChangeStatusAsync(LeanChangePostStatusDto input)
+  public async Task ChangeStatusAsync(LeanPostChangeStatusDto input)
   {
     // 获取岗位
     var post = await _postRepository.GetByIdAsync(input.Id);
@@ -149,7 +149,7 @@ public class LeanPostService : LeanBaseService, ILeanPostService
     }
 
     // 验证内置岗位
-    if (post.IsBuiltin == Common.Enums.LeanBuiltinStatus.Yes)
+    if (post.IsBuiltin == 1)
     {
       throw new LeanException("内置岗位不允许修改状态");
     }
@@ -174,7 +174,7 @@ public class LeanPostService : LeanBaseService, ILeanPostService
   /// <summary>
   /// 分页查询岗位
   /// </summary>
-  public async Task<LeanApiResult<LeanPageResult<LeanPostDto>>> GetPageAsync(LeanQueryPostDto input)
+  public async Task<LeanApiResult<LeanPageResult<LeanPostDto>>> GetPageAsync(LeanPostQueryDto input)
   {
     var (total, items) = await _postRepository.GetPageListAsync(x =>
         (string.IsNullOrEmpty(input.PostName) || x.PostName.Contains(input.PostName)) &&
@@ -200,7 +200,7 @@ public class LeanPostService : LeanBaseService, ILeanPostService
   /// <summary>
   /// 设置岗位状态
   /// </summary>
-  public async Task<LeanApiResult> SetStatusAsync(LeanChangePostStatusDto input)
+  public async Task<LeanApiResult> SetStatusAsync(LeanPostChangeStatusDto input)
   {
     await ChangeStatusAsync(input);
     return LeanApiResult.Ok();
@@ -209,7 +209,7 @@ public class LeanPostService : LeanBaseService, ILeanPostService
   /// <summary>
   /// 导出岗位数据
   /// </summary>
-  public async Task<byte[]> ExportAsync(LeanQueryPostDto input)
+  public async Task<byte[]> ExportAsync(LeanPostQueryDto input)
   {
     var posts = await QueryAsync(input);
     var exportDtos = posts.Select(x => new LeanPostExportDto
@@ -228,9 +228,9 @@ public class LeanPostService : LeanBaseService, ILeanPostService
   /// <summary>
   /// 导入岗位数据
   /// </summary>
-  public async Task<LeanImportPostResultDto> ImportAsync(LeanFileInfo file)
+  public async Task<LeanPostImportResultDto> ImportAsync(LeanFileInfo file)
   {
-    var result = new LeanImportPostResultDto();
+    var result = new LeanPostImportResultDto();
     try
     {
       var bytes = new byte[file.Stream.Length];
@@ -245,8 +245,8 @@ public class LeanPostService : LeanBaseService, ILeanPostService
           continue;
         }
         var post = item.Adapt<LeanPost>();
-        post.PostStatus = Common.Enums.LeanPostStatus.Normal;
-        post.IsBuiltin = Common.Enums.LeanBuiltinStatus.No;
+        post.PostStatus = 2;
+        post.IsBuiltin = 0;
         await _postRepository.CreateAsync(post);
         result.SuccessCount++;
       }

@@ -120,12 +120,16 @@ public interface ILeanWorkflowEngine
   /// <summary>
   /// 获取流程状态
   /// </summary>
-  Task<LeanWorkflowInstanceStatus> GetProcessStatusAsync(long processInstanceId);
+  /// <param name="processInstanceId">流程实例ID</param>
+  /// <returns>流程状态</returns>
+  Task<int> GetProcessStatusAsync(long processInstanceId);
 
   /// <summary>
   /// 获取节点状态
   /// </summary>
-  Task<LeanWorkflowActivityStatus> GetNodeStatusAsync(string nodeId);
+  /// <param name="nodeId">节点ID</param>
+  /// <returns>节点状态</returns>
+  Task<int> GetNodeStatusAsync(string nodeId);
   #endregion
 
   /// <summary>

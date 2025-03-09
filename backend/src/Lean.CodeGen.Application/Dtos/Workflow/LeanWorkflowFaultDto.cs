@@ -62,8 +62,10 @@ public class LeanWorkflowFaultDto
 
   /// <summary>
   /// 是否已处理
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public bool IsHandled { get; set; }
+  public int IsHandled { get; set; }
 
   /// <summary>
   /// 处理时间

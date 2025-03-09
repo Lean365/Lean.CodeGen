@@ -35,7 +35,7 @@ public class LeanWorkflowHistoryDto
   /// <summary>
   /// 操作类型
   /// </summary>
-  public LeanWorkflowOperationType OperationType { get; set; }
+  public int OperationType { get; set; }
 
   /// <summary>
   /// 操作人ID

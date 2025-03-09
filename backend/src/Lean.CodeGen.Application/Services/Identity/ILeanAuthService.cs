@@ -1,5 +1,6 @@
 using Lean.CodeGen.Application.Dtos.Identity;
 using Lean.CodeGen.Common.Models;
+using Lean.CodeGen.Application.Dtos.Captcha;
 
 namespace Lean.CodeGen.Application.Services.Identity;
 

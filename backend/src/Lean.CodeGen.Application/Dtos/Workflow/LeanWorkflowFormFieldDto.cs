@@ -52,18 +52,24 @@ public class LeanWorkflowFormFieldDto
 
   /// <summary>
   /// 是否必填
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public bool IsRequired { get; set; }
+  public int IsRequired { get; set; }
 
   /// <summary>
   /// 是否只读
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public bool IsReadonly { get; set; }
+  public int IsReadonly { get; set; }
 
   /// <summary>
   /// 是否隐藏
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public bool IsHidden { get; set; }
+  public int IsHidden { get; set; }
 
   /// <summary>
   /// 验证规则
@@ -92,8 +98,10 @@ public class LeanWorkflowFormFieldDto
 
   /// <summary>
   /// 是否启用
+  /// 0-停用
+  /// 1-启用
   /// </summary>
-  public bool Status { get; set; }
+  public int Status { get; set; }
 
   /// <summary>
   /// 排序号

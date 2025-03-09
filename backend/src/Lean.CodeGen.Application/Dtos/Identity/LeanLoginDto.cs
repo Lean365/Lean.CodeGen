@@ -32,18 +32,27 @@ public class LeanLoginDto : LeanBaseDto
 
   /// <summary>
   /// 设备类型
+  /// 0-PC
+  /// 1-Mobile
+  /// 2-Tablet
+  /// 3-Other
   /// </summary>
-  public LeanDeviceType DeviceType { get; set; }
+  public int? DeviceType { get; set; }
 
   /// <summary>
   /// 是否信任设备
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public bool IsTrusted { get; set; }
+  public int IsTrusted { get; set; }
 
   /// <summary>
   /// 设备状态
+  /// 0-正常
+  /// 1-禁用
+  /// 2-锁定
   /// </summary>
-  public LeanDeviceStatus DeviceStatus { get; set; }
+  public int? DeviceStatus { get; set; }
 
   /// <summary>
   /// 登录IP
@@ -67,13 +76,20 @@ public class LeanLoginDto : LeanBaseDto
 
   /// <summary>
   /// 登录方式
+  /// 0-账号密码
+  /// 1-手机验证码
+  /// 2-邮箱验证码
+  /// 3-第三方登录
   /// </summary>
-  public LeanLoginType LoginType { get; set; }
+  public int? LoginType { get; set; }
 
   /// <summary>
   /// 登录状态
+  /// 0-正常
+  /// 1-锁定
+  /// 2-禁用
   /// </summary>
-  public LeanLoginStatus LoginStatus { get; set; }
+  public int? LoginStatus { get; set; }
 
   /// <summary>
   /// 密码错误次数
@@ -109,7 +125,7 @@ public class LeanLoginDto : LeanBaseDto
 /// <summary>
 /// 登录查询参数
 /// </summary>
-public class LeanQueryLoginDto : LeanPage
+public class LeanLoginQueryDto : LeanPage
 {
   /// <summary>
   /// 用户ID
@@ -129,12 +145,12 @@ public class LeanQueryLoginDto : LeanPage
   /// <summary>
   /// 设备类型
   /// </summary>
-  public LeanDeviceType? DeviceType { get; set; }
+  public int? DeviceType { get; set; }
 
   /// <summary>
   /// 设备状态
   /// </summary>
-  public LeanDeviceStatus? DeviceStatus { get; set; }
+  public int? DeviceStatus { get; set; }
 
   /// <summary>
   /// 登录IP
@@ -149,12 +165,12 @@ public class LeanQueryLoginDto : LeanPage
   /// <summary>
   /// 登录方式
   /// </summary>
-  public LeanLoginType? LoginType { get; set; }
+  public int? LoginType { get; set; }
 
   /// <summary>
   /// 登录状态
   /// </summary>
-  public LeanLoginStatus? LoginStatus { get; set; }
+  public int? LoginStatus { get; set; }
 
   /// <summary>
   /// 创建时间范围-开始
@@ -170,7 +186,7 @@ public class LeanQueryLoginDto : LeanPage
 /// <summary>
 /// 登录参数
 /// </summary>
-public class LeanLoginParamDto
+public class LeanLoginCreateDto
 {
   /// <summary>
   /// 用户名
@@ -204,12 +220,12 @@ public class LeanLoginParamDto
   /// <summary>
   /// 设备类型
   /// </summary>
-  public LeanDeviceType DeviceType { get; set; }
+  public int DeviceType { get; set; }
 
   /// <summary>
   /// 是否信任设备
   /// </summary>
-  public bool IsTrusted { get; set; }
+  public int IsTrusted { get; set; }
 
   /// <summary>
   /// 登录IP
@@ -271,7 +287,7 @@ public class LeanLoginResultDto
 /// <summary>
 /// 刷新令牌参数
 /// </summary>
-public class LeanRefreshTokenDto
+public class LeanLoginRefreshTokenDto
 {
   /// <summary>
   /// 刷新令牌
@@ -281,9 +297,9 @@ public class LeanRefreshTokenDto
 }
 
 /// <summary>
-/// 登出参数
+/// 退出登录参数
 /// </summary>
-public class LeanLogoutDto
+public class LeanLoginLogoutDto
 {
   /// <summary>
   /// 设备ID
@@ -293,7 +309,7 @@ public class LeanLogoutDto
 }
 
 /// <summary>
-/// 登录请求
+/// 登录请求参数
 /// </summary>
 public class LeanLoginRequestDto
 {
@@ -331,7 +347,7 @@ public class LeanLoginRequestDto
 }
 
 /// <summary>
-/// 登录响应
+/// 登录响应参数
 /// </summary>
 public class LeanLoginResponseDto
 {
@@ -352,7 +368,7 @@ public class LeanLoginResponseDto
 }
 
 /// <summary>
-/// 用户信息
+/// 用户信息DTO
 /// </summary>
 public class LeanUserInfoDto
 {
@@ -388,7 +404,7 @@ public class LeanUserInfoDto
 }
 
 /// <summary>
-/// 验证码响应
+/// 验证码响应参数
 /// </summary>
 public class LeanCaptchaResponseDto
 {

@@ -30,7 +30,7 @@ public class LeanWorkflowTaskDto
   /// <summary>
   /// 任务类型
   /// </summary>
-  public LeanWorkflowTaskType TaskType { get; set; }
+  public int TaskType { get; set; }
 
   /// <summary>
   /// 任务节点编码
@@ -75,7 +75,7 @@ public class LeanWorkflowTaskDto
   /// <summary>
   /// 任务状态
   /// </summary>
-  public LeanWorkflowTaskStatus TaskStatus { get; set; }
+  public int TaskStatus { get; set; }
 
   /// <summary>
   /// 开始时间
@@ -104,18 +104,24 @@ public class LeanWorkflowTaskDto
 
   /// <summary>
   /// 是否超时
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public bool IsTimeout { get; set; }
+  public int IsTimeout { get; set; }
 
   /// <summary>
   /// 是否已读
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public bool IsRead { get; set; }
+  public int IsRead { get; set; }
 
   /// <summary>
   /// 是否已催办
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public bool IsUrged { get; set; }
+  public int IsUrged { get; set; }
 
   /// <summary>
   /// 表单数据列表

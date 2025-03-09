@@ -37,12 +37,12 @@ public abstract class LeanAuditService<TEntity> : LeanBaseService where TEntity 
         throw new LeanException("记录不存在");
       }
 
-      if (entity.AuditStatus != LeanAuditStatus.NoNeedAudit)
+      if (entity.AuditStatus != 0)
       {
         throw new LeanException("当前状态不能提交审核");
       }
 
-      entity.AuditStatus = LeanAuditStatus.Pending;
+      entity.AuditStatus = 1;
       await Repository.UpdateAsync(entity);
 
       return LeanApiResult.Ok();
@@ -62,12 +62,12 @@ public abstract class LeanAuditService<TEntity> : LeanBaseService where TEntity 
         throw new LeanException("记录不存在");
       }
 
-      if (entity.AuditStatus != LeanAuditStatus.Pending)
+      if (entity.AuditStatus != 1)
       {
         throw new LeanException("当前状态不能审核通过");
       }
 
-      entity.AuditStatus = LeanAuditStatus.Approved;
+      entity.AuditStatus = 2;
       entity.AuditUserId = Context.CurrentUserId;
       await Repository.UpdateAsync(entity);
 
@@ -88,12 +88,12 @@ public abstract class LeanAuditService<TEntity> : LeanBaseService where TEntity 
         throw new LeanException("记录不存在");
       }
 
-      if (entity.AuditStatus != LeanAuditStatus.Pending)
+      if (entity.AuditStatus != 1)
       {
         throw new LeanException("当前状态不能驳回");
       }
 
-      entity.AuditStatus = LeanAuditStatus.Rejected;
+      entity.AuditStatus = 3;
       entity.AuditUserId = Context.CurrentUserId;
       await Repository.UpdateAsync(entity);
 
@@ -117,12 +117,12 @@ public abstract class LeanAuditService<TEntity> : LeanBaseService where TEntity 
         throw new LeanException("记录不存在");
       }
 
-      if (entity.AuditStatus != LeanAuditStatus.Pending)
+      if (entity.AuditStatus != 1)
       {
         throw new LeanException("当前状态不能撤销审核");
       }
 
-      entity.AuditStatus = LeanAuditStatus.NoNeedAudit;
+      entity.AuditStatus = 0;
       await Repository.UpdateAsync(entity);
 
       return LeanApiResult.Ok();

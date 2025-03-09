@@ -3,7 +3,7 @@ using Lean.CodeGen.Common.Enums;
 namespace Lean.CodeGen.Application.Dtos.Identity;
 
 /// <summary>
-/// 用户岗位关联DTO
+/// 用户岗位关联参数
 /// </summary>
 public class LeanUserPostDto
 {
@@ -24,6 +24,8 @@ public class LeanUserPostDto
 
   /// <summary>
   /// 是否主岗位
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public LeanPrimaryStatus IsPrimary { get; set; }
+  public int IsPrimary { get; set; }
 }

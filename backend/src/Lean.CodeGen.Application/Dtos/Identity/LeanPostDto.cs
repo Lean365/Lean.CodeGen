@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using Lean.CodeGen.Common.Enums;
 using Lean.CodeGen.Common.Excel;
 using Lean.CodeGen.Common.Models;
 
@@ -34,19 +33,23 @@ public class LeanPostDto : LeanBaseDto
 
   /// <summary>
   /// 岗位状态
+  /// 0-正常
+  /// 1-停用
   /// </summary>
-  public LeanPostStatus PostStatus { get; set; }
+  public int PostStatus { get; set; }
 
   /// <summary>
   /// 是否内置
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public LeanBuiltinStatus IsBuiltin { get; set; }
+  public int IsBuiltin { get; set; }
 }
 
 /// <summary>
 /// 岗位查询参数
 /// </summary>
-public class LeanQueryPostDto : LeanPage
+public class LeanPostQueryDto : LeanPage
 {
   /// <summary>
   /// 岗位名称
@@ -60,13 +63,17 @@ public class LeanQueryPostDto : LeanPage
 
   /// <summary>
   /// 岗位状态
+  /// 0-正常
+  /// 1-停用
   /// </summary>
-  public LeanPostStatus? PostStatus { get; set; }
+  public int? PostStatus { get; set; }
 
   /// <summary>
   /// 是否内置
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public LeanBuiltinStatus? IsBuiltin { get; set; }
+  public int? IsBuiltin { get; set; }
 
   /// <summary>
   /// 创建时间范围-开始
@@ -82,7 +89,7 @@ public class LeanQueryPostDto : LeanPage
 /// <summary>
 /// 岗位创建参数
 /// </summary>
-public class LeanCreatePostDto
+public class LeanPostCreateDto
 {
   /// <summary>
   /// 岗位名称
@@ -111,19 +118,23 @@ public class LeanCreatePostDto
 
   /// <summary>
   /// 岗位状态
+  /// 0-正常
+  /// 1-停用
   /// </summary>
-  public LeanPostStatus PostStatus { get; set; } = LeanPostStatus.Normal;
+  public int PostStatus { get; set; } = 0;
 
   /// <summary>
   /// 是否内置
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public LeanBuiltinStatus IsBuiltin { get; set; } = LeanBuiltinStatus.No;
+  public int IsBuiltin { get; set; } = 0;
 }
 
 /// <summary>
 /// 岗位更新参数
 /// </summary>
-public class LeanUpdatePostDto
+public class LeanPostUpdateDto
 {
   /// <summary>
   /// 岗位ID
@@ -151,14 +162,16 @@ public class LeanUpdatePostDto
 
   /// <summary>
   /// 岗位状态
+  /// 0-正常
+  /// 1-停用
   /// </summary>
-  public LeanPostStatus PostStatus { get; set; }
+  public int PostStatus { get; set; }
 }
 
 /// <summary>
 /// 岗位删除参数
 /// </summary>
-public class LeanDeletePostDto
+public class LeanPostDeleteDto
 {
   /// <summary>
   /// 岗位ID
@@ -170,7 +183,7 @@ public class LeanDeletePostDto
 /// <summary>
 /// 岗位状态变更参数
 /// </summary>
-public class LeanChangePostStatusDto
+public class LeanPostChangeStatusDto
 {
   /// <summary>
   /// 岗位ID
@@ -180,13 +193,15 @@ public class LeanChangePostStatusDto
 
   /// <summary>
   /// 岗位状态
+  /// 0-正常
+  /// 1-停用
   /// </summary>
-  [Required(ErrorMessage = "岗位状态不能为空")]
-  public LeanPostStatus PostStatus { get; set; }
+  [Required(ErrorMessage = "状态不能为空")]
+  public int PostStatus { get; set; }
 }
 
 /// <summary>
-/// 岗位导入DTO
+/// 岗位导入参数
 /// </summary>
 public class LeanPostImportDto
 {
@@ -194,15 +209,15 @@ public class LeanPostImportDto
   /// 岗位名称
   /// </summary>
   [LeanExcelColumn("岗位名称")]
-  [Required]
-  public string PostName { get; set; }
+  [Required(ErrorMessage = "岗位名称不能为空")]
+  public string PostName { get; set; } = default!;
 
   /// <summary>
   /// 岗位编码
   /// </summary>
   [LeanExcelColumn("岗位编码")]
-  [Required]
-  public string PostCode { get; set; }
+  [Required(ErrorMessage = "岗位编码不能为空")]
+  public string PostCode { get; set; } = default!;
 
   /// <summary>
   /// 显示顺序
@@ -214,27 +229,27 @@ public class LeanPostImportDto
   /// 备注
   /// </summary>
   [LeanExcelColumn("备注")]
-  public string Remark { get; set; }
+  public string? Remark { get; set; }
 }
 
 /// <summary>
-/// 岗位导入模板
+/// 岗位导入模板参数
 /// </summary>
-public class LeanImportTemplatePostDto
+public class LeanPostImportTemplateDto
 {
   /// <summary>
   /// 岗位名称
   /// </summary>
   [Required(ErrorMessage = "岗位名称不能为空")]
   [StringLength(50, MinimumLength = 2, ErrorMessage = "岗位名称长度必须在2-50个字符之间")]
-  public string PostName { get; set; } = string.Empty;
+  public string PostName { get; set; } = default!;
 
   /// <summary>
   /// 岗位编码
   /// </summary>
   [Required(ErrorMessage = "岗位编码不能为空")]
   [StringLength(50, MinimumLength = 2, ErrorMessage = "岗位编码长度必须在2-50个字符之间")]
-  public string PostCode { get; set; } = string.Empty;
+  public string PostCode { get; set; } = default!;
 
   /// <summary>
   /// 岗位描述
@@ -249,39 +264,35 @@ public class LeanImportTemplatePostDto
 }
 
 /// <summary>
-/// 岗位导入错误信息
+/// 岗位导入错误参数
 /// </summary>
-public class LeanImportPostErrorDto : LeanImportError
+public class LeanPostImportErrorDto : LeanImportError
 {
   /// <summary>
   /// 岗位编码
   /// </summary>
-  public string PostCode
-  {
-    get => Key;
-    set => Key = value;
-  }
+  public string PostCode { get; set; } = default!;
 }
 
 /// <summary>
-/// 岗位导入结果
+/// 岗位导入结果参数
 /// </summary>
-public class LeanImportPostResultDto : LeanImportResult
+public class LeanPostImportResultDto : LeanImportResult
 {
   /// <summary>
-  /// 错误信息列表
+  /// 错误列表
   /// </summary>
-  public new List<LeanImportPostErrorDto> Errors { get; set; } = new();
+  public new List<LeanPostImportErrorDto> Errors { get; set; } = new();
 
   /// <summary>
-  /// 添加错误信息
+  /// 添加错误
   /// </summary>
+  /// <param name="postCode">岗位编码</param>
+  /// <param name="errorMessage">错误消息</param>
   public override void AddError(string postCode, string errorMessage)
   {
-    base.AddError(postCode, errorMessage);
-    Errors.Add(new LeanImportPostErrorDto
+    Errors.Add(new LeanPostImportErrorDto
     {
-      RowIndex = TotalCount,
       PostCode = postCode,
       ErrorMessage = errorMessage
     });
@@ -289,9 +300,9 @@ public class LeanImportPostResultDto : LeanImportResult
 }
 
 /// <summary>
-/// 岗位导出参数
+/// 岗位导出查询参数
 /// </summary>
-public class LeanExportPostDto : LeanQueryPostDto
+public class LeanPostExportQueryDto : LeanPostQueryDto
 {
   /// <summary>
   /// 导出字段列表
@@ -302,12 +313,14 @@ public class LeanExportPostDto : LeanQueryPostDto
   /// 文件格式
   /// </summary>
   [Required(ErrorMessage = "文件格式不能为空")]
-  public string FileFormat { get; set; } = "xlsx";
+  public string FileType { get; set; } = default!;
 
   /// <summary>
   /// 是否导出全部
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public bool IsExportAll { get; set; }
+  public int IsExportAll { get; set; }
 
   /// <summary>
   /// 选中的ID列表
@@ -316,7 +329,7 @@ public class LeanExportPostDto : LeanQueryPostDto
 }
 
 /// <summary>
-/// 岗位导出数据
+/// 岗位导出参数
 /// </summary>
 public class LeanPostExportDto
 {
@@ -334,9 +347,11 @@ public class LeanPostExportDto
 
   /// <summary>
   /// 岗位状态
+  /// 0-正常
+  /// 1-停用
   /// </summary>
   [LeanExcelColumn("岗位状态", DataType = LeanExcelDataType.Int)]
-  public LeanPostStatus PostStatus { get; set; }
+  public int PostStatus { get; set; }
 
   /// <summary>
   /// 显示顺序
@@ -346,9 +361,11 @@ public class LeanPostExportDto
 
   /// <summary>
   /// 是否内置
+  /// 0-否
+  /// 1-是
   /// </summary>
   [LeanExcelColumn("是否内置", DataType = LeanExcelDataType.Int)]
-  public LeanBuiltinStatus IsBuiltin { get; set; }
+  public int IsBuiltin { get; set; }
 
   /// <summary>
   /// 创建时间

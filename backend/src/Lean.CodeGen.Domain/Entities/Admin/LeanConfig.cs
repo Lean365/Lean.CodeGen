@@ -15,7 +15,7 @@ namespace Lean.CodeGen.Domain.Entities.Admin;
 /// <summary>
 /// 系统配置实体
 /// </summary>
-[SugarTable("lean_admin_config", "系统配置表")]
+[SugarTable("lean_adm_config", "系统配置表")]
 [SugarIndex("uk_key", nameof(ConfigKey), OrderByType.Asc, true)]
 public class LeanConfig : LeanBaseEntity
 {
@@ -53,7 +53,7 @@ public class LeanConfig : LeanBaseEntity
     /// 配置值的数据类型：String-字符串，Number-数值，Boolean-布尔值，Json-JSON对象，Other-其他
     /// </remarks>
     [SugarColumn(ColumnName = "config_type", ColumnDescription = "配置类型", IsNullable = false, DefaultValue = "0", ColumnDataType = "int")]
-    public LeanConfigType ConfigType { get; set; }
+    public int ConfigType { get; set; }
 
     /// <summary>
     /// 系统内置
@@ -63,7 +63,7 @@ public class LeanConfig : LeanBaseEntity
     /// 内置配置项不允许删除
     /// </remarks>
     [SugarColumn(ColumnName = "is_builtin", ColumnDescription = "系统内置", IsNullable = false, DefaultValue = "0", ColumnDataType = "int")]
-    public LeanBuiltinStatus IsBuiltin { get; set; }
+    public int IsBuiltin { get; set; }
 
     /// <summary>
     /// 状态
@@ -71,8 +71,8 @@ public class LeanConfig : LeanBaseEntity
     /// <remarks>
     /// 配置项状态：0-正常，1-停用
     /// </remarks>
-    [SugarColumn(ColumnName = "status", ColumnDescription = "状态", IsNullable = false, DefaultValue = "0", ColumnDataType = "int")]
-    public LeanStatus Status { get; set; }
+    [SugarColumn(ColumnName = "config_status", ColumnDescription = "状态", IsNullable = false, DefaultValue = "0", ColumnDataType = "int")]
+    public int ConfigStatus { get; set; }
 
     /// <summary>
     /// 配置分组

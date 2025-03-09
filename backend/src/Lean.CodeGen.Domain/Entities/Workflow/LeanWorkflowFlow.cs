@@ -5,7 +5,7 @@ namespace Lean.CodeGen.Domain.Entities.Workflow;
 /// <summary>
 /// 工作流连线实体
 /// </summary>
-[SugarTable("lean_workflow_flow", "工作流连线表")]
+[SugarTable("lean_wk_flow", "工作流连线表")]
 public class LeanWorkflowFlow : LeanBaseEntity
 {
   /// <summary>

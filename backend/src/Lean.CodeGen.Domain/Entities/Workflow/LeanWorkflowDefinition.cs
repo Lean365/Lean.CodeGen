@@ -6,7 +6,7 @@ namespace Lean.CodeGen.Domain.Entities.Workflow;
 /// <summary>
 /// 工作流定义实体
 /// </summary>
-[SugarTable("lean_workflow_definition", "工作流定义表")]
+[SugarTable("lean_wk_definition", "工作流定义表")]
 [SugarIndex("uk_code", nameof(WorkflowCode), OrderByType.Asc, true)]
 public class LeanWorkflowDefinition : LeanBaseEntity
 {
@@ -56,7 +56,7 @@ public class LeanWorkflowDefinition : LeanBaseEntity
   /// 工作流状态
   /// </summary>
   [SugarColumn(ColumnName = "workflow_status", ColumnDescription = "工作流状态", IsNullable = false)]
-  public LeanWorkflowStatus WorkflowStatus { get; set; }
+  public int WorkflowStatus { get; set; }
 
   /// <summary>
   /// 是否启用(0=禁用,1=启用)

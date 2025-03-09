@@ -100,10 +100,10 @@ public abstract class LeanBaseEntity
   /// 审核状态
   /// </summary>
   /// <remarks>
-  /// 记录实体的审核状态：NoNeedAudit-无需审核，Pending-待审核，Approved-已审核，Rejected-已驳回等
+  /// 记录实体的审核状态：0-无需审核，1-待审核，2-已审核，3-已驳回
   /// </remarks>
   [SugarColumn(ColumnName = "audit_status", ColumnDescription = "审核状态", IsNullable = false, DefaultValue = "0", ColumnDataType = "int")]
-  public LeanAuditStatus AuditStatus { get; set; }
+  public int AuditStatus { get; set; }
 
   /// <summary>
   /// 审核人员ID

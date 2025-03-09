@@ -42,11 +42,11 @@ public class LeanDictDataSeed
 
   private async Task InitializeDictDataAsync(LeanDictType dictType)
   {
-    _logger.Info($"开始初始化字典类型[{dictType.DictName}]的字典数据...");
+    _logger.Info($"开始初始化字典类型[{dictType.DictTypeName}]的字典数据...");
 
     var defaultDictData = new List<LeanDictData>();
 
-    switch (dictType.DictCode)
+    switch (dictType.DictTypeCode)
     {
       case "sys_status":
         defaultDictData.AddRange(new[]
@@ -440,7 +440,7 @@ public class LeanDictDataSeed
       foreach (var dictData in defaultDictData)
       {
         var exists = await _db.Queryable<LeanDictData>()
-            .FirstAsync(x => x.TypeId == dictData.TypeId && x.DictValue == dictData.DictValue);
+            .FirstAsync(x => x.TypeId == dictData.TypeId && x.DictDataValue == dictData.DictDataValue);
 
         if (exists != null)
         {
@@ -448,14 +448,14 @@ public class LeanDictDataSeed
           // 复制原有审计信息并初始化更新信息
           dictData.CopyAuditFields(exists).InitAuditFields(true);
           await _db.Updateable(dictData).ExecuteCommandAsync();
-          _logger.Info($"更新字典数据: {dictData.DictLabel}");
+          _logger.Info($"更新字典数据: {dictData.DictDataLabel}");
         }
         else
         {
           // 初始化审计字段
           dictData.InitAuditFields();
           await _db.Insertable(dictData).ExecuteCommandAsync();
-          _logger.Info($"新增字典数据: {dictData.DictLabel}");
+          _logger.Info($"新增字典数据: {dictData.DictDataLabel}");
         }
       }
     }
@@ -466,14 +466,14 @@ public class LeanDictDataSeed
     return new LeanDictData
     {
       TypeId = typeId,
-      DictLabel = label,
-      DictValue = value,
+      DictDataLabel = label,
+      DictDataValue = value,
       CssClass = cssClass,
       ListClass = cssClass,
       TransKey = $"dict.{GetEnglishLabel(label)}.{typeId}{value}",
       OrderNum = orderNum,
-      Status = LeanStatus.Enable,
-      IsBuiltin = LeanBuiltinStatus.Yes,
+      DictDataStatus = 2,
+      IsBuiltin = 1,
       Remark = $"{label}({value})"
     };
   }

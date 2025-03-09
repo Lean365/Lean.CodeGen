@@ -39,9 +39,9 @@ namespace Lean.CodeGen.Application.Dtos.Generator
     public string? Language { get; set; }
 
     /// <summary>
-    /// 是否启用
+    /// 是否启用（0：禁用 1：启用）
     /// </summary>
-    public bool? IsEnabled { get; set; }
+    public int? IsEnabled { get; set; }
 
     /// <summary>
     /// 配置Id
@@ -107,10 +107,10 @@ namespace Lean.CodeGen.Application.Dtos.Generator
     public string Language { get; set; } = default!;
 
     /// <summary>
-    /// 是否启用
+    /// 是否启用（0：禁用 1：启用）
     /// </summary>
-    [LeanExcelColumn("是否启用", DataType = LeanExcelDataType.Boolean)]
-    public bool IsEnabled { get; set; }
+    [LeanExcelColumn("是否启用", DataType = LeanExcelDataType.Int)]
+    public int IsEnabled { get; set; }
 
     /// <summary>
     /// 备注
@@ -179,10 +179,10 @@ namespace Lean.CodeGen.Application.Dtos.Generator
     public string Language { get; set; } = default!;
 
     /// <summary>
-    /// 是否启用
+    /// 是否启用（0：禁用 1：启用）
     /// </summary>
-    [LeanExcelColumn("是否启用", DataType = LeanExcelDataType.Boolean)]
-    public bool IsEnabled { get; set; }
+    [LeanExcelColumn("是否启用", DataType = LeanExcelDataType.Int)]
+    public int IsEnabled { get; set; }
 
     /// <summary>
     /// 备注
@@ -245,10 +245,10 @@ namespace Lean.CodeGen.Application.Dtos.Generator
     public string Language { get; set; } = "CSharp";
 
     /// <summary>
-    /// 是否启用
+    /// 是否启用（0：禁用 1：启用）
     /// </summary>
-    [LeanExcelColumn("是否启用", DataType = LeanExcelDataType.Boolean)]
-    public bool IsEnabled { get; set; } = true;
+    [LeanExcelColumn("是否启用", DataType = LeanExcelDataType.Int)]
+    public int IsEnabled { get; set; } = 1;
 
     /// <summary>
     /// 备注

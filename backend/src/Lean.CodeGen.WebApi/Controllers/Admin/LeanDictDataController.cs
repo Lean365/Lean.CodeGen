@@ -3,6 +3,7 @@ using Lean.CodeGen.Application.Dtos.Admin;
 using Lean.CodeGen.Application.Services.Admin;
 using Lean.CodeGen.Common.Models;
 using Lean.CodeGen.Common.Enums;
+using Lean.CodeGen.Common.Attributes;
 using System.IO;
 using System;
 using System.Collections.Generic;
@@ -16,8 +17,9 @@ namespace Lean.CodeGen.WebApi.Controllers.Admin;
 /// <summary>
 /// 字典数据控制器
 /// </summary>
-[Route("api/admin/dict-data")]
 [ApiController]
+[Route("api/[controller]")]
+[ApiExplorerSettings(GroupName = "admin")]
 public class LeanDictDataController : LeanBaseController
 {
   private readonly ILeanDictDataService _service;
@@ -38,7 +40,7 @@ public class LeanDictDataController : LeanBaseController
   /// 创建字典数据
   /// </summary>
   [HttpPost]
-  public async Task<IActionResult> CreateAsync([FromBody] LeanCreateDictDataDto input)
+  public async Task<IActionResult> CreateAsync([FromBody] LeanDictDataCreateDto input)
   {
     var result = await _service.CreateAsync(input);
     return Success(result, LeanBusinessType.Create);
@@ -48,7 +50,7 @@ public class LeanDictDataController : LeanBaseController
   /// 更新字典数据
   /// </summary>
   [HttpPut]
-  public async Task<IActionResult> UpdateAsync([FromBody] LeanUpdateDictDataDto input)
+  public async Task<IActionResult> UpdateAsync([FromBody] LeanDictDataUpdateDto input)
   {
     var result = await _service.UpdateAsync(input);
     return Success(result, LeanBusinessType.Update);
@@ -88,7 +90,7 @@ public class LeanDictDataController : LeanBaseController
   /// 分页查询字典数据
   /// </summary>
   [HttpGet("page")]
-  public async Task<IActionResult> GetPagedListAsync([FromQuery] LeanQueryDictDataDto input)
+  public async Task<IActionResult> GetPagedListAsync([FromQuery] LeanDictDataQueryDto input)
   {
     var result = await _service.GetPageAsync(input);
     return Success(result, LeanBusinessType.Query);
@@ -98,7 +100,7 @@ public class LeanDictDataController : LeanBaseController
   /// 设置字典数据状态
   /// </summary>
   [HttpPut("status")]
-  public async Task<IActionResult> SetStatusAsync([FromBody] LeanChangeDictDataStatusDto input)
+  public async Task<IActionResult> SetStatusAsync([FromBody] LeanDictDataChangeStatusDto input)
   {
     var result = await _service.SetStatusAsync(input);
     return Success(result, LeanBusinessType.Update);
@@ -118,7 +120,7 @@ public class LeanDictDataController : LeanBaseController
   /// 导出字典数据
   /// </summary>
   [HttpGet("export")]
-  public async Task<IActionResult> ExportAsync([FromQuery] LeanQueryDictDataDto input)
+  public async Task<IActionResult> ExportAsync([FromQuery] LeanDictDataQueryDto input)
   {
     var bytes = await _service.ExportAsync(input);
     return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "dict-data.xlsx");
@@ -127,19 +129,13 @@ public class LeanDictDataController : LeanBaseController
   /// <summary>
   /// 导入字典数据
   /// </summary>
+  /// <param name="file">Excel文件</param>
+  /// <returns>导入结果</returns>
   [HttpPost("import")]
-  public async Task<IActionResult> ImportAsync([FromForm] IFormFile file)
+  [LeanPermission("system:dict:import", "导入字典数据")]
+  public async Task<IActionResult> ImportAsync([FromForm] LeanFileInfo file)
   {
-    using var ms = new MemoryStream();
-    await file.CopyToAsync(ms);
-    ms.Position = 0;
-    var fileInfo = new LeanFileInfo
-    {
-      Stream = ms,
-      FileName = file.FileName,
-      ContentType = file.ContentType
-    };
-    var result = await _service.ImportAsync(fileInfo);
+    var result = await _service.ImportAsync(file);
     return Success(result, LeanBusinessType.Import);
   }
 

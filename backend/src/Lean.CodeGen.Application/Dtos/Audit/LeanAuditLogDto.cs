@@ -47,8 +47,11 @@ namespace Lean.CodeGen.Application.Dtos.Audit
 
     /// <summary>
     /// 操作类型
+    /// 0-新增
+    /// 1-修改
+    /// 2-删除
     /// </summary>
-    public LeanAuditOperationType OperationType { get; set; }
+    public int OperationType { get; set; }
 
     /// <summary>
     /// 操作描述
@@ -108,8 +111,11 @@ namespace Lean.CodeGen.Application.Dtos.Audit
 
     /// <summary>
     /// 操作类型
+    /// 0-新增
+    /// 1-修改
+    /// 2-删除
     /// </summary>
-    public LeanAuditOperationType? OperationType { get; set; }
+    public int? OperationType { get; set; }
 
     /// <summary>
     /// 创建时间范围-开始

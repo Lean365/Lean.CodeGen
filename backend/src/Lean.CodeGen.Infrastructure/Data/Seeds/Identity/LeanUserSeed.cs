@@ -74,18 +74,22 @@ public class LeanUserSeed
       {
         UserName = "admin",
         RealName = "系统管理员",
-        UserType = LeanUserType.System,      // 系统用户类型
-        UserStatus = LeanUserStatus.Normal,   // 正常状态
-        IsBuiltin = LeanBuiltinStatus.Yes     // 内置用户
+        UserType = 0,      // 系统用户类型
+        UserStatus = 1,   // 正常状态
+        IsBuiltin = 1, // 是
+        CreateTime = DateTime.Now,
+        UpdateTime = DateTime.Now
       },
       // 创建测试用户账号
       new LeanUser()
       {
         UserName = "test",
         RealName = "测试用户",
-        UserType = LeanUserType.Normal,      // 普通用户类型
-        UserStatus = LeanUserStatus.Normal,   // 正常状态
-        IsBuiltin = LeanBuiltinStatus.Yes     // 内置用户
+        UserType = 2,      // 普通用户类型
+        UserStatus = 1,   // 正常状态
+        IsBuiltin = 1, // 是
+        CreateTime = DateTime.Now,
+        UpdateTime = DateTime.Now
       }
     };
 

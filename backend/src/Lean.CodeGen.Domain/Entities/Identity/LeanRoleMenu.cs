@@ -14,7 +14,7 @@ namespace Lean.CodeGen.Domain.Entities.Identity;
 /// <summary>
 /// 角色菜单关联实体
 /// </summary>
-[SugarTable("lean_role_menu", "角色菜单关联表")]
+[SugarTable("lean_id_role_menu", "角色菜单关联表")]
 [SugarIndex("pk_role_menu", nameof(RoleId), OrderByType.Asc, nameof(MenuId), OrderByType.Asc)]
 public class LeanRoleMenu : LeanBaseEntity
 {

@@ -14,28 +14,28 @@ namespace Lean.CodeGen.Domain.Entities.Identity;
 /// <summary>
 /// 用户岗位关联
 /// </summary>
-[SugarTable("lean_user_post")]
+[SugarTable("lean_id_user_post")]
 public class LeanUserPost : LeanBaseEntity
 {
-  /// <summary>
-  /// 用户ID
-  /// </summary>
-  public long UserId { get; set; }
+    /// <summary>
+    /// 用户ID
+    /// </summary>
+    public long UserId { get; set; }
 
-  /// <summary>
-  /// 岗位ID
-  /// </summary>
-  public long PostId { get; set; }
+    /// <summary>
+    /// 岗位ID
+    /// </summary>
+    public long PostId { get; set; }
 
-  /// <summary>
-  /// 用户
-  /// </summary>
-  [Navigate(NavigateType.OneToOne, nameof(UserId))]
-  public virtual LeanUser? User { get; set; }
+    /// <summary>
+    /// 用户
+    /// </summary>
+    [Navigate(NavigateType.OneToOne, nameof(UserId))]
+    public virtual LeanUser? User { get; set; }
 
-  /// <summary>
-  /// 岗位
-  /// </summary>
-  [Navigate(NavigateType.OneToOne, nameof(PostId))]
-  public virtual LeanPost? Post { get; set; }
+    /// <summary>
+    /// 岗位
+    /// </summary>
+    [Navigate(NavigateType.OneToOne, nameof(PostId))]
+    public virtual LeanPost? Post { get; set; }
 }

@@ -35,7 +35,7 @@ public class LeanWorkflowActivityInstanceDto
   /// <summary>
   /// 活动状态
   /// </summary>
-  public LeanWorkflowActivityStatus ActivityStatus { get; set; }
+  public int ActivityStatus { get; set; }
 
   /// <summary>
   /// 开始时间

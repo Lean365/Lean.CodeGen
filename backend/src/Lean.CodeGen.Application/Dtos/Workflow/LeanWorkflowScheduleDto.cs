@@ -36,9 +36,11 @@ public class LeanWorkflowScheduleDto
   public string? ScheduleConfig { get; set; }
 
   /// <summary>
-  /// 调度状态(0=禁用,1=启用)
+  /// 是否启用
+  /// 0-停用
+  /// 1-启用
   /// </summary>
-  public bool Status { get; set; }
+  public int Status { get; set; }
 
   /// <summary>
   /// 开始时间

@@ -6,7 +6,7 @@ namespace Lean.CodeGen.Domain.Entities.Workflow;
 /// <summary>
 /// 工作流历史实体
 /// </summary>
-[SugarTable("lean_workflow_history", "工作流历史表")]
+[SugarTable("lean_wk_history", "工作流历史表")]
 [SugarIndex("idx_instance", nameof(InstanceId), OrderByType.Asc)]
 [SugarIndex("idx_task", nameof(TaskId), OrderByType.Asc)]
 public class LeanWorkflowHistory : LeanBaseEntity
@@ -39,7 +39,7 @@ public class LeanWorkflowHistory : LeanBaseEntity
   /// 操作类型
   /// </summary>
   [SugarColumn(ColumnName = "operation_type", ColumnDescription = "操作类型", IsNullable = false)]
-  public LeanWorkflowOperationType OperationType { get; set; }
+  public int OperationType { get; set; }
 
   /// <summary>
   /// 操作人ID

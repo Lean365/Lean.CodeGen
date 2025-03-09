@@ -87,9 +87,11 @@ public class LeanOnlineMessage : LeanBaseEntity
   /// </summary>
   /// <remarks>
   /// 消息是否已被接收者阅读
+  /// 0-未读
+  /// 1-已读
   /// </remarks>
-  [SugarColumn(ColumnName = "is_read", ColumnDescription = "是否已读", IsNullable = false, DefaultValue = "0", ColumnDataType = "bit")]
-  public bool IsRead { get; set; }
+  [SugarColumn(ColumnName = "is_read", ColumnDescription = "是否已读", IsNullable = false, DefaultValue = "0", ColumnDataType = "int")]
+  public int IsRead { get; set; }
 
   /// <summary>
   /// 消息类型

@@ -1,5 +1,4 @@
 using Lean.CodeGen.Application.Dtos.Workflow;
-using Lean.CodeGen.Common.Enums;
 using Lean.CodeGen.Common.Models;
 using Lean.CodeGen.Domain.Entities.Workflow;
 using Lean.CodeGen.Domain.Interfaces.Repositories;
@@ -15,152 +14,168 @@ namespace Lean.CodeGen.Application.Services.Workflow;
 /// </summary>
 public class LeanWorkflowActivityInstanceService : LeanBaseService, ILeanWorkflowActivityInstanceService
 {
-    private readonly ILeanRepository<LeanWorkflowActivityInstance> _repository;
-    private readonly ILogger _logger;
+  private readonly ILeanRepository<LeanWorkflowActivityInstance> _repository;
+  private readonly ILogger _logger;
 
-    public LeanWorkflowActivityInstanceService(
-        ILeanRepository<LeanWorkflowActivityInstance> repository,
-        LeanBaseServiceContext context)
-        : base(context)
+  public LeanWorkflowActivityInstanceService(
+      ILeanRepository<LeanWorkflowActivityInstance> repository,
+      LeanBaseServiceContext context)
+      : base(context)
+  {
+    _repository = repository;
+    _logger = context.Logger;
+  }
+
+  /// <inheritdoc/>
+  public async Task<LeanWorkflowActivityInstanceDto?> GetAsync(long id)
+  {
+    var entity = await _repository.GetByIdAsync(id);
+    return entity?.Adapt<LeanWorkflowActivityInstanceDto>();
+  }
+
+  /// <inheritdoc/>
+  public async Task<long> CreateAsync(LeanWorkflowActivityInstanceDto dto)
+  {
+    var entity = dto.Adapt<LeanWorkflowActivityInstance>();
+    return await _repository.CreateAsync(entity);
+  }
+
+  /// <inheritdoc/>
+  public async Task<LeanApiResult> UpdateAsync(LeanWorkflowActivityInstanceDto dto)
+  {
+    var entity = await _repository.GetByIdAsync(dto.Id);
+    if (entity == null)
     {
-        _repository = repository;
-        _logger = context.Logger;
+      return LeanApiResult.Error("工作流活动实例不存在");
     }
 
-    /// <inheritdoc/>
-    public async Task<LeanWorkflowActivityInstanceDto?> GetAsync(long id)
+    dto.Adapt(entity);
+    await _repository.UpdateAsync(entity);
+    return LeanApiResult.Ok();
+  }
+
+  /// <inheritdoc/>
+  public async Task<LeanApiResult> DeleteAsync(long id)
+  {
+    var entity = await _repository.GetByIdAsync(id);
+    if (entity == null)
     {
-        var entity = await _repository.GetByIdAsync(id);
-        return entity?.Adapt<LeanWorkflowActivityInstanceDto>();
+      return LeanApiResult.Error("工作流活动实例不存在");
     }
 
-    /// <inheritdoc/>
-    public async Task<long> CreateAsync(LeanWorkflowActivityInstanceDto dto)
+    await _repository.DeleteAsync(entity);
+    return LeanApiResult.Ok();
+  }
+
+  /// <inheritdoc/>
+  public async Task<LeanApiResult> StartAsync(long id)
+  {
+    var entity = await _repository.GetByIdAsync(id);
+    if (entity == null)
     {
-        var entity = dto.Adapt<LeanWorkflowActivityInstance>();
-        return await _repository.CreateAsync(entity);
+      return LeanApiResult.Error("工作流活动实例不存在");
     }
 
-    /// <inheritdoc/>
-    public async Task<bool> UpdateAsync(LeanWorkflowActivityInstanceDto dto)
+    entity.ActivityStatus = 1; // Running
+    await _repository.UpdateAsync(entity);
+    return LeanApiResult.Ok();
+  }
+
+  /// <inheritdoc/>
+  public async Task<LeanApiResult> CompleteAsync(long id)
+  {
+    var entity = await _repository.GetByIdAsync(id);
+    if (entity == null)
     {
-        var entity = dto.Adapt<LeanWorkflowActivityInstance>();
-        return await _repository.UpdateAsync(entity);
+      return LeanApiResult.Error("工作流活动实例不存在");
     }
 
-    /// <inheritdoc/>
-    public async Task<bool> DeleteAsync(long id)
+    entity.ActivityStatus = 2; // Completed
+    entity.EndTime = DateTime.Now;
+    await _repository.UpdateAsync(entity);
+    return LeanApiResult.Ok();
+  }
+
+  /// <inheritdoc/>
+  public async Task<LeanApiResult> CancelAsync(long id)
+  {
+    var entity = await _repository.GetByIdAsync(id);
+    if (entity == null)
     {
-        return await _repository.DeleteAsync(x => x.Id == id);
+      return LeanApiResult.Error("工作流活动实例不存在");
     }
 
-    /// <inheritdoc/>
-    public async Task<bool> StartAsync(long id)
-    {
-        var entity = await _repository.GetByIdAsync(id);
-        if (entity == null)
-        {
-            throw new Exception($"活动实例[{id}]不存在");
-        }
+    entity.ActivityStatus = 3; // Cancelled
+    entity.EndTime = DateTime.Now;
+    await _repository.UpdateAsync(entity);
+    return LeanApiResult.Ok();
+  }
 
-        entity.StartTime = DateTime.Now;
-        entity.ActivityStatus = LeanWorkflowActivityStatus.Running;
-        return await _repository.UpdateAsync(entity);
+  /// <inheritdoc/>
+  public async Task<LeanApiResult> CompensateAsync(long id)
+  {
+    var entity = await _repository.GetByIdAsync(id);
+    if (entity == null)
+    {
+      return LeanApiResult.Error("工作流活动实例不存在");
     }
 
-    /// <inheritdoc/>
-    public async Task<bool> CompleteAsync(long id)
-    {
-        var entity = await _repository.GetByIdAsync(id);
-        if (entity == null)
-        {
-            throw new Exception($"活动实例[{id}]不存在");
-        }
+    entity.ActivityStatus = 4; // Compensating
+    await _repository.UpdateAsync(entity);
+    return LeanApiResult.Ok();
+  }
 
-        entity.EndTime = DateTime.Now;
-        entity.ActivityStatus = LeanWorkflowActivityStatus.Completed;
-        return await _repository.UpdateAsync(entity);
+  /// <inheritdoc/>
+  public async Task<LeanPageResult<LeanWorkflowActivityInstanceDto>> GetPagedListAsync(
+      int pageIndex,
+      int pageSize,
+      long? workflowInstanceId = null,
+      string? activityType = null,
+      int? activityStatus = null,
+      DateTime? startTime = null,
+      DateTime? endTime = null)
+  {
+    Expression<Func<LeanWorkflowActivityInstance, bool>> predicate = x => true;
+
+    if (workflowInstanceId.HasValue)
+    {
+      var temp = predicate;
+      predicate = x => temp.Compile()(x) && x.WorkflowInstanceId == workflowInstanceId.Value;
     }
 
-    /// <inheritdoc/>
-    public async Task<bool> CancelAsync(long id)
+    if (!string.IsNullOrEmpty(activityType))
     {
-        var entity = await _repository.GetByIdAsync(id);
-        if (entity == null)
-        {
-            throw new Exception($"活动实例[{id}]不存在");
-        }
-
-        entity.EndTime = DateTime.Now;
-        entity.ActivityStatus = LeanWorkflowActivityStatus.Cancelled;
-        return await _repository.UpdateAsync(entity);
+      var temp = predicate;
+      predicate = x => temp.Compile()(x) && x.ActivityType == activityType;
     }
 
-    /// <inheritdoc/>
-    public async Task<bool> CompensateAsync(long id)
+    if (activityStatus.HasValue)
     {
-        var entity = await _repository.GetByIdAsync(id);
-        if (entity == null)
-        {
-            throw new Exception($"活动实例[{id}]不存在");
-        }
-
-        entity.EndTime = DateTime.Now;
-        entity.ActivityStatus = LeanWorkflowActivityStatus.Compensated;
-        return await _repository.UpdateAsync(entity);
+      var temp = predicate;
+      predicate = x => temp.Compile()(x) && x.ActivityStatus == activityStatus.Value;
     }
 
-    /// <inheritdoc/>
-    public async Task<LeanPageResult<LeanWorkflowActivityInstanceDto>> GetPagedListAsync(
-        int pageIndex,
-        int pageSize,
-        long? workflowInstanceId = null,
-        string? activityType = null,
-        int? activityStatus = null,
-        DateTime? startTime = null,
-        DateTime? endTime = null)
+    if (startTime.HasValue)
     {
-        Expression<Func<LeanWorkflowActivityInstance, bool>> predicate = x => true;
-
-        if (workflowInstanceId.HasValue)
-        {
-            var temp = predicate;
-            predicate = x => temp.Compile()(x) && x.WorkflowInstanceId == workflowInstanceId.Value;
-        }
-
-        if (!string.IsNullOrEmpty(activityType))
-        {
-            var temp = predicate;
-            predicate = x => temp.Compile()(x) && x.ActivityType == activityType;
-        }
-
-        if (activityStatus.HasValue)
-        {
-            var temp = predicate;
-            predicate = x => temp.Compile()(x) && (int)x.ActivityStatus == activityStatus.Value;
-        }
-
-        if (startTime.HasValue)
-        {
-            var temp = predicate;
-            predicate = x => temp.Compile()(x) && x.StartTime >= startTime.Value;
-        }
-
-        if (endTime.HasValue)
-        {
-            var temp = predicate;
-            predicate = x => temp.Compile()(x) && x.EndTime <= endTime.Value;
-        }
-
-        var result = await _repository.GetPageListAsync(predicate, pageSize, pageIndex);
-        var list = result.Items.Adapt<List<LeanWorkflowActivityInstanceDto>>();
-
-        return new LeanPageResult<LeanWorkflowActivityInstanceDto>
-        {
-            Total = result.Total,
-            Items = list,
-            PageIndex = pageIndex,
-            PageSize = pageSize
-        };
+      var temp = predicate;
+      predicate = x => temp.Compile()(x) && x.StartTime >= startTime.Value;
     }
+
+    if (endTime.HasValue)
+    {
+      var temp = predicate;
+      predicate = x => temp.Compile()(x) && x.EndTime <= endTime.Value;
+    }
+
+    var result = await _repository.GetPageListAsync(predicate, pageSize, pageIndex);
+    var list = result.Items.Adapt<List<LeanWorkflowActivityInstanceDto>>();
+
+    return new LeanPageResult<LeanWorkflowActivityInstanceDto>
+    {
+      Total = result.Total,
+      Items = list,
+      PageIndex = pageIndex,
+      PageSize = pageSize
+    };
+  }
 }

@@ -306,8 +306,8 @@ public class LeanDictTranslationSeed
       TransValue = zhValue,
       ModuleName = "dict",
       OrderNum = 0,
-      Status = LeanStatus.Enable,
-      IsBuiltin = LeanBuiltinStatus.Yes
+      TransStatus = 2,
+      IsBuiltin = 1
     });
 
     // 添加英文翻译
@@ -318,8 +318,8 @@ public class LeanDictTranslationSeed
       TransValue = enValue,
       ModuleName = "dict",
       OrderNum = 0,
-      Status = LeanStatus.Enable,
-      IsBuiltin = LeanBuiltinStatus.Yes
+      TransStatus = 2,
+      IsBuiltin = 1
     });
   }
 }

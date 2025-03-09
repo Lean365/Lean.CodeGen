@@ -57,33 +57,45 @@ public class LeanWorkflowActivityTypeDto
 
   /// <summary>
   /// 是否支持补偿
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public bool SupportsCompensation { get; set; }
+  public int SupportsCompensation { get; set; }
 
   /// <summary>
   /// 是否为阻塞活动
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public bool IsBlocking { get; set; }
+  public int IsBlocking { get; set; }
 
   /// <summary>
   /// 是否为触发器活动
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public bool IsTrigger { get; set; }
+  public int IsTrigger { get; set; }
 
   /// <summary>
   /// 是否为容器活动
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public bool IsContainer { get; set; }
+  public int IsContainer { get; set; }
 
   /// <summary>
   /// 是否为系统活动
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public bool IsSystem { get; set; }
+  public int IsSystem { get; set; }
 
   /// <summary>
   /// 是否启用
+  /// 0-停用
+  /// 1-启用
   /// </summary>
-  public bool Status { get; set; }
+  public int Status { get; set; }
 
   /// <summary>
   /// 自定义属性JSON

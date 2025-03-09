@@ -62,28 +62,38 @@ public class LeanWorkflowActivityPropertyDto
 
   /// <summary>
   /// 是否必填
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public bool IsRequired { get; set; }
+  public int IsRequired { get; set; }
 
   /// <summary>
   /// 是否支持表达式
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public bool SupportsExpressions { get; set; }
+  public int SupportsExpressions { get; set; }
 
   /// <summary>
-  /// 是否为设计时属性
+  /// 是否设计时属性
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public bool IsDesignTime { get; set; }
+  public int IsDesignTime { get; set; }
 
   /// <summary>
-  /// 是否为运行时属性
+  /// 是否运行时属性
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public bool IsRunTime { get; set; }
+  public int IsRunTime { get; set; }
 
   /// <summary>
   /// 是否启用
+  /// 0-停用
+  /// 1-启用
   /// </summary>
-  public bool Status { get; set; }
+  public int Status { get; set; }
 
   /// <summary>
   /// 自定义属性JSON

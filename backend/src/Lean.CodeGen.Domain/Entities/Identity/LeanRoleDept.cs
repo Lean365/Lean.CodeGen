@@ -17,7 +17,7 @@ namespace Lean.CodeGen.Domain.Entities.Identity;
 /// <remarks>
 /// 用于数据权限控制，定义角色可以访问哪些部门的数据
 /// </remarks>
-[SugarTable("lean_role_dept", "角色部门关联表")]
+[SugarTable("lean_id_role_dept", "角色部门关联表")]
 [SugarIndex("pk_role_dept", nameof(RoleId), OrderByType.Asc, nameof(DeptId), OrderByType.Asc)]
 public class LeanRoleDept : LeanBaseEntity
 {

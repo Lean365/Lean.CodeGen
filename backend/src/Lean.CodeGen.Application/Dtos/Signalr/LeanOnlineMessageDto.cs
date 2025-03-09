@@ -6,7 +6,7 @@ namespace Lean.CodeGen.Application.Dtos.Signalr;
 /// <summary>
 /// 在线消息查询参数
 /// </summary>
-public class LeanQueryOnlineMessageDto : LeanPage
+public class LeanOnlineMessageQueryDto : LeanPage
 {
   /// <summary>
   /// 发送者ID
@@ -20,8 +20,10 @@ public class LeanQueryOnlineMessageDto : LeanPage
 
   /// <summary>
   /// 是否已读
+  /// 0-未读
+  /// 1-已读
   /// </summary>
-  public bool? IsRead { get; set; }
+  public int? IsRead { get; set; }
 
   /// <summary>
   /// 消息类型
@@ -91,8 +93,10 @@ public class LeanOnlineMessageDto
 
   /// <summary>
   /// 是否已读
+  /// 0-未读
+  /// 1-已读
   /// </summary>
-  public bool IsRead { get; set; }
+  public int IsRead { get; set; }
 
   /// <summary>
   /// 发送时间
@@ -111,9 +115,9 @@ public class LeanOnlineMessageDto
 }
 
 /// <summary>
-/// 发送消息DTO
+/// 在线消息发送参数
 /// </summary>
-public class LeanSendMessageDto
+public class LeanOnlineMessageSendDto
 {
   /// <summary>
   /// 发送者ID
@@ -139,9 +143,9 @@ public class LeanSendMessageDto
 }
 
 /// <summary>
-/// 批量标记消息已读DTO
+/// 在线消息标记已读参数
 /// </summary>
-public class LeanMarkMessagesAsReadDto
+public class LeanOnlineMessageMarkAsReadDto
 {
   /// <summary>
   /// 用户ID

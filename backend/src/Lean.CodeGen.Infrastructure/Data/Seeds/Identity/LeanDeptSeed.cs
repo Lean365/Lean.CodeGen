@@ -38,8 +38,8 @@ public class LeanDeptSeed
         Leader = "张三",
         Phone = "15888888888",
         Email = "admin@lean.com",
-        DeptStatus = LeanDeptStatus.Normal,
-        IsBuiltin = LeanBuiltinStatus.Yes
+        DeptStatus = 1,
+        IsBuiltin = 1
       }
     };
 
@@ -55,8 +55,8 @@ public class LeanDeptSeed
         Leader = "李四",
         Phone = "15666666666",
         Email = "dev@lean.com",
-        DeptStatus = LeanDeptStatus.Normal,
-        IsBuiltin = LeanBuiltinStatus.Yes
+        DeptStatus = 1,
+        IsBuiltin = 1
       },
       new()
       {
@@ -67,8 +67,8 @@ public class LeanDeptSeed
         Leader = "王五",
         Phone = "15777777777",
         Email = "sales@lean.com",
-        DeptStatus = LeanDeptStatus.Normal,
-        IsBuiltin = LeanBuiltinStatus.Yes
+        DeptStatus = 1,
+        IsBuiltin = 1
       }
     };
 

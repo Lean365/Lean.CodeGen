@@ -95,7 +95,9 @@ public class LeanOnlineUser : LeanBaseEntity
   /// </summary>
   /// <remarks>
   /// 用户是否处于在线状态
+  /// 0-离线
+  /// 1-在线
   /// </remarks>
-  [SugarColumn(ColumnName = "is_online", ColumnDescription = "是否在线", IsNullable = false, DefaultValue = "1", ColumnDataType = "bit")]
-  public bool IsOnline { get; set; }
+  [SugarColumn(ColumnName = "is_online", ColumnDescription = "是否在线", IsNullable = false, DefaultValue = "1", ColumnDataType = "int")]
+  public int IsOnline { get; set; }
 }

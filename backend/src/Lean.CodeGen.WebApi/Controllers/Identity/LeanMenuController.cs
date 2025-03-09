@@ -3,6 +3,7 @@ using Lean.CodeGen.Application.Dtos.Identity;
 using Lean.CodeGen.Application.Services.Identity;
 using Lean.CodeGen.Common.Models;
 using Lean.CodeGen.Common.Enums;
+using Lean.CodeGen.Common.Attributes;
 using Microsoft.Extensions.Configuration;
 using Lean.CodeGen.Application.Services.Admin;
 
@@ -18,8 +19,9 @@ namespace Lean.CodeGen.WebApi.Controllers.Identity;
 /// 3. 菜单树形结构管理
 /// 4. 菜单权限管理
 /// </remarks>
-[Route("api/admin/menus")]
 [ApiController]
+[Route("api/[controller]")]
+[ApiExplorerSettings(GroupName = "identity")]
 public class LeanMenuController : LeanBaseController
 {
   private readonly ILeanMenuService _menuService;
@@ -45,7 +47,7 @@ public class LeanMenuController : LeanBaseController
   /// <param name="input">菜单创建参数</param>
   /// <returns>创建成功的菜单信息</returns>
   [HttpPost]
-  public async Task<IActionResult> CreateAsync([FromBody] LeanCreateMenuDto input)
+  public async Task<IActionResult> CreateAsync([FromBody] LeanMenuCreateDto input)
   {
     var result = await _menuService.CreateAsync(input);
     return Success(result, LeanBusinessType.Create);
@@ -57,7 +59,7 @@ public class LeanMenuController : LeanBaseController
   /// <param name="input">菜单更新参数</param>
   /// <returns>更新后的菜单信息</returns>
   [HttpPut]
-  public async Task<IActionResult> UpdateAsync([FromBody] LeanUpdateMenuDto input)
+  public async Task<IActionResult> UpdateAsync([FromBody] LeanMenuUpdateDto input)
   {
     var result = await _menuService.UpdateAsync(input);
     return Success(result, LeanBusinessType.Update);
@@ -105,7 +107,7 @@ public class LeanMenuController : LeanBaseController
   /// <param name="input">查询参数</param>
   /// <returns>菜单列表</returns>
   [HttpGet]
-  public async Task<IActionResult> GetPageAsync([FromQuery] LeanQueryMenuDto input)
+  public async Task<IActionResult> GetPageAsync([FromQuery] LeanMenuQueryDto input)
   {
     var result = await _menuService.GetPageAsync(input);
     return Success(result, LeanBusinessType.Query);
@@ -117,7 +119,7 @@ public class LeanMenuController : LeanBaseController
   /// <param name="input">状态修改参数</param>
   /// <returns>修改后的菜单状态</returns>
   [HttpPut("status")]
-  public async Task<IActionResult> SetStatusAsync([FromBody] LeanChangeMenuStatusDto input)
+  public async Task<IActionResult> SetStatusAsync([FromBody] LeanMenuChangeStatusDto input)
   {
     var result = await _menuService.SetStatusAsync(input);
     return Success(result, LeanBusinessType.Update);
@@ -129,7 +131,7 @@ public class LeanMenuController : LeanBaseController
   /// <param name="input">查询参数</param>
   /// <returns>菜单树形结构</returns>
   [HttpGet("tree")]
-  public async Task<IActionResult> GetTreeAsync([FromQuery] LeanQueryMenuDto input)
+  public async Task<IActionResult> GetTreeAsync([FromQuery] LeanMenuQueryDto input)
   {
     var result = await _menuService.GetTreeAsync(input);
     return Success(result, LeanBusinessType.Query);
@@ -141,7 +143,7 @@ public class LeanMenuController : LeanBaseController
   /// <param name="input">查询参数</param>
   /// <returns>菜单数据导出结果</returns>
   [HttpGet("export")]
-  public async Task<IActionResult> ExportAsync([FromQuery] LeanQueryMenuDto input)
+  public async Task<IActionResult> ExportAsync([FromQuery] LeanMenuQueryDto input)
   {
     var bytes = await _menuService.ExportAsync(input);
     return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "menus.xlsx");
@@ -150,21 +152,13 @@ public class LeanMenuController : LeanBaseController
   /// <summary>
   /// 导入菜单数据
   /// </summary>
-  /// <param name="file">菜单数据文件</param>
+  /// <param name="file">Excel文件</param>
   /// <returns>导入结果</returns>
   [HttpPost("import")]
-  public async Task<IActionResult> ImportAsync([FromForm] IFormFile file)
+  [LeanPermission("system:menu:import", "导入菜单")]
+  public async Task<IActionResult> ImportAsync([FromForm] LeanFileInfo file)
   {
-    using var ms = new MemoryStream();
-    await file.CopyToAsync(ms);
-    ms.Position = 0;
-    var fileInfo = new LeanFileInfo
-    {
-      Stream = ms,
-      FileName = file.FileName,
-      ContentType = file.ContentType
-    };
-    var result = await _menuService.ImportAsync(fileInfo);
+    var result = await _menuService.ImportAsync(file);
     return Success(result, LeanBusinessType.Import);
   }
 

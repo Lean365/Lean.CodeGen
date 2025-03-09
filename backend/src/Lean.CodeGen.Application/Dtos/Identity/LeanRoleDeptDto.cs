@@ -32,7 +32,7 @@ public class LeanRoleDeptDto : LeanBaseDto
 /// <summary>
 /// 角色部门关联查询参数
 /// </summary>
-public class LeanQueryRoleDeptDto : LeanPage
+public class LeanRoleDeptQueryDto : LeanPage
 {
   /// <summary>
   /// 角色ID
@@ -58,7 +58,7 @@ public class LeanQueryRoleDeptDto : LeanPage
 /// <summary>
 /// 角色部门关联创建参数
 /// </summary>
-public class LeanCreateRoleDeptDto
+public class LeanRoleDeptCreateDto
 {
   /// <summary>
   /// 角色ID
@@ -76,7 +76,7 @@ public class LeanCreateRoleDeptDto
 /// <summary>
 /// 角色部门关联更新参数
 /// </summary>
-public class LeanUpdateRoleDeptDto
+public class LeanRoleDeptUpdateDto
 {
   /// <summary>
   /// 角色部门关联ID
@@ -100,7 +100,7 @@ public class LeanUpdateRoleDeptDto
 /// <summary>
 /// 角色部门关联删除参数
 /// </summary>
-public class LeanDeleteRoleDeptDto
+public class LeanRoleDeptDeleteDto
 {
   /// <summary>
   /// 角色部门关联ID
@@ -112,7 +112,7 @@ public class LeanDeleteRoleDeptDto
 /// <summary>
 /// 角色部门关联批量创建参数
 /// </summary>
-public class LeanBatchCreateRoleDeptDto
+public class LeanRoleDeptBatchCreateDto
 {
   /// <summary>
   /// 角色ID

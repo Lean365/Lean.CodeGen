@@ -50,7 +50,7 @@ public class LeanOnlineUserService : LeanBaseService, ILeanOnlineUserService
   /// </summary>
   public async Task<List<LeanOnlineUserDto>> GetOnlineUsersAsync()
   {
-    var users = await _userRepository.GetListAsync(u => u.IsOnline);
+    var users = await _userRepository.GetListAsync(u => u.IsOnline == 1);
     return users.Adapt<List<LeanOnlineUserDto>>();
   }
 
@@ -62,7 +62,7 @@ public class LeanOnlineUserService : LeanBaseService, ILeanOnlineUserService
   public async Task<bool> IsUserOnlineAsync(string userId)
   {
     var user = await _userRepository.FirstOrDefaultAsync(u => u.UserId == userId);
-    return user?.IsOnline ?? false;
+    return user?.IsOnline == 1;
   }
 
   /// <summary>
@@ -83,7 +83,7 @@ public class LeanOnlineUserService : LeanBaseService, ILeanOnlineUserService
         UserId = userId,
         UserName = userName,
         Avatar = avatar,
-        IsOnline = true,
+        IsOnline = 1,
         LastActiveTime = DateTime.Now,
         CreateTime = DateTime.Now,
         UpdateTime = DateTime.Now
@@ -109,7 +109,7 @@ public class LeanOnlineUserService : LeanBaseService, ILeanOnlineUserService
     var user = await _userRepository.FirstOrDefaultAsync(u => u.UserId == userId);
     if (user != null)
     {
-      user.IsOnline = false;
+      user.IsOnline = 0;
       user.LastActiveTime = DateTime.Now;
       user.UpdateTime = DateTime.Now;
       await _userRepository.UpdateAsync(user);
@@ -123,13 +123,13 @@ public class LeanOnlineUserService : LeanBaseService, ILeanOnlineUserService
   public async Task CleanOfflineUsersAsync(int minutes = 30)
   {
     var cutoffTime = DateTime.Now.AddMinutes(-minutes);
-    await _userRepository.DeleteAsync(u => !u.IsOnline && u.LastActiveTime < cutoffTime);
+    await _userRepository.DeleteAsync(u => u.IsOnline == 0 && u.LastActiveTime < cutoffTime);
   }
 
   /// <summary>
   /// 分页查询在线用户
   /// </summary>
-  public async Task<LeanPageResult<LeanOnlineUserDto>> GetPageListAsync(LeanQueryOnlineUserDto input)
+  public async Task<LeanPageResult<LeanOnlineUserDto>> GetPageListAsync(LeanOnlineUserQueryDto input)
   {
     Expression<Func<LeanOnlineUser, bool>> predicate = BuildQueryPredicate(input);
     var result = await _userRepository.GetPageListAsync(
@@ -146,7 +146,7 @@ public class LeanOnlineUserService : LeanBaseService, ILeanOnlineUserService
     };
   }
 
-  private Expression<Func<LeanOnlineUser, bool>> BuildQueryPredicate(LeanQueryOnlineUserDto input)
+  private Expression<Func<LeanOnlineUser, bool>> BuildQueryPredicate(LeanOnlineUserQueryDto input)
   {
     Expression<Func<LeanOnlineUser, bool>> predicate = u => true;
 
@@ -180,7 +180,7 @@ public class LeanOnlineUserService : LeanBaseService, ILeanOnlineUserService
 
   public async Task<string?> GetUserConnectionIdAsync(string userId)
   {
-    var user = await _userRepository.FirstOrDefaultAsync(u => u.UserId == userId && u.IsOnline);
+    var user = await _userRepository.FirstOrDefaultAsync(u => u.UserId == userId && u.IsOnline == 1);
     return user?.ConnectionId;
   }
 
@@ -189,7 +189,7 @@ public class LeanOnlineUserService : LeanBaseService, ILeanOnlineUserService
     var user = await _userRepository.FirstOrDefaultAsync(u => u.ConnectionId == connectionId);
     if (user != null)
     {
-      user.IsOnline = isOnline;
+      user.IsOnline = isOnline ? 1 : 0;
       user.UpdateTime = DateTime.Now;
       if (!isOnline)
       {

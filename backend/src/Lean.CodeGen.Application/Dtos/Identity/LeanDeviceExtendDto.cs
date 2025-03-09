@@ -28,7 +28,7 @@ public class LeanDeviceExtendDto : LeanBaseDto
   /// <summary>
   /// 设备类型
   /// </summary>
-  public LeanDeviceType DeviceType { get; set; }
+  public int DeviceType { get; set; }
 
   /// <summary>
   /// 操作系统
@@ -52,13 +52,15 @@ public class LeanDeviceExtendDto : LeanBaseDto
 
   /// <summary>
   /// 是否信任设备
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public bool IsTrusted { get; set; }
+  public int? IsTrusted { get; set; }
 
   /// <summary>
   /// 设备状态
   /// </summary>
-  public LeanDeviceStatus DeviceStatus { get; set; }
+  public int DeviceStatus { get; set; }
 
   /// <summary>
   /// 关联的用户信息
@@ -69,7 +71,7 @@ public class LeanDeviceExtendDto : LeanBaseDto
 /// <summary>
 /// 设备扩展查询参数
 /// </summary>
-public class LeanQueryDeviceExtendDto : LeanPage
+public class LeanDeviceExtendQueryDto : LeanPage
 {
   /// <summary>
   /// 用户ID
@@ -89,12 +91,12 @@ public class LeanQueryDeviceExtendDto : LeanPage
   /// <summary>
   /// 设备类型
   /// </summary>
-  public LeanDeviceType? DeviceType { get; set; }
+  public int? DeviceType { get; set; }
 
   /// <summary>
   /// 设备状态
   /// </summary>
-  public LeanDeviceStatus? DeviceStatus { get; set; }
+  public int? DeviceStatus { get; set; }
 
   /// <summary>
   /// 是否信任设备
@@ -115,7 +117,7 @@ public class LeanQueryDeviceExtendDto : LeanPage
 /// <summary>
 /// 设备扩展创建参数
 /// </summary>
-public class LeanCreateDeviceExtendDto
+public class LeanDeviceExtendCreateDto
 {
   /// <summary>
   /// 用户ID
@@ -139,7 +141,7 @@ public class LeanCreateDeviceExtendDto
   /// <summary>
   /// 设备类型
   /// </summary>
-  public LeanDeviceType DeviceType { get; set; }
+  public int DeviceType { get; set; }
 
   /// <summary>
   /// 操作系统
@@ -161,14 +163,16 @@ public class LeanCreateDeviceExtendDto
 
   /// <summary>
   /// 是否信任设备
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public bool IsTrusted { get; set; }
+  public int IsTrusted { get; set; }
 }
 
 /// <summary>
 /// 设备扩展更新参数
 /// </summary>
-public class LeanUpdateDeviceExtendDto
+public class LeanDeviceExtendUpdateDto
 {
   /// <summary>
   /// 设备扩展ID
@@ -184,19 +188,21 @@ public class LeanUpdateDeviceExtendDto
 
   /// <summary>
   /// 是否信任设备
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public bool IsTrusted { get; set; }
+  public int IsTrusted { get; set; }
 
   /// <summary>
   /// 设备状态
   /// </summary>
-  public LeanDeviceStatus DeviceStatus { get; set; }
+  public int DeviceStatus { get; set; }
 }
 
 /// <summary>
 /// 设备扩展状态变更参数
 /// </summary>
-public class LeanChangeDeviceExtendStatusDto
+public class LeanDeviceExtendChangeStatusDto
 {
   /// <summary>
   /// 设备扩展ID
@@ -208,13 +214,13 @@ public class LeanChangeDeviceExtendStatusDto
   /// 设备状态
   /// </summary>
   [Required(ErrorMessage = "设备状态不能为空")]
-  public LeanDeviceStatus DeviceStatus { get; set; }
+  public int DeviceStatus { get; set; }
 }
 
 /// <summary>
-/// 设备扩展导出参数
+/// 设备扩展导出查询参数
 /// </summary>
-public class LeanExportDeviceExtendDto : LeanQueryDeviceExtendDto
+public class LeanDeviceExtendExportQueryDto : LeanDeviceExtendQueryDto
 {
   /// <summary>
   /// 导出字段列表
@@ -229,8 +235,10 @@ public class LeanExportDeviceExtendDto : LeanQueryDeviceExtendDto
 
   /// <summary>
   /// 是否导出全部
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public bool IsExportAll { get; set; }
+  public int IsExportAll { get; set; }
 
   /// <summary>
   /// 选中的ID列表
@@ -241,7 +249,7 @@ public class LeanExportDeviceExtendDto : LeanQueryDeviceExtendDto
 /// <summary>
 /// 设备扩展删除参数
 /// </summary>
-public class LeanDeleteDeviceExtendDto
+public class LeanDeviceExtendDeleteDto
 {
   /// <summary>
   /// 设备扩展ID

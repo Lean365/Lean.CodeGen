@@ -5,7 +5,7 @@ namespace Lean.CodeGen.Domain.Entities.Workflow;
 /// <summary>
 /// 工作流触发器实体
 /// </summary>
-[SugarTable("lean_workflow_trigger", "工作流触发器表")]
+[SugarTable("lean_wk_trigger", "工作流触发器表")]
 [SugarIndex("idx_definition", nameof(DefinitionId), OrderByType.Asc)]
 public class LeanWorkflowTrigger : LeanBaseEntity
 {

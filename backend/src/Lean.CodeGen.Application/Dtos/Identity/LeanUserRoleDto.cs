@@ -32,7 +32,7 @@ public class LeanUserRoleDto : LeanBaseDto
 /// <summary>
 /// 用户角色关联查询参数
 /// </summary>
-public class LeanQueryUserRoleDto : LeanPage
+public class LeanUserRoleQueryDto : LeanPage
 {
   /// <summary>
   /// 用户ID
@@ -58,7 +58,7 @@ public class LeanQueryUserRoleDto : LeanPage
 /// <summary>
 /// 用户角色关联创建参数
 /// </summary>
-public class LeanCreateUserRoleDto
+public class LeanUserRoleCreateDto
 {
   /// <summary>
   /// 用户ID
@@ -76,7 +76,7 @@ public class LeanCreateUserRoleDto
 /// <summary>
 /// 用户角色关联更新参数
 /// </summary>
-public class LeanUpdateUserRoleDto
+public class LeanUserRoleUpdateDto
 {
   /// <summary>
   /// 用户角色关联ID
@@ -100,7 +100,7 @@ public class LeanUpdateUserRoleDto
 /// <summary>
 /// 用户角色关联删除参数
 /// </summary>
-public class LeanDeleteUserRoleDto
+public class LeanUserRoleDeleteDto
 {
   /// <summary>
   /// 用户角色关联ID
@@ -112,7 +112,7 @@ public class LeanDeleteUserRoleDto
 /// <summary>
 /// 用户角色关联批量创建参数
 /// </summary>
-public class LeanBatchCreateUserRoleDto
+public class LeanUserRoleBatchCreateDto
 {
   /// <summary>
   /// 用户ID

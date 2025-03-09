@@ -15,7 +15,7 @@ namespace Lean.CodeGen.Domain.Entities.Identity;
 /// <summary>
 /// 用户部门关联实体
 /// </summary>
-[SugarTable("lean_user_dept", "用户部门关联表")]
+[SugarTable("lean_id_user_dept", "用户部门关联表")]
 [SugarIndex("pk_user_dept", nameof(UserId), OrderByType.Asc, nameof(DeptId), OrderByType.Asc)]
 public class LeanUserDept : LeanBaseEntity
 {
@@ -41,11 +41,11 @@ public class LeanUserDept : LeanBaseEntity
     /// 是否主部门
     /// </summary>
     /// <remarks>
-    /// 是否为用户的主部门：No-否，Yes-是
+    /// 是否为用户的主部门：0-否，1-是
     /// 一个用户只能有一个主部门
     /// </remarks>
     [SugarColumn(ColumnName = "is_primary", ColumnDescription = "是否主部门", IsNullable = false, DefaultValue = "0", ColumnDataType = "int")]
-    public LeanPrimaryStatus IsPrimary { get; set; }
+    public int IsPrimary { get; set; }
 
     /// <summary>
     /// 用户

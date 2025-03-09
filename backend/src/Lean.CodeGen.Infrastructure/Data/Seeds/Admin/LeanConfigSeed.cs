@@ -123,10 +123,10 @@ public class LeanConfigSeed
       ConfigKey = key,
       ConfigValue = value,
       ConfigName = name,
-      ConfigType = LeanConfigType.String,
+      ConfigType = 0,
       ConfigGroup = group,
-      Status = LeanStatus.Normal,
-      IsBuiltin = LeanBuiltinStatus.Yes
+      ConfigStatus = 0,
+      IsBuiltin = 0
     };
 
     var exists = await _db.Queryable<LeanConfig>()

@@ -15,6 +15,7 @@ using System.Security.Claims;
 using Lean.CodeGen.Common.Security;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using Lean.CodeGen.Application.Dtos.Captcha;
 
 namespace Lean.CodeGen.Application.Services.Identity;
 
@@ -183,9 +184,9 @@ public class LeanAuthService : ILeanAuthService
       {
         DeviceId = deviceId,
         DeviceName = clientInfo.BrowserInfo.Browser,
-        DeviceType = clientInfo.BrowserInfo.IsMobile ? Common.Enums.LeanDeviceType.Mobile : Common.Enums.LeanDeviceType.Desktop,
-        IsTrusted = false,
-        DeviceStatus = Common.Enums.LeanDeviceStatus.Normal,
+        DeviceType = clientInfo.BrowserInfo.IsMobile ? 0 : 1, // 0: Mobile, 1: Desktop
+        IsTrusted = 0, // 0: 不信任, 1: 信任
+        DeviceStatus = 0, // 0: Normal
         LastLoginIp = clientInfo.IpAddress,
         Browser = clientInfo.BrowserInfo.Browser,
         Os = clientInfo.BrowserInfo.Platform
@@ -215,15 +216,15 @@ public class LeanAuthService : ILeanAuthService
         FirstDeviceId = deviceId,
         FirstBrowser = clientInfo.BrowserInfo.Browser,
         FirstOs = clientInfo.BrowserInfo.Platform,
-        FirstLoginType = Common.Enums.LeanLoginType.Password,
+        FirstLoginType = 0, // 0: Password
         LastLoginIp = clientInfo.IpAddress,
         LastLoginLocation = loginLocation,
         LastLoginTime = DateTime.Now,
         LastDeviceId = deviceId,
         LastBrowser = clientInfo.BrowserInfo.Browser,
         LastOs = clientInfo.BrowserInfo.Platform,
-        LastLoginType = Common.Enums.LeanLoginType.Password,
-        LoginStatus = Common.Enums.LeanLoginStatus.Normal,
+        LastLoginType = 0, // 0: Password
+        LoginStatus = 0, // 0: Normal
         SystemInfo = JsonConvert.SerializeObject(new { Server = serverInfo, Client = clientInfo })
       };
       await _loginExtendRepository.CreateAsync(loginExtendInfo);
@@ -238,8 +239,9 @@ public class LeanAuthService : ILeanAuthService
       loginExtendInfo.LastDeviceId = deviceId;
       loginExtendInfo.LastBrowser = clientInfo.BrowserInfo.Browser;
       loginExtendInfo.LastOs = clientInfo.BrowserInfo.Platform;
-      loginExtendInfo.LoginStatus = Common.Enums.LeanLoginStatus.Normal;
+      loginExtendInfo.LoginStatus = 0; // 0: Normal
       loginExtendInfo.SystemInfo = JsonConvert.SerializeObject(new { Server = serverInfo, Client = clientInfo });
+      loginExtendInfo.LastLoginType = 0; // 0: Password
       await _loginExtendRepository.UpdateAsync(loginExtendInfo);
     }
 

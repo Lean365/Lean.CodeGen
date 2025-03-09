@@ -3,6 +3,7 @@ using Lean.CodeGen.Application.Dtos.Identity;
 using Lean.CodeGen.Application.Services.Identity;
 using Lean.CodeGen.Common.Models;
 using Lean.CodeGen.Common.Enums;
+using Lean.CodeGen.Common.Attributes;
 using Microsoft.Extensions.Configuration;
 using Lean.CodeGen.Application.Services.Admin;
 
@@ -16,8 +17,9 @@ namespace Lean.CodeGen.WebApi.Controllers.Identity;
 /// 1. 岗位的增删改查
 /// 2. 岗位状态管理
 /// </remarks>
-[Route("api/admin/posts")]
 [ApiController]
+[Route("api/[controller]")]
+[ApiExplorerSettings(GroupName = "identity")]
 public class LeanPostController : LeanBaseController
 {
   private readonly ILeanPostService _postService;
@@ -43,7 +45,7 @@ public class LeanPostController : LeanBaseController
   /// <param name="input">岗位创建参数</param>
   /// <returns>创建成功的岗位信息</returns>
   [HttpPost]
-  public async Task<IActionResult> CreateAsync([FromBody] LeanCreatePostDto input)
+  public async Task<IActionResult> CreateAsync([FromBody] LeanPostCreateDto input)
   {
     var result = await _postService.CreateAsync(input);
     return Success(result, LeanBusinessType.Create);
@@ -55,7 +57,7 @@ public class LeanPostController : LeanBaseController
   /// <param name="input">岗位更新参数</param>
   /// <returns>更新后的岗位信息</returns>
   [HttpPut]
-  public async Task<IActionResult> UpdateAsync([FromBody] LeanUpdatePostDto input)
+  public async Task<IActionResult> UpdateAsync([FromBody] LeanPostUpdateDto input)
   {
     var result = await _postService.UpdateAsync(input);
     return Success(result, LeanBusinessType.Update);
@@ -102,7 +104,7 @@ public class LeanPostController : LeanBaseController
   /// <param name="input">查询参数</param>
   /// <returns>岗位列表</returns>
   [HttpGet]
-  public async Task<IActionResult> GetPageAsync([FromQuery] LeanQueryPostDto input)
+  public async Task<IActionResult> GetPageAsync([FromQuery] LeanPostQueryDto input)
   {
     var result = await _postService.GetPageAsync(input);
     return Success(result, LeanBusinessType.Query);
@@ -114,7 +116,7 @@ public class LeanPostController : LeanBaseController
   /// <param name="input">状态修改参数</param>
   /// <returns>修改后的岗位信息</returns>
   [HttpPut("status")]
-  public async Task<IActionResult> SetStatusAsync([FromBody] LeanChangePostStatusDto input)
+  public async Task<IActionResult> SetStatusAsync([FromBody] LeanPostChangeStatusDto input)
   {
     var result = await _postService.SetStatusAsync(input);
     return Success(result, LeanBusinessType.Update);
@@ -126,7 +128,7 @@ public class LeanPostController : LeanBaseController
   /// <param name="input">查询参数</param>
   /// <returns>岗位数据导出结果</returns>
   [HttpGet("export")]
-  public async Task<IActionResult> ExportAsync([FromQuery] LeanQueryPostDto input)
+  public async Task<IActionResult> ExportAsync([FromQuery] LeanPostQueryDto input)
   {
     var bytes = await _postService.ExportAsync(input);
     return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "posts.xlsx");
@@ -135,21 +137,13 @@ public class LeanPostController : LeanBaseController
   /// <summary>
   /// 导入岗位数据
   /// </summary>
-  /// <param name="file">岗位数据文件</param>
+  /// <param name="file">Excel文件</param>
   /// <returns>导入结果</returns>
   [HttpPost("import")]
-  public async Task<IActionResult> ImportAsync([FromForm] IFormFile file)
+  [LeanPermission("system:post:import", "导入岗位")]
+  public async Task<IActionResult> ImportAsync([FromForm] LeanFileInfo file)
   {
-    using var ms = new MemoryStream();
-    await file.CopyToAsync(ms);
-    ms.Position = 0;
-    var fileInfo = new LeanFileInfo
-    {
-      Stream = ms,
-      FileName = file.FileName,
-      ContentType = file.ContentType
-    };
-    var result = await _postService.ImportAsync(fileInfo);
+    var result = await _postService.ImportAsync(file);
     return Success(result, LeanBusinessType.Import);
   }
 

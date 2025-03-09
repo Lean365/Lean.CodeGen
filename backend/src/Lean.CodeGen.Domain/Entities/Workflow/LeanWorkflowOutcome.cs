@@ -5,7 +5,7 @@ namespace Lean.CodeGen.Domain.Entities.Workflow;
 /// <summary>
 /// 工作流结果实体
 /// </summary>
-[SugarTable("lean_workflow_outcome", "工作流结果表")]
+[SugarTable("lean_wk_outcome", "工作流结果表")]
 [SugarIndex("idx_activity_instance", nameof(ActivityInstanceId), OrderByType.Asc)]
 public class LeanWorkflowOutcome : LeanBaseEntity
 {

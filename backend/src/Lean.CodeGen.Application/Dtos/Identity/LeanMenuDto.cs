@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using Lean.CodeGen.Common.Enums;
 using Lean.CodeGen.Common.Excel;
 using Lean.CodeGen.Common.Models;
 
@@ -29,13 +28,18 @@ public class LeanMenuDto
 
   /// <summary>
   /// 菜单类型
+  /// 0-目录
+  /// 1-菜单
+  /// 2-按钮
   /// </summary>
-  public LeanMenuType MenuType { get; set; }
+  public int MenuType { get; set; }
 
   /// <summary>
   /// 菜单状态
+  /// 0-正常
+  /// 1-停用
   /// </summary>
-  public LeanMenuStatus MenuStatus { get; set; }
+  public int MenuStatus { get; set; }
 
   /// <summary>
   /// 权限标识
@@ -64,13 +68,17 @@ public class LeanMenuDto
 
   /// <summary>
   /// 是否内置
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public LeanBuiltinStatus IsBuiltin { get; set; }
+  public int IsBuiltin { get; set; }
 
   /// <summary>
   /// 是否选中（用于树形结构）
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public bool IsChecked { get; set; }
+  public int IsChecked { get; set; }
 
   /// <summary>
   /// 创建时间
@@ -84,7 +92,7 @@ public class LeanMenuDto
 }
 
 /// <summary>
-/// 菜单树形结构
+/// 菜单树形参数
 /// </summary>
 public class LeanMenuTreeDto : LeanMenuDto
 {
@@ -97,7 +105,7 @@ public class LeanMenuTreeDto : LeanMenuDto
 /// <summary>
 /// 菜单查询参数
 /// </summary>
-public class LeanQueryMenuDto : LeanPage
+public class LeanMenuQueryDto : LeanPage
 {
   /// <summary>
   /// 父级菜单ID
@@ -116,13 +124,18 @@ public class LeanQueryMenuDto : LeanPage
 
   /// <summary>
   /// 菜单类型
+  /// 0-目录
+  /// 1-菜单
+  /// 2-按钮
   /// </summary>
-  public LeanMenuType? MenuType { get; set; }
+  public int? MenuType { get; set; }
 
   /// <summary>
   /// 菜单状态
+  /// 0-正常
+  /// 1-停用
   /// </summary>
-  public LeanMenuStatus? MenuStatus { get; set; }
+  public int? MenuStatus { get; set; }
 
   /// <summary>
   /// 创建时间范围-开始
@@ -136,9 +149,9 @@ public class LeanQueryMenuDto : LeanPage
 }
 
 /// <summary>
-/// 创建菜单参数
+/// 菜单创建参数
 /// </summary>
-public class LeanCreateMenuDto
+public class LeanMenuCreateDto
 {
   /// <summary>
   /// 父级菜单ID
@@ -154,9 +167,12 @@ public class LeanCreateMenuDto
 
   /// <summary>
   /// 菜单类型
+  /// 0-目录
+  /// 1-菜单
+  /// 2-按钮
   /// </summary>
   [Required(ErrorMessage = "菜单类型不能为空")]
-  public LeanMenuType MenuType { get; set; }
+  public int MenuType { get; set; }
 
   /// <summary>
   /// 权限标识
@@ -190,14 +206,16 @@ public class LeanCreateMenuDto
 
   /// <summary>
   /// 菜单状态
+  /// 0-正常
+  /// 1-停用
   /// </summary>
-  public LeanMenuStatus MenuStatus { get; set; } = LeanMenuStatus.Normal;
+  public int MenuStatus { get; set; } = 0;
 }
 
 /// <summary>
-/// 更新菜单参数
+/// 菜单更新参数
 /// </summary>
-public class LeanUpdateMenuDto : LeanCreateMenuDto
+public class LeanMenuUpdateDto : LeanMenuCreateDto
 {
   /// <summary>
   /// 菜单ID
@@ -207,9 +225,9 @@ public class LeanUpdateMenuDto : LeanCreateMenuDto
 }
 
 /// <summary>
-/// 删除菜单参数
+/// 菜单删除参数
 /// </summary>
-public class LeanDeleteMenuDto
+public class LeanMenuDeleteDto
 {
   /// <summary>
   /// 菜单ID
@@ -219,9 +237,9 @@ public class LeanDeleteMenuDto
 }
 
 /// <summary>
-/// 修改菜单状态参数
+/// 菜单状态变更参数
 /// </summary>
-public class LeanChangeMenuStatusDto
+public class LeanMenuChangeStatusDto
 {
   /// <summary>
   /// 菜单ID
@@ -231,13 +249,15 @@ public class LeanChangeMenuStatusDto
 
   /// <summary>
   /// 菜单状态
+  /// 0-正常
+  /// 1-停用
   /// </summary>
   [Required(ErrorMessage = "菜单状态不能为空")]
-  public LeanMenuStatus MenuStatus { get; set; }
+  public int MenuStatus { get; set; }
 }
 
 /// <summary>
-/// 菜单导入DTO
+/// 菜单导入参数
 /// </summary>
 public class LeanMenuImportDto
 {
@@ -250,16 +270,21 @@ public class LeanMenuImportDto
 
   /// <summary>
   /// 菜单类型
+  /// 0-目录
+  /// 1-菜单
+  /// 2-按钮
   /// </summary>
   [Required(ErrorMessage = "菜单类型不能为空")]
   [LeanExcelColumn("菜单类型", DataType = LeanExcelDataType.Int)]
-  public LeanMenuType MenuType { get; set; }
+  public int MenuType { get; set; }
 
   /// <summary>
   /// 菜单状态
+  /// 0-正常
+  /// 1-停用
   /// </summary>
   [LeanExcelColumn("菜单状态", DataType = LeanExcelDataType.Int)]
-  public LeanMenuStatus MenuStatus { get; set; }
+  public int MenuStatus { get; set; }
 
   /// <summary>
   /// 父级菜单ID
@@ -277,34 +302,34 @@ public class LeanMenuImportDto
   /// 权限标识
   /// </summary>
   [LeanExcelColumn("权限标识", DataType = LeanExcelDataType.String)]
-  public string? Perms { get; set; }
+  public string Perms { get; set; } = default!;
 
   /// <summary>
   /// 路由地址
   /// </summary>
   [LeanExcelColumn("路由地址", DataType = LeanExcelDataType.String)]
-  public string? Path { get; set; }
+  public string Path { get; set; } = default!;
 
   /// <summary>
   /// 组件路径
   /// </summary>
   [LeanExcelColumn("组件路径", DataType = LeanExcelDataType.String)]
-  public string? Component { get; set; }
+  public string Component { get; set; } = default!;
 
   /// <summary>
   /// 图标
   /// </summary>
   [LeanExcelColumn("图标", DataType = LeanExcelDataType.String)]
-  public string? Icon { get; set; }
+  public string Icon { get; set; } = default!;
 }
 
 /// <summary>
-/// 菜单导入模板
+/// 菜单导入模板参数
 /// </summary>
-public class LeanImportTemplateMenuDto
+public class LeanMenuImportTemplateDto
 {
   /// <summary>
-  /// 父级ID
+  /// 父级菜单ID
   /// </summary>
   public long? ParentId { get; set; }
 
@@ -313,20 +338,23 @@ public class LeanImportTemplateMenuDto
   /// </summary>
   [Required(ErrorMessage = "菜单名称不能为空")]
   [StringLength(50, MinimumLength = 2, ErrorMessage = "菜单名称长度必须在2-50个字符之间")]
-  public string MenuName { get; set; } = string.Empty;
+  public string MenuName { get; set; } = default!;
 
   /// <summary>
   /// 权限标识
   /// </summary>
   [Required(ErrorMessage = "权限标识不能为空")]
   [StringLength(100, MinimumLength = 2, ErrorMessage = "权限标识长度必须在2-100个字符之间")]
-  public string Perms { get; set; } = string.Empty;
+  public string Perms { get; set; } = default!;
 
   /// <summary>
   /// 菜单类型
+  /// 0-目录
+  /// 1-菜单
+  /// 2-按钮
   /// </summary>
   [Required(ErrorMessage = "菜单类型不能为空")]
-  public LeanMenuType MenuType { get; set; }
+  public int MenuType { get; set; }
 
   /// <summary>
   /// 排序号
@@ -337,60 +365,56 @@ public class LeanImportTemplateMenuDto
   /// 图标
   /// </summary>
   [StringLength(100, ErrorMessage = "图标长度不能超过100个字符")]
-  public string? Icon { get; set; }
+  public string Icon { get; set; } = default!;
 
   /// <summary>
-  /// 路由路径
+  /// 路由地址
   /// </summary>
   [StringLength(200, ErrorMessage = "路由路径长度不能超过200个字符")]
-  public string? Path { get; set; }
+  public string Path { get; set; } = default!;
 
   /// <summary>
   /// 组件路径
   /// </summary>
   [StringLength(200, ErrorMessage = "组件路径长度不能超过200个字符")]
-  public string? Component { get; set; }
+  public string Component { get; set; } = default!;
 }
 
 /// <summary>
-/// 菜单导入错误信息
+/// 菜单导入错误参数
 /// </summary>
-public class LeanImportMenuErrorDto : LeanImportError
+public class LeanMenuImportErrorDto : LeanImportError
 {
   /// <summary>
   /// 权限标识
   /// </summary>
-  public string Perms
-  {
-    get => Key;
-    set => Key = value;
-  }
+  public string Perms { get; set; } = default!;
 }
 
 /// <summary>
-/// 菜单导入结果
+/// 菜单导入结果参数
 /// </summary>
-public class LeanImportMenuResultDto : LeanImportResult
+public class LeanMenuImportResultDto : LeanImportResult
 {
   /// <summary>
-  /// 错误信息列表
+  /// 错误列表
   /// </summary>
-  public new List<LeanImportMenuErrorDto> Errors { get; set; } = new();
+  public new List<LeanMenuImportErrorDto> Errors { get; set; } = new();
 
   /// <summary>
-  /// 错误信息
+  /// 错误消息
   /// </summary>
   public string? ErrorMessage { get; set; }
 
   /// <summary>
-  /// 添加错误信息
+  /// 添加错误
   /// </summary>
+  /// <param name="perms">权限标识</param>
+  /// <param name="errorMessage">错误消息</param>
   public override void AddError(string perms, string errorMessage)
   {
-    base.AddError(perms, errorMessage);
-    Errors.Add(new LeanImportMenuErrorDto
+    Errors.Add(new LeanMenuImportErrorDto
     {
-      RowIndex = TotalCount,
       Perms = perms,
       ErrorMessage = errorMessage
     });
@@ -398,9 +422,9 @@ public class LeanImportMenuResultDto : LeanImportResult
 }
 
 /// <summary>
-/// 菜单导出参数
+/// 菜单导出查询参数
 /// </summary>
-public class LeanExportMenuDto : LeanQueryMenuDto
+public class LeanMenuExportQueryDto : LeanMenuQueryDto
 {
   /// <summary>
   /// 导出字段列表
@@ -411,12 +435,14 @@ public class LeanExportMenuDto : LeanQueryMenuDto
   /// 文件格式
   /// </summary>
   [Required(ErrorMessage = "文件格式不能为空")]
-  public string FileFormat { get; set; } = "xlsx";
+  public string FileType { get; set; } = default!;
 
   /// <summary>
   /// 是否导出全部
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public bool IsExportAll { get; set; }
+  public int IsExportAll { get; set; }
 
   /// <summary>
   /// 选中的ID列表
@@ -425,7 +451,7 @@ public class LeanExportMenuDto : LeanQueryMenuDto
 }
 
 /// <summary>
-/// 菜单导出DTO
+/// 菜单导出参数
 /// </summary>
 public class LeanMenuExportDto
 {
@@ -437,15 +463,20 @@ public class LeanMenuExportDto
 
   /// <summary>
   /// 菜单类型
+  /// 0-目录
+  /// 1-菜单
+  /// 2-按钮
   /// </summary>
   [LeanExcelColumn("菜单类型", DataType = LeanExcelDataType.Int)]
-  public LeanMenuType MenuType { get; set; }
+  public int MenuType { get; set; }
 
   /// <summary>
   /// 菜单状态
+  /// 0-正常
+  /// 1-停用
   /// </summary>
   [LeanExcelColumn("菜单状态", DataType = LeanExcelDataType.Int)]
-  public LeanMenuStatus MenuStatus { get; set; }
+  public int MenuStatus { get; set; }
 
   /// <summary>
   /// 父级菜单ID
@@ -485,9 +516,11 @@ public class LeanMenuExportDto
 
   /// <summary>
   /// 是否内置
+  /// 0-否
+  /// 1-是
   /// </summary>
   [LeanExcelColumn("是否内置", DataType = LeanExcelDataType.Int)]
-  public LeanBuiltinStatus IsBuiltin { get; set; }
+  public int IsBuiltin { get; set; }
 
   /// <summary>
   /// 创建时间

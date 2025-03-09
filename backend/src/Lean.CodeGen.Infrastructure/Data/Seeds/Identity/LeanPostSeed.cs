@@ -33,24 +33,24 @@ public class LeanPostSeed
                 PostCode = "ceo",
                 PostName = "董事长",
                 OrderNum = 1,
-                PostStatus = LeanPostStatus.Normal,
-                IsBuiltin = LeanBuiltinStatus.Yes
+                PostStatus = 1,
+                IsBuiltin = 1
             },
             new()
             {
                 PostCode = "se",
                 PostName = "项目经理",
                 OrderNum = 2,
-                PostStatus = LeanPostStatus.Normal,
-                IsBuiltin = LeanBuiltinStatus.Yes
+                PostStatus = 1,
+                IsBuiltin = 1
             },
             new()
             {
                 PostCode = "hr",
                 PostName = "人力资源",
                 OrderNum = 3,
-                PostStatus = LeanPostStatus.Normal,
-                IsBuiltin = LeanBuiltinStatus.Yes
+                PostStatus = 1,
+                IsBuiltin = 1
             }
         };
 

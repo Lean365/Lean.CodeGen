@@ -5,7 +5,7 @@ namespace Lean.CodeGen.Domain.Entities.Workflow;
 /// <summary>
 /// 工作流关联实体
 /// </summary>
-[SugarTable("lean_workflow_correlation", "工作流关联表")]
+[SugarTable("lean_wk_correlation", "工作流关联表")]
 [SugarIndex("idx_instance", nameof(InstanceId), OrderByType.Asc)]
 [SugarIndex("uk_correlation_id", nameof(CorrelationId), OrderByType.Asc, true)]
 public class LeanWorkflowCorrelation : LeanBaseEntity

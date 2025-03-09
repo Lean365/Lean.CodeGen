@@ -35,61 +35,69 @@ public interface ILeanWorkflowInstanceService
   /// </summary>
   /// <param name="dto">工作流实例</param>
   /// <returns>是否成功</returns>
-  Task<bool> UpdateAsync(LeanWorkflowInstanceDto dto);
+  Task<LeanApiResult> UpdateAsync(LeanWorkflowInstanceDto dto);
 
   /// <summary>
   /// 删除工作流实例
   /// </summary>
   /// <param name="id">工作流实例ID</param>
   /// <returns>是否成功</returns>
-  Task<bool> DeleteAsync(long id);
+  Task<LeanApiResult> DeleteAsync(long id);
 
   /// <summary>
   /// 启动工作流实例
   /// </summary>
   /// <param name="id">工作流实例ID</param>
   /// <returns>是否成功</returns>
-  Task<bool> StartAsync(long id);
+  Task<LeanApiResult> StartAsync(long id);
 
   /// <summary>
   /// 暂停工作流实例
   /// </summary>
   /// <param name="id">工作流实例ID</param>
   /// <returns>是否成功</returns>
-  Task<bool> SuspendAsync(long id);
+  Task<LeanApiResult> SuspendAsync(long id);
 
   /// <summary>
   /// 恢复工作流实例
   /// </summary>
   /// <param name="id">工作流实例ID</param>
   /// <returns>是否成功</returns>
-  Task<bool> ResumeAsync(long id);
+  Task<LeanApiResult> ResumeAsync(long id);
 
   /// <summary>
   /// 终止工作流实例
   /// </summary>
   /// <param name="id">工作流实例ID</param>
   /// <returns>是否成功</returns>
-  Task<bool> TerminateAsync(long id);
+  Task<LeanApiResult> TerminateAsync(long id);
 
   /// <summary>
   /// 归档工作流实例
   /// </summary>
   /// <param name="id">工作流实例ID</param>
   /// <returns>是否成功</returns>
-  Task<bool> ArchiveAsync(long id);
+  Task<LeanApiResult> ArchiveAsync(long id);
 
   /// <summary>
-  /// 分页查询工作流实例
+  /// 获取分页列表
   /// </summary>
   /// <param name="pageIndex">页码</param>
-  /// <param name="pageSize">每页大小</param>
-  /// <param name="definitionId">工作流定义ID</param>
+  /// <param name="pageSize">页大小</param>
+  /// <param name="definitionId">流程定义ID</param>
   /// <param name="businessKey">业务主键</param>
   /// <param name="businessType">业务类型</param>
-  /// <param name="title">实例标题</param>
+  /// <param name="title">标题</param>
   /// <param name="initiatorId">发起人ID</param>
-  /// <param name="workflowStatus">工作流状态</param>
-  /// <returns>分页结果</returns>
-  Task<LeanPageResult<LeanWorkflowInstanceDto>> GetPagedListAsync(int pageIndex, int pageSize, long? definitionId = null, string? businessKey = null, string? businessType = null, string? title = null, long? initiatorId = null, LeanWorkflowInstanceStatus? workflowStatus = null);
+  /// <param name="workflowStatus">流程状态</param>
+  /// <returns>分页列表</returns>
+  Task<LeanPageResult<LeanWorkflowInstanceDto>> GetPagedListAsync(
+      int pageIndex,
+      int pageSize,
+      long? definitionId = null,
+      string? businessKey = null,
+      string? businessType = null,
+      string? title = null,
+      long? initiatorId = null,
+      int? workflowStatus = null);
 }

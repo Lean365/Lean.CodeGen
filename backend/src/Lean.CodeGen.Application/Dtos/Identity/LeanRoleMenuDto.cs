@@ -33,7 +33,7 @@ public class LeanRoleMenuDto : LeanBaseDto
 /// <summary>
 /// 角色菜单关联查询参数
 /// </summary>
-public class LeanQueryRoleMenuDto : LeanPage
+public class LeanRoleMenuQueryDto : LeanPage
 {
   /// <summary>
   /// 角色ID
@@ -59,7 +59,7 @@ public class LeanQueryRoleMenuDto : LeanPage
 /// <summary>
 /// 角色菜单关联创建参数
 /// </summary>
-public class LeanCreateRoleMenuDto
+public class LeanRoleMenuCreateDto
 {
   /// <summary>
   /// 角色ID
@@ -77,7 +77,7 @@ public class LeanCreateRoleMenuDto
 /// <summary>
 /// 角色菜单关联更新参数
 /// </summary>
-public class LeanUpdateRoleMenuDto
+public class LeanRoleMenuUpdateDto
 {
   /// <summary>
   /// 角色菜单关联ID
@@ -101,7 +101,7 @@ public class LeanUpdateRoleMenuDto
 /// <summary>
 /// 角色菜单关联删除参数
 /// </summary>
-public class LeanDeleteRoleMenuDto
+public class LeanRoleMenuDeleteDto
 {
   /// <summary>
   /// 角色菜单关联ID
@@ -113,7 +113,7 @@ public class LeanDeleteRoleMenuDto
 /// <summary>
 /// 角色菜单关联批量创建参数
 /// </summary>
-public class LeanBatchCreateRoleMenuDto
+public class LeanRoleMenuBatchCreateDto
 {
   /// <summary>
   /// 角色ID
@@ -131,7 +131,7 @@ public class LeanBatchCreateRoleMenuDto
 /// <summary>
 /// 角色菜单分配参数
 /// </summary>
-public class LeanAssignRoleMenuDto
+public class LeanRoleMenuAssignDto
 {
   /// <summary>
   /// 角色ID
@@ -147,7 +147,7 @@ public class LeanAssignRoleMenuDto
 /// <summary>
 /// 角色数据权限分配参数
 /// </summary>
-public class LeanAssignRoleDataScopeDto
+public class LeanRoleDataScopeAssignDto
 {
   /// <summary>
   /// 角色ID
@@ -157,7 +157,7 @@ public class LeanAssignRoleDataScopeDto
   /// <summary>
   /// 数据权限类型
   /// </summary>
-  public LeanDataScopeType DataScope { get; set; }
+  public int DataScope { get; set; }
 
   /// <summary>
   /// 部门ID列表
@@ -178,7 +178,7 @@ public class LeanRoleDataScopeDto
   /// <summary>
   /// 数据权限类型
   /// </summary>
-  public LeanDataScopeType DataScope { get; set; }
+  public int DataScope { get; set; }
 
   /// <summary>
   /// 部门ID列表

@@ -107,7 +107,7 @@ namespace Lean.CodeGen.Application.Services.Identity
     /// 5. 生成密码盐值
     /// 6. 记录审计日志
     /// </remarks>
-    public async Task<LeanUserDto> CreateAsync(LeanCreateUserDto input)
+    public async Task<LeanUserDto> CreateAsync(LeanUserCreateDto input)
     {
       return await ExecuteInTransactionAsync(async () =>
       {
@@ -153,7 +153,7 @@ namespace Lean.CodeGen.Application.Services.Identity
     /// 4. 验证手机号唯一性（如果更新）
     /// 5. 记录审计日志
     /// </remarks>
-    public async Task<LeanUserDto> UpdateAsync(LeanUpdateUserDto input)
+    public async Task<LeanUserDto> UpdateAsync(LeanUserUpdateDto input)
     {
       return await ExecuteInTransactionAsync(async () =>
       {
@@ -163,7 +163,7 @@ namespace Lean.CodeGen.Application.Services.Identity
           throw new LeanException("用户不存在");
         }
 
-        if (user.IsBuiltin == LeanBuiltinStatus.Yes)
+        if (user.IsBuiltin == 1)
         {
           throw new LeanException("内置用户不能修改");
         }
@@ -202,7 +202,7 @@ namespace Lean.CodeGen.Application.Services.Identity
     /// 5. 删除用户记录
     /// 6. 记录审计日志
     /// </remarks>
-    public async Task DeleteAsync(LeanDeleteUserDto input)
+    public async Task DeleteAsync(LeanUserDeleteDto input)
     {
       await ExecuteInTransactionAsync(async () =>
       {
@@ -212,7 +212,7 @@ namespace Lean.CodeGen.Application.Services.Identity
           throw new LeanException("用户不存在");
         }
 
-        if (user.IsBuiltin == LeanBuiltinStatus.Yes)
+        if (user.IsBuiltin == 1)
         {
           throw new LeanException("内置用户不能删除");
         }
@@ -255,7 +255,7 @@ namespace Lean.CodeGen.Application.Services.Identity
       // 获取用户部门
       var userDepts = await _userDeptRepository.GetListAsync(x => x.UserId == id);
       result.DeptIds = userDepts.Select(x => x.DeptId).ToList();
-      result.PrimaryDeptId = userDepts.FirstOrDefault(x => x.IsPrimary == LeanPrimaryStatus.Yes)?.DeptId;
+      result.PrimaryDeptId = userDepts.FirstOrDefault(x => x.IsPrimary == 1)?.DeptId;
 
       // 获取用户角色
       var userRoles = await _userRoleRepository.GetListAsync(x => x.UserId == id);
@@ -278,7 +278,7 @@ namespace Lean.CodeGen.Application.Services.Identity
     /// 5. 创建时间范围
     /// 查询结果按创建时间倒序排序
     /// </remarks>
-    public async Task<LeanPageResult<LeanUserDto>> QueryAsync(LeanQueryUserDto input)
+    public async Task<LeanPageResult<LeanUserDto>> QueryAsync(LeanUserQueryDto input)
     {
       using (LogPerformance("查询用户列表"))
       {
@@ -348,7 +348,7 @@ namespace Lean.CodeGen.Application.Services.Identity
     /// 3. 更新用户状态
     /// 4. 记录审计日志
     /// </remarks>
-    public async Task ChangeStatusAsync(LeanChangeUserStatusDto input)
+    public async Task ChangeStatusAsync(LeanUserChangeStatusDto input)
     {
       await ExecuteInTransactionAsync(async () =>
       {
@@ -358,14 +358,14 @@ namespace Lean.CodeGen.Application.Services.Identity
           throw new LeanException("用户不存在");
         }
 
-        if (user.IsBuiltin == LeanBuiltinStatus.Yes)
+        if (user.IsBuiltin == 1)
         {
           throw new LeanException("内置用户不能修改状态");
         }
 
+        // 更新状态
         user.UserStatus = input.UserStatus;
         await _userRepository.UpdateAsync(user);
-
         LogAudit("ChangeUserStatus", $"修改用户状态: {user.UserName}, 状态: {input.UserStatus}");
       }, "修改用户状态");
     }
@@ -382,7 +382,7 @@ namespace Lean.CodeGen.Application.Services.Identity
     /// 4. 生成新的密码盐值
     /// 5. 记录审计日志
     /// </remarks>
-    public async Task ResetPasswordAsync(LeanResetUserPasswordDto input)
+    public async Task ResetPasswordAsync(LeanUserResetPasswordDto input)
     {
       await ExecuteInTransactionAsync(async () =>
       {
@@ -392,7 +392,7 @@ namespace Lean.CodeGen.Application.Services.Identity
           throw new LeanException("用户不存在");
         }
 
-        if (user.IsBuiltin == LeanBuiltinStatus.Yes)
+        if (user.IsBuiltin == 1)
         {
           throw new LeanException("内置用户不能重置密码");
         }
@@ -419,7 +419,7 @@ namespace Lean.CodeGen.Application.Services.Identity
     /// 5. 生成新的密码盐值
     /// 6. 记录审计日志
     /// </remarks>
-    public async Task ChangePasswordAsync(LeanChangeUserPasswordDto input)
+    public async Task ChangePasswordAsync(LeanUserChangePasswordDto input)
     {
       await ExecuteInTransactionAsync(async () =>
       {
@@ -429,7 +429,7 @@ namespace Lean.CodeGen.Application.Services.Identity
           throw new LeanException("用户不存在");
         }
 
-        if (user.IsBuiltin == LeanBuiltinStatus.Yes)
+        if (user.IsBuiltin == 1)
         {
           throw new LeanException("内置用户不能修改密码");
         }
@@ -461,9 +461,19 @@ namespace Lean.CodeGen.Application.Services.Identity
     /// </summary>
     /// <param name="input">导出参数</param>
     /// <returns>导出的文件字节数组</returns>
-    public async Task<byte[]> ExportAsync(LeanExportUserDto input)
+    public async Task<byte[]> ExportAsync(LeanUserExportDto input)
     {
-      var users = await QueryAsync(input);
+      var queryInput = new LeanUserQueryDto
+      {
+        UserName = input.UserName,
+        RealName = input.RealName,
+        PhoneNumber = input.PhoneNumber,
+        UserStatus = input.UserStatus,
+        PageSize = int.MaxValue,
+        PageIndex = 1
+      };
+
+      var users = await QueryAsync(queryInput);
       var exportDtos = users.Items.Select(x => new LeanUserExportDto
       {
         UserName = x.UserName,
@@ -487,9 +497,9 @@ namespace Lean.CodeGen.Application.Services.Identity
     /// <remarks>
     /// TODO: 实现用户数据导入功能
     /// </remarks>
-    public async Task<LeanImportUserResultDto> ImportAsync(LeanFileInfo file)
+    public async Task<LeanUserImportResultDto> ImportAsync(LeanFileInfo file)
     {
-      var result = new LeanImportUserResultDto();
+      var result = new LeanUserImportResultDto();
 
       try
       {
@@ -509,8 +519,8 @@ namespace Lean.CodeGen.Application.Services.Identity
           var user = item.Adapt<LeanUser>();
           user.Password = SecurityOptions.DefaultPassword;
           user.Salt = Guid.NewGuid().ToString("N");
-          user.UserStatus = LeanUserStatus.Normal;
-          user.IsBuiltin = LeanBuiltinStatus.No;
+          user.UserStatus = 2;
+          user.IsBuiltin = 0;
           await _userRepository.CreateAsync(user);
           result.SuccessCount++;
         }

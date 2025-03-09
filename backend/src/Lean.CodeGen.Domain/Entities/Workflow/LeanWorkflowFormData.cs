@@ -5,7 +5,7 @@ namespace Lean.CodeGen.Domain.Entities.Workflow;
 /// <summary>
 /// 工作流表单数据实体
 /// </summary>
-[SugarTable("lean_workflow_form_data", "工作流表单数据表")]
+[SugarTable("lean_wk_form_data", "工作流表单数据表")]
 [SugarIndex("idx_instance", nameof(InstanceId), OrderByType.Asc)]
 [SugarIndex("idx_task", nameof(TaskId), OrderByType.Asc)]
 public class LeanWorkflowFormData : LeanBaseEntity

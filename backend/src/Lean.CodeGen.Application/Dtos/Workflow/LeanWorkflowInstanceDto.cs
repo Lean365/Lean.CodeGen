@@ -90,17 +90,21 @@ public class LeanWorkflowInstanceDto
   /// <summary>
   /// 工作流状态
   /// </summary>
-  public LeanWorkflowInstanceStatus WorkflowStatus { get; set; }
+  public int WorkflowStatus { get; set; }
 
   /// <summary>
   /// 是否暂停
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public bool IsSuspended { get; set; }
+  public int IsSuspended { get; set; }
 
   /// <summary>
   /// 是否已归档
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public bool IsArchived { get; set; }
+  public int IsArchived { get; set; }
 
   /// <summary>
   /// 表单数据列表

@@ -30,23 +30,25 @@ public class LeanLanguageSeed
     var defaultLanguages = new List<LeanLanguage>
         {
             // 东亚语言
-            new() { LangCode = "zh-CN", LangName = "简体中文", LangIcon = "🇨🇳", IsDefault = LeanYesNo.Yes },
-            new() { LangCode = "zh-TW", LangName = "繁體中文", LangIcon = "🇹🇼", IsDefault = LeanYesNo.No },
-            new() { LangCode = "ja-JP", LangName = "日本語", LangIcon = "🇯🇵", IsDefault = LeanYesNo.No },
-            new() { LangCode = "ko-KR", LangName = "한국어", LangIcon = "🇰🇷", IsDefault = LeanYesNo.No },
+            new() { LangCode = "zh-CN", LangName = "简体中文", LangIcon = "🇨🇳", IsDefault = 1 },
+            new() { LangCode = "zh-TW", LangName = "繁體中文", LangIcon = "🇹🇼", IsDefault = 0 },
+            new() { LangCode = "ja-JP", LangName = "日本語", LangIcon = "🇯🇵", IsDefault = 0 },
+            new() { LangCode = "ko-KR", LangName = "한국어", LangIcon = "🇰🇷", IsDefault = 0 },
             // 联合国官方语言
-            new() { LangCode = "en-US", LangName = "English", LangIcon = "🇺🇸", IsDefault = LeanYesNo.No },
-            new() { LangCode = "fr-FR", LangName = "Français", LangIcon = "🇫🇷", IsDefault = LeanYesNo.No },
-            new() { LangCode = "es-ES", LangName = "Español", LangIcon = "🇪🇸", IsDefault = LeanYesNo.No },
-            new() { LangCode = "ru-RU", LangName = "Русский", LangIcon = "🇷🇺", IsDefault = LeanYesNo.No },
-            new() { LangCode = "ar-SA", LangName = "العربية", LangIcon = "🇸🇦", IsDefault = LeanYesNo.No }
+            new() { LangCode = "en-US", LangName = "English", LangIcon = "🇺🇸", IsDefault = 0 },
+            new() { LangCode = "fr-FR", LangName = "Français", LangIcon = "🇫🇷", IsDefault = 0 },
+            new() { LangCode = "es-ES", LangName = "Español", LangIcon = "🇪🇸", IsDefault = 0 },
+            new() { LangCode = "ru-RU", LangName = "Русский", LangIcon = "🇷🇺", IsDefault = 0 },
+            new() { LangCode = "ar-SA", LangName = "العربية", LangIcon = "🇸🇦", IsDefault = 0 }
         };
 
     // 为所有语言设置通用属性
     foreach (var lang in defaultLanguages)
     {
-      lang.Status = LeanStatus.Enable;
-      lang.IsBuiltin = LeanBuiltinStatus.Yes;
+      lang.OrderNum = 1;
+      lang.Remark = "简体中文";
+      lang.LangStatus = 1; // 启用
+      lang.IsBuiltin = 1; // 是
       lang.OrderNum = defaultLanguages.IndexOf(lang) + 1;
     }
 

@@ -73,7 +73,7 @@ public class LeanSignalrHub : Hub
   /// <summary>
   /// 发送消息
   /// </summary>
-  public async Task SendMessage(LeanSendMessageDto input)
+  public async Task SendMessage(LeanOnlineMessageSendDto input)
   {
     var message = await _messageService.SendMessageAsync(input);
 

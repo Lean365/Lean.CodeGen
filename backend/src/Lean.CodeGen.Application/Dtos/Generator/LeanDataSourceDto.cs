@@ -65,8 +65,11 @@ namespace Lean.CodeGen.Application.Dtos.Generator
 
     /// <summary>
     /// 是否启用
+    /// 0-禁用
+    /// 1-启用
     /// </summary>
-    public bool IsEnabled { get; set; }
+    [LeanExcelColumn("是否启用", DataType = LeanExcelDataType.Int)]
+    public int IsEnabled { get; set; }
 
     /// <summary>
     /// 备注
@@ -126,8 +129,10 @@ namespace Lean.CodeGen.Application.Dtos.Generator
 
     /// <summary>
     /// 是否启用
+    /// 0-禁用
+    /// 1-启用
     /// </summary>
-    public bool IsEnabled { get; set; }
+    public int IsEnabled { get; set; }
 
     /// <summary>
     /// 备注
@@ -163,8 +168,10 @@ namespace Lean.CodeGen.Application.Dtos.Generator
 
     /// <summary>
     /// 是否启用
+    /// 0-禁用
+    /// 1-启用
     /// </summary>
-    public bool? IsEnabled { get; set; }
+    public int? IsEnabled { get; set; }
 
     /// <summary>
     /// 创建时间范围-开始
@@ -220,9 +227,11 @@ namespace Lean.CodeGen.Application.Dtos.Generator
 
     /// <summary>
     /// 是否启用
+    /// 0-禁用
+    /// 1-启用
     /// </summary>
-    [LeanExcelColumn("是否启用", DataType = LeanExcelDataType.Boolean)]
-    public bool IsEnabled { get; set; }
+    [LeanExcelColumn("是否启用", DataType = LeanExcelDataType.Int)]
+    public int IsEnabled { get; set; }
 
     /// <summary>
     /// 备注
@@ -286,9 +295,11 @@ namespace Lean.CodeGen.Application.Dtos.Generator
 
     /// <summary>
     /// 是否启用
+    /// 0-禁用
+    /// 1-启用
     /// </summary>
-    [LeanExcelColumn("是否启用", DataType = LeanExcelDataType.Boolean)]
-    public bool IsEnabled { get; set; }
+    [LeanExcelColumn("是否启用", DataType = LeanExcelDataType.Int)]
+    public int IsEnabled { get; set; }
 
     /// <summary>
     /// 备注
@@ -323,8 +334,13 @@ namespace Lean.CodeGen.Application.Dtos.Generator
     [LeanExcelColumn("密码", DataType = LeanExcelDataType.String)]
     public string Password { get; set; } = default!;
 
-    [LeanExcelColumn("是否启用", DataType = LeanExcelDataType.Boolean)]
-    public bool IsEnabled { get; set; }
+    /// <summary>
+    /// 是否启用
+    /// 0-禁用
+    /// 1-启用
+    /// </summary>
+    [LeanExcelColumn("是否启用", DataType = LeanExcelDataType.Int)]
+    public int IsEnabled { get; set; }
 
     [LeanExcelColumn("备注", DataType = LeanExcelDataType.String)]
     public string? Remark { get; set; }

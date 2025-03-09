@@ -15,8 +15,8 @@ namespace Lean.CodeGen.Domain.Entities.Admin;
 /// <summary>
 /// 字典数据实体
 /// </summary>
-[SugarTable("lean_admin_dict_data", "字典数据表")]
-[SugarIndex("idx_type_value", nameof(TypeId), OrderByType.Asc, nameof(DictLabel), OrderByType.Asc)]
+[SugarTable("lean_adm_dict_data", "字典数据表")]
+[SugarIndex("idx_type_value", nameof(TypeId), OrderByType.Asc, nameof(DictDataLabel), OrderByType.Asc)]
 public class LeanDictData : LeanBaseEntity
 {
     /// <summary>
@@ -43,8 +43,8 @@ public class LeanDictData : LeanBaseEntity
     /// <remarks>
     /// 字典数据的显示名称，如：男、女、正常、停用等
     /// </remarks>
-    [SugarColumn(ColumnName = "dict_label", ColumnDescription = "字典标签", Length = 100, IsNullable = false, ColumnDataType = "nvarchar")]
-    public string DictLabel { get; set; } = string.Empty;
+    [SugarColumn(ColumnName = "dict_data_label", ColumnDescription = "字典标签", Length = 100, IsNullable = false, ColumnDataType = "nvarchar")]
+    public string DictDataLabel { get; set; } = string.Empty;
 
     /// <summary>
     /// 字典键值
@@ -52,8 +52,8 @@ public class LeanDictData : LeanBaseEntity
     /// <remarks>
     /// 字典数据的实际值，如：0、1等
     /// </remarks>
-    [SugarColumn(ColumnName = "dict_value", ColumnDescription = "字典键值", Length = 100, IsNullable = false, ColumnDataType = "nvarchar")]
-    public string DictValue { get; set; } = string.Empty;
+    [SugarColumn(ColumnName = "dict_data_value", ColumnDescription = "字典键值", Length = 100, IsNullable = false, ColumnDataType = "nvarchar")]
+    public string DictDataValue { get; set; } = string.Empty;
 
     /// <summary>
     /// 扩展标签
@@ -61,8 +61,8 @@ public class LeanDictData : LeanBaseEntity
     /// <remarks>
     /// 字典数据的扩展显示名称
     /// </remarks>
-    [SugarColumn(ColumnName = "ext_label", ColumnDescription = "扩展标签", Length = 100, IsNullable = true, ColumnDataType = "nvarchar")]
-    public string? ExtLabel { get; set; }
+    [SugarColumn(ColumnName = "ext_data_label", ColumnDescription = "扩展标签", Length = 100, IsNullable = true, ColumnDataType = "nvarchar")]
+    public string? ExtDataLabel { get; set; }
 
     /// <summary>
     /// 扩展键值
@@ -70,8 +70,8 @@ public class LeanDictData : LeanBaseEntity
     /// <remarks>
     /// 字典数据的扩展值
     /// </remarks>
-    [SugarColumn(ColumnName = "ext_value", ColumnDescription = "扩展键值", Length = 100, IsNullable = true, ColumnDataType = "nvarchar")]
-    public string? ExtValue { get; set; }
+    [SugarColumn(ColumnName = "ext_data_value", ColumnDescription = "扩展键值", Length = 100, IsNullable = true, ColumnDataType = "nvarchar")]
+    public string? ExtDataValue { get; set; }
 
     /// <summary>
     /// 样式属性
@@ -106,17 +106,17 @@ public class LeanDictData : LeanBaseEntity
     /// <remarks>
     /// 字典数据状态：0-正常，1-停用
     /// </remarks>
-    [SugarColumn(ColumnName = "status", ColumnDescription = "状态", IsNullable = false, DefaultValue = "0", ColumnDataType = "int")]
-    public LeanStatus Status { get; set; }
+    [SugarColumn(ColumnName = "dict_data_status", ColumnDescription = "状态", IsNullable = false, DefaultValue = "0", ColumnDataType = "int")]
+    public int DictDataStatus { get; set; }
 
     /// <summary>
     /// 是否内置
     /// </summary>
     /// <remarks>
-    /// 是否为系统内置数据：No-否，Yes-是
+    /// 是否为系统内置数据：0-否，1-是
     /// </remarks>
     [SugarColumn(ColumnName = "is_builtin", ColumnDescription = "是否内置", IsNullable = false, DefaultValue = "0", ColumnDataType = "int")]
-    public LeanBuiltinStatus IsBuiltin { get; set; }
+    public int IsBuiltin { get; set; }
 
     /// <summary>
     /// 所属字典类型

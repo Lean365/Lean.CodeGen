@@ -33,7 +33,7 @@ public class LeanUserDeptDto : LeanBaseDto
 /// <summary>
 /// 用户部门关联查询参数
 /// </summary>
-public class LeanQueryUserDeptDto : LeanPage
+public class LeanUserDeptQueryDto : LeanPage
 {
   /// <summary>
   /// 用户ID
@@ -59,7 +59,7 @@ public class LeanQueryUserDeptDto : LeanPage
 /// <summary>
 /// 用户部门关联创建参数
 /// </summary>
-public class LeanCreateUserDeptDto
+public class LeanUserDeptCreateDto
 {
   /// <summary>
   /// 用户ID
@@ -77,7 +77,7 @@ public class LeanCreateUserDeptDto
 /// <summary>
 /// 用户部门关联更新参数
 /// </summary>
-public class LeanUpdateUserDeptDto
+public class LeanUserDeptUpdateDto
 {
   /// <summary>
   /// 用户部门关联ID
@@ -101,7 +101,7 @@ public class LeanUpdateUserDeptDto
 /// <summary>
 /// 用户部门关联删除参数
 /// </summary>
-public class LeanDeleteUserDeptDto
+public class LeanUserDeptDeleteDto
 {
   /// <summary>
   /// 用户部门关联ID
@@ -113,7 +113,7 @@ public class LeanDeleteUserDeptDto
 /// <summary>
 /// 用户部门关联批量创建参数
 /// </summary>
-public class LeanBatchCreateUserDeptDto
+public class LeanUserDeptBatchCreateDto
 {
   /// <summary>
   /// 用户ID
@@ -129,7 +129,7 @@ public class LeanBatchCreateUserDeptDto
 }
 
 /// <summary>
-/// 用户部门信息DTO
+/// 用户部门信息参数
 /// </summary>
 public class LeanUserDeptInfoDto
 {
@@ -150,6 +150,8 @@ public class LeanUserDeptInfoDto
 
   /// <summary>
   /// 是否主部门
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public LeanPrimaryStatus IsPrimary { get; set; }
+  public int IsPrimary { get; set; }
 }

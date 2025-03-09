@@ -11,6 +11,7 @@ global using System.Threading.Tasks;
 // 第三方库
 global using Mapster;
 global using Scriban;
+global using SqlSugar;
 
 // 项目命名空间
 global using System.ComponentModel.DataAnnotations;

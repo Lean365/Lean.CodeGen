@@ -59,7 +59,7 @@ public class LeanConfigProvider : IConfigurationProvider
   {
     // 1. 从数据库加载配置
     var dbConfigs = _db.Queryable<LeanConfig>()
-        .Where(c => c.Status == Common.Enums.LeanStatus.Normal)
+        .Where(c => c.ConfigStatus == 2)
         .ToList();
 
     foreach (var config in dbConfigs)

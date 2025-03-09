@@ -129,7 +129,7 @@ namespace Lean.CodeGen.Application.Services.Audit
 
       if (queryDto.OperationStatus.HasValue)
       {
-        predicate = predicate.And(t => t.OperationStatus == queryDto.OperationStatus);
+        predicate = predicate.And(t => t.OperationStatus == queryDto.OperationStatus.Value);
       }
 
       if (!string.IsNullOrEmpty(queryDto.ClientIp))

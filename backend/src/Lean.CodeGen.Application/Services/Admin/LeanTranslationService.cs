@@ -49,7 +49,7 @@ public class LeanTranslationService : LeanBaseService, ILeanTranslationService
     /// <summary>
     /// 创建翻译
     /// </summary>
-    public async Task<LeanApiResult<long>> CreateAsync(LeanCreateTranslationDto input)
+    public async Task<LeanApiResult<long>> CreateAsync(LeanTranslationCreateDto input)
     {
         try
         {
@@ -69,8 +69,8 @@ public class LeanTranslationService : LeanBaseService, ILeanTranslationService
 
             // 创建实体
             var entity = input.Adapt<LeanTranslation>();
-            entity.Status = LeanStatus.Normal;
-            entity.IsBuiltin = LeanBuiltinStatus.No;
+            entity.TransStatus = 0;
+            entity.IsBuiltin = 0;
 
             // 保存到数据库
             var id = await _repository.CreateAsync(entity);
@@ -87,7 +87,7 @@ public class LeanTranslationService : LeanBaseService, ILeanTranslationService
     /// <summary>
     /// 更新翻译
     /// </summary>
-    public async Task<LeanApiResult> UpdateAsync(LeanUpdateTranslationDto input)
+    public async Task<LeanApiResult> UpdateAsync(LeanTranslationUpdateDto input)
     {
         try
         {
@@ -140,7 +140,7 @@ public class LeanTranslationService : LeanBaseService, ILeanTranslationService
             }
 
             // 检查是否为内置翻译
-            if (entity.IsBuiltin == LeanBuiltinStatus.Yes)
+            if (entity.IsBuiltin == 1)
             {
                 return LeanApiResult.Error("内置翻译不允许删除", LeanErrorCode.OperationForbidden, LeanBusinessType.Delete);
             }
@@ -172,7 +172,7 @@ public class LeanTranslationService : LeanBaseService, ILeanTranslationService
             }
 
             // 检查是否包含内置翻译
-            if (entities.Any(x => x.IsBuiltin == LeanBuiltinStatus.Yes))
+            if (entities.Any(x => x.IsBuiltin == 1))
             {
                 return LeanApiResult.Error("选中的翻译中包含内置翻译，不允许删除", LeanErrorCode.OperationForbidden, LeanBusinessType.Delete);
             }
@@ -216,7 +216,7 @@ public class LeanTranslationService : LeanBaseService, ILeanTranslationService
     /// <summary>
     /// 获取翻译列表（分页）
     /// </summary>
-    public async Task<LeanApiResult<LeanPageResult<LeanTranslationDto>>> GetPageAsync(LeanQueryTranslationDto input)
+    public async Task<LeanApiResult<LeanPageResult<LeanTranslationDto>>> GetPageAsync(LeanTranslationQueryDto input)
     {
         try
         {
@@ -243,7 +243,7 @@ public class LeanTranslationService : LeanBaseService, ILeanTranslationService
     /// <summary>
     /// 设置翻译状态
     /// </summary>
-    public async Task<LeanApiResult> SetStatusAsync(LeanChangeTranslationStatusDto input)
+    public async Task<LeanApiResult> SetStatusAsync(LeanTranslationChangeStatusDto input)
     {
         try
         {
@@ -255,13 +255,13 @@ public class LeanTranslationService : LeanBaseService, ILeanTranslationService
             }
 
             // 检查是否为内置翻译
-            if (entity.IsBuiltin == LeanBuiltinStatus.Yes)
+            if (entity.IsBuiltin == 1)
             {
                 return LeanApiResult.Error("内置翻译不允许修改状态", LeanErrorCode.OperationForbidden, LeanBusinessType.Update);
             }
 
             // 更新状态
-            entity.Status = input.Status;
+            entity.TransStatus = input.TransStatus;
             await _repository.UpdateAsync(entity);
 
             // 返回结果
@@ -276,7 +276,7 @@ public class LeanTranslationService : LeanBaseService, ILeanTranslationService
     /// <summary>
     /// 导出翻译
     /// </summary>
-    public async Task<byte[]> ExportAsync(LeanQueryTranslationDto input)
+    public async Task<byte[]> ExportAsync(LeanTranslationQueryDto input)
     {
         var list = await _repository.GetListAsync(BuildQueryPredicate(input));
         var exportDtos = list.Select(t => t.Adapt<LeanTranslationExportDto>()).ToList();
@@ -286,10 +286,10 @@ public class LeanTranslationService : LeanBaseService, ILeanTranslationService
     /// <summary>
     /// 导出转置翻译
     /// </summary>
-    public async Task<byte[]> ExportTransposeAsync(LeanQueryTranslationDto input)
+    public async Task<byte[]> ExportTransposeAsync(LeanTranslationQueryDto input)
     {
         var translations = await _repository.GetListAsync(BuildQueryPredicate(input));
-        var languages = await _languageRepository.GetListAsync(x => x.Status == LeanStatus.Normal);
+        var languages = await _languageRepository.GetListAsync(x => x.LangStatus == 0);
 
         var transKeys = translations.Select(x => x.TransKey).Distinct().ToList();
         var exportDtos = transKeys.Select(key =>
@@ -324,7 +324,7 @@ public class LeanTranslationService : LeanBaseService, ILeanTranslationService
         var importResult = await Task.FromResult(LeanExcelHelper.Import<LeanTranslationImportDto>(bytes));
         if (importResult.Data == null || !importResult.Data.Any()) return importResult;
 
-        var languages = await _languageRepository.GetListAsync(x => x.Status == LeanStatus.Normal);
+        var languages = await _languageRepository.GetListAsync(x => x.LangStatus == 0);
         foreach (var importDto in importResult.Data)
         {
             foreach (var lang in languages)
@@ -342,7 +342,8 @@ public class LeanTranslationService : LeanBaseService, ILeanTranslationService
                         TransKey = importDto.TransKey,
                         LangId = lang.Id,
                         TransValue = transValue,
-                        Status = LeanStatus.Normal
+                        TransStatus = 0,
+                        IsBuiltin = 0
                     };
                     await _repository.CreateAsync(translation);
                 }
@@ -406,8 +407,8 @@ public class LeanTranslationService : LeanBaseService, ILeanTranslationService
                     LangId = langId,
                     TransKey = translation.Key,
                     TransValue = translation.Value,
-                    Status = LeanStatus.Normal,
-                    IsBuiltin = LeanBuiltinStatus.No
+                    TransStatus = 0,
+                    IsBuiltin = 0
                 };
                 await _repository.CreateAsync(entity);
             }
@@ -427,7 +428,7 @@ public class LeanTranslationService : LeanBaseService, ILeanTranslationService
             return new Dictionary<string, string>();
         }
 
-        var translations = await _repository.GetListAsync(x => x.LangId == language.Id && x.Status == LeanStatus.Normal);
+        var translations = await _repository.GetListAsync(x => x.LangId == language.Id && x.TransStatus == 0);
         return translations.ToDictionary(x => x.TransKey, x => x.TransValue);
     }
 
@@ -446,14 +447,14 @@ public class LeanTranslationService : LeanBaseService, ILeanTranslationService
     /// <summary>
     /// 获取转置的翻译列表（分页）
     /// </summary>
-    public async Task<LeanApiResult<LeanPageResult<LeanTranslationExportDto>>> GetTransposePageAsync(LeanQueryTranslationDto input)
+    public async Task<LeanApiResult<LeanPageResult<LeanTranslationExportDto>>> GetTransposePageAsync(LeanTranslationQueryDto input)
     {
         try
         {
             // 1. 获取所有翻译数据
             var translations = await _repository.GetListAsync(BuildQueryPredicate(input));
             // 2. 获取所有启用的语言
-            var languages = await _languageRepository.GetListAsync(x => x.Status == LeanStatus.Normal);
+            var languages = await _languageRepository.GetListAsync(x => x.LangStatus == 0);
 
             // 3. 按翻译键分组进行转置
             var transKeys = translations.Select(x => x.TransKey).Distinct().ToList();
@@ -491,12 +492,12 @@ public class LeanTranslationService : LeanBaseService, ILeanTranslationService
     /// <summary>
     /// 创建转置的翻译
     /// </summary>
-    public async Task<LeanApiResult> CreateTransposeAsync(LeanCreateTranslationTransposeDto input)
+    public async Task<LeanApiResult> CreateTransposeAsync(LeanTranslationTransposeCreateDto input)
     {
         try
         {
             // 获取所有语言
-            var languages = await _languageRepository.GetListAsync(x => x.Status == LeanStatus.Normal);
+            var languages = await _languageRepository.GetListAsync(x => x.LangStatus == 0);
 
             // 检查翻译键是否已存在
             var exists = await _repository.AnyAsync(x => x.TransKey == input.TransKey);
@@ -517,8 +518,8 @@ public class LeanTranslationService : LeanBaseService, ILeanTranslationService
                     ModuleName = input.ModuleName,
                     LangId = lang.Id,
                     TransValue = transValue,
-                    Status = LeanStatus.Normal,
-                    IsBuiltin = LeanBuiltinStatus.No
+                    TransStatus = 0,
+                    IsBuiltin = 0
                 };
 
                 await _repository.CreateAsync(translation);
@@ -538,12 +539,12 @@ public class LeanTranslationService : LeanBaseService, ILeanTranslationService
     /// <summary>
     /// 更新转置的翻译
     /// </summary>
-    public async Task<LeanApiResult> UpdateTransposeAsync(LeanUpdateTranslationTransposeDto input)
+    public async Task<LeanApiResult> UpdateTransposeAsync(LeanTranslationTransposeUpdateDto input)
     {
         try
         {
             // 获取所有语言
-            var languages = await _languageRepository.GetListAsync(x => x.Status == LeanStatus.Normal);
+            var languages = await _languageRepository.GetListAsync(x => x.LangStatus == 0);
 
             // 获取现有翻译
             var existingTranslations = await _repository.GetListAsync(x => x.TransKey == input.TransKey);
@@ -553,7 +554,7 @@ public class LeanTranslationService : LeanBaseService, ILeanTranslationService
             }
 
             // 检查是否为内置翻译
-            if (existingTranslations.Any(x => x.IsBuiltin == LeanBuiltinStatus.Yes))
+            if (existingTranslations.Any(x => x.IsBuiltin == 1))
             {
                 return LeanApiResult.Error("内置翻译不允许修改", LeanErrorCode.OperationForbidden, LeanBusinessType.Update);
             }
@@ -573,8 +574,8 @@ public class LeanTranslationService : LeanBaseService, ILeanTranslationService
                         ModuleName = input.ModuleName,
                         LangId = lang.Id,
                         TransValue = transValue,
-                        Status = LeanStatus.Normal,
-                        IsBuiltin = LeanBuiltinStatus.No
+                        TransStatus = 0,
+                        IsBuiltin = 0
                     };
                     await _repository.CreateAsync(translation);
                 }
@@ -597,7 +598,7 @@ public class LeanTranslationService : LeanBaseService, ILeanTranslationService
         }
     }
 
-    private Expression<Func<LeanTranslation, bool>> BuildQueryPredicate(LeanQueryTranslationDto input)
+    private Expression<Func<LeanTranslation, bool>> BuildQueryPredicate(LeanTranslationQueryDto input)
     {
         Expression<Func<LeanTranslation, bool>> predicate = x => true;
 
@@ -618,9 +619,9 @@ public class LeanTranslationService : LeanBaseService, ILeanTranslationService
             predicate = predicate.And(x => x.TransValue.Contains(transValue));
         }
 
-        if (input.Status.HasValue)
+        if (input.TransStatus.HasValue)
         {
-            predicate = predicate.And(x => x.Status == input.Status.Value);
+            predicate = predicate.And(x => x.TransStatus == input.TransStatus.Value);
         }
 
         return predicate;

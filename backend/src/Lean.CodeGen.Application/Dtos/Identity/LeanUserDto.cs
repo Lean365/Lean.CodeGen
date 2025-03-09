@@ -35,8 +35,10 @@ public class LeanUserDto : LeanBaseDto
 
   /// <summary>
   /// 用户类型
+  /// 0-普通用户
+  /// 1-管理员
   /// </summary>
-  public LeanUserType UserType { get; set; }
+  public int UserType { get; set; }
 
   /// <summary>
   /// 邮箱
@@ -55,13 +57,24 @@ public class LeanUserDto : LeanBaseDto
 
   /// <summary>
   /// 用户状态
+  /// 0-正常
+  /// 1-停用
   /// </summary>
-  public LeanUserStatus UserStatus { get; set; }
+  public int UserStatus { get; set; }
 
   /// <summary>
   /// 是否内置
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public LeanBuiltinStatus IsBuiltin { get; set; }
+  public int IsBuiltin { get; set; }
+
+  /// <summary>
+  /// 是否信任设备
+  /// 0-否
+  /// 1-是
+  /// </summary>
+  public int IsTrusted { get; set; }
 
   /// <summary>
   /// 角色ID列表
@@ -107,7 +120,7 @@ public class LeanUserDto : LeanBaseDto
 /// <summary>
 /// 用户查询参数
 /// </summary>
-public class LeanQueryUserDto : LeanPage
+public class LeanUserQueryDto : LeanPage
 {
   /// <summary>
   /// ID
@@ -141,8 +154,10 @@ public class LeanQueryUserDto : LeanPage
 
   /// <summary>
   /// 用户类型
+  /// 0-普通用户
+  /// 1-管理员
   /// </summary>
-  public LeanUserType? UserType { get; set; }
+  public int? UserType { get; set; }
 
   /// <summary>
   /// 邮箱
@@ -161,13 +176,17 @@ public class LeanQueryUserDto : LeanPage
 
   /// <summary>
   /// 用户状态
+  /// 0-正常
+  /// 1-停用
   /// </summary>
-  public LeanUserStatus? UserStatus { get; set; }
+  public int? UserStatus { get; set; }
 
   /// <summary>
   /// 是否内置
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public LeanBuiltinStatus? IsBuiltin { get; set; }
+  public int? IsBuiltin { get; set; }
 
   /// <summary>
   /// 创建者ID
@@ -211,8 +230,11 @@ public class LeanQueryUserDto : LeanPage
 
   /// <summary>
   /// 审核状态
+  /// 0-未审核
+  /// 1-已审核
+  /// 2-已驳回
   /// </summary>
-  public LeanAuditStatus? AuditStatus { get; set; }
+  public int? AuditStatus { get; set; }
 
   /// <summary>
   /// 审核人员ID
@@ -270,12 +292,12 @@ public class LeanQueryUserDto : LeanPage
   public int? IsDeleted { get; set; }
 
   /// <summary>
-  /// 删除者ID
+  /// 删除人员ID
   /// </summary>
   public long? DeleteUserId { get; set; }
 
   /// <summary>
-  /// 删除者
+  /// 删除人员
   /// </summary>
   public string? DeleteUserName { get; set; }
 
@@ -308,7 +330,7 @@ public class LeanQueryUserDto : LeanPage
 /// <summary>
 /// 用户创建参数
 /// </summary>
-public class LeanCreateUserDto
+public class LeanUserCreateDto
 {
   /// <summary>
   /// 用户名
@@ -321,7 +343,7 @@ public class LeanCreateUserDto
   /// 密码
   /// </summary>
   [Required(ErrorMessage = "密码不能为空")]
-  [StringLength(100, MinimumLength = 6, ErrorMessage = "密码长度必须在6-100个字符之间")]
+  [StringLength(50, MinimumLength = 6, ErrorMessage = "密码长度必须在6-50个字符之间")]
   public string Password { get; set; } = string.Empty;
 
   /// <summary>
@@ -345,8 +367,10 @@ public class LeanCreateUserDto
 
   /// <summary>
   /// 用户类型
+  /// 0-普通用户
+  /// 1-管理员
   /// </summary>
-  public LeanUserType UserType { get; set; } = LeanUserType.Normal;
+  public int UserType { get; set; } = 0;
 
   /// <summary>
   /// 邮箱
@@ -370,19 +394,23 @@ public class LeanCreateUserDto
 
   /// <summary>
   /// 用户状态
+  /// 0-正常
+  /// 1-停用
   /// </summary>
-  public LeanUserStatus UserStatus { get; set; } = LeanUserStatus.Normal;
+  public int UserStatus { get; set; } = 0;
 
   /// <summary>
   /// 是否内置
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public LeanBuiltinStatus IsBuiltin { get; set; } = LeanBuiltinStatus.No;
+  public int IsBuiltin { get; set; } = 0;
 }
 
 /// <summary>
 /// 用户更新参数
 /// </summary>
-public class LeanUpdateUserDto
+public class LeanUserUpdateDto
 {
   /// <summary>
   /// 用户ID
@@ -431,14 +459,16 @@ public class LeanUpdateUserDto
 
   /// <summary>
   /// 用户状态
+  /// 0-正常
+  /// 1-停用
   /// </summary>
-  public LeanUserStatus UserStatus { get; set; }
+  public int UserStatus { get; set; }
 }
 
 /// <summary>
 /// 用户状态变更参数
 /// </summary>
-public class LeanChangeUserStatusDto
+public class LeanUserChangeStatusDto
 {
   /// <summary>
   /// 用户ID
@@ -448,15 +478,17 @@ public class LeanChangeUserStatusDto
 
   /// <summary>
   /// 用户状态
+  /// 0-正常
+  /// 1-停用
   /// </summary>
   [Required(ErrorMessage = "用户状态不能为空")]
-  public LeanUserStatus UserStatus { get; set; }
+  public int UserStatus { get; set; }
 }
 
 /// <summary>
-/// 重置密码参数
+/// 用户重置密码参数
 /// </summary>
-public class LeanResetUserPasswordDto
+public class LeanUserResetPasswordDto
 {
   /// <summary>
   /// 用户ID
@@ -468,14 +500,14 @@ public class LeanResetUserPasswordDto
   /// 新密码
   /// </summary>
   [Required(ErrorMessage = "新密码不能为空")]
-  [StringLength(20, MinimumLength = 6, ErrorMessage = "密码长度必须在6-20个字符之间")]
+  [StringLength(50, MinimumLength = 6, ErrorMessage = "密码长度必须在6-50个字符之间")]
   public string NewPassword { get; set; } = string.Empty;
 }
 
 /// <summary>
-/// 修改密码参数
+/// 用户修改密码参数
 /// </summary>
-public class LeanChangeUserPasswordDto
+public class LeanUserChangePasswordDto
 {
   /// <summary>
   /// 用户ID
@@ -487,49 +519,49 @@ public class LeanChangeUserPasswordDto
   /// 旧密码
   /// </summary>
   [Required(ErrorMessage = "旧密码不能为空")]
-  [StringLength(20, MinimumLength = 6, ErrorMessage = "密码长度必须在6-20个字符之间")]
+  [StringLength(50, MinimumLength = 6, ErrorMessage = "密码长度必须在6-50个字符之间")]
   public string OldPassword { get; set; } = string.Empty;
 
   /// <summary>
   /// 新密码
   /// </summary>
   [Required(ErrorMessage = "新密码不能为空")]
-  [StringLength(20, MinimumLength = 6, ErrorMessage = "密码长度必须在6-20个字符之间")]
+  [StringLength(50, MinimumLength = 6, ErrorMessage = "密码长度必须在6-50个字符之间")]
   public string NewPassword { get; set; } = string.Empty;
 
   /// <summary>
   /// 确认密码
   /// </summary>
   [Required(ErrorMessage = "确认密码不能为空")]
-  [Compare(nameof(NewPassword), ErrorMessage = "两次输入的密码不一致")]
+  [Compare("NewPassword", ErrorMessage = "两次输入的密码不一致")]
   public string ConfirmPassword { get; set; } = string.Empty;
 }
 
 /// <summary>
-/// 用户导入模板
+/// 用户导入模板参数
 /// </summary>
-public class LeanImportTemplateUserDto
+public class LeanUserImportTemplateDto
 {
   /// <summary>
   /// 用户名
   /// </summary>
   [Required(ErrorMessage = "用户名不能为空")]
   [StringLength(50, MinimumLength = 2, ErrorMessage = "用户名长度必须在2-50个字符之间")]
-  public string UserName { get; set; } = string.Empty;
+  public string UserName { get; set; } = default!;
 
   /// <summary>
   /// 密码
   /// </summary>
   [Required(ErrorMessage = "密码不能为空")]
-  [StringLength(20, MinimumLength = 6, ErrorMessage = "密码长度必须在6-20个字符之间")]
-  public string Password { get; set; } = string.Empty;
+  [StringLength(50, MinimumLength = 6, ErrorMessage = "密码长度必须在6-50个字符之间")]
+  public string Password { get; set; } = default!;
 
   /// <summary>
   /// 真实姓名
   /// </summary>
   [Required(ErrorMessage = "真实姓名不能为空")]
   [StringLength(50, MinimumLength = 2, ErrorMessage = "真实姓名长度必须在2-50个字符之间")]
-  public string RealName { get; set; } = string.Empty;
+  public string RealName { get; set; } = default!;
 
   /// <summary>
   /// 英文名称
@@ -559,39 +591,35 @@ public class LeanImportTemplateUserDto
 }
 
 /// <summary>
-/// 用户导入错误信息
+/// 用户导入错误参数
 /// </summary>
-public class LeanImportUserErrorDto : LeanImportError
+public class LeanUserImportErrorDto : LeanImportError
 {
   /// <summary>
   /// 用户名
   /// </summary>
-  public string UserName
-  {
-    get => Key;
-    set => Key = value;
-  }
+  public string UserName { get; set; } = default!;
 }
 
 /// <summary>
-/// 用户导入结果
+/// 用户导入结果参数
 /// </summary>
-public class LeanImportUserResultDto : LeanImportResult
+public class LeanUserImportResultDto : LeanImportResult
 {
   /// <summary>
-  /// 错误信息列表
+  /// 错误列表
   /// </summary>
-  public new List<LeanImportUserErrorDto> Errors { get; set; } = new();
+  public new List<LeanUserImportErrorDto> Errors { get; set; } = new();
 
   /// <summary>
-  /// 添加错误信息
+  /// 添加错误
   /// </summary>
+  /// <param name="userName">用户名</param>
+  /// <param name="errorMessage">错误消息</param>
   public override void AddError(string userName, string errorMessage)
   {
-    base.AddError(userName, errorMessage);
-    Errors.Add(new LeanImportUserErrorDto
+    Errors.Add(new LeanUserImportErrorDto
     {
-      RowIndex = TotalCount,
       UserName = userName,
       ErrorMessage = errorMessage
     });
@@ -599,9 +627,9 @@ public class LeanImportUserResultDto : LeanImportResult
 }
 
 /// <summary>
-/// 用户导出参数
+/// 用户导出查询参数
 /// </summary>
-public class LeanExportUserDto : LeanQueryUserDto
+public class LeanUserExportQueryDto : LeanUserQueryDto
 {
   /// <summary>
   /// 导出字段列表
@@ -612,12 +640,14 @@ public class LeanExportUserDto : LeanQueryUserDto
   /// 文件格式
   /// </summary>
   [Required(ErrorMessage = "文件格式不能为空")]
-  public string FileFormat { get; set; } = "xlsx";
+  public string FileType { get; set; } = default!;
 
   /// <summary>
   /// 是否导出全部
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public bool IsExportAll { get; set; }
+  public int IsExportAll { get; set; }
 
   /// <summary>
   /// 选中的ID列表
@@ -628,7 +658,7 @@ public class LeanExportUserDto : LeanQueryUserDto
 /// <summary>
 /// 用户删除参数
 /// </summary>
-public class LeanDeleteUserDto
+public class LeanUserDeleteDto
 {
   /// <summary>
   /// 用户ID
@@ -638,7 +668,7 @@ public class LeanDeleteUserDto
 }
 
 /// <summary>
-/// 用户导出数据
+/// 用户导出参数
 /// </summary>
 public class LeanUserExportDto
 {
@@ -680,15 +710,19 @@ public class LeanUserExportDto
 
   /// <summary>
   /// 用户状态
+  /// 0-正常
+  /// 1-停用
   /// </summary>
   [LeanExcelColumn("用户状态", DataType = LeanExcelDataType.Int)]
-  public LeanUserStatus UserStatus { get; set; }
+  public int UserStatus { get; set; }
 
   /// <summary>
   /// 是否内置
+  /// 0-否
+  /// 1-是
   /// </summary>
   [LeanExcelColumn("是否内置", DataType = LeanExcelDataType.Int)]
-  public LeanBuiltinStatus IsBuiltin { get; set; }
+  public int IsBuiltin { get; set; }
 
   /// <summary>
   /// 创建时间
@@ -698,7 +732,7 @@ public class LeanUserExportDto
 }
 
 /// <summary>
-/// 用户导入DTO
+/// 用户导入参数
 /// </summary>
 public class LeanUserImportDto
 {
@@ -706,15 +740,13 @@ public class LeanUserImportDto
   /// 用户名
   /// </summary>
   [LeanExcelColumn("用户名")]
-  [Required]
-  public string UserName { get; set; }
+  public string UserName { get; set; } = default!;
 
   /// <summary>
   /// 真实姓名
   /// </summary>
   [LeanExcelColumn("真实姓名")]
-  [Required]
-  public string RealName { get; set; }
+  public string RealName { get; set; } = default!;
 
   /// <summary>
   /// 英文名称

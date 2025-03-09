@@ -5,7 +5,7 @@ namespace Lean.CodeGen.Domain.Entities.Workflow;
 /// <summary>
 /// 工作流补偿实体
 /// </summary>
-[SugarTable("lean_workflow_compensation", "工作流补偿表")]
+[SugarTable("lean_wk_compensation", "工作流补偿表")]
 [SugarIndex("idx_activity_instance", nameof(ActivityInstanceId), OrderByType.Asc)]
 public class LeanWorkflowCompensation : LeanBaseEntity
 {

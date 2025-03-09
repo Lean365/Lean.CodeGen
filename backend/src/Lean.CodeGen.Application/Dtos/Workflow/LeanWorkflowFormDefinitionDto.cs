@@ -42,8 +42,10 @@ public class LeanWorkflowFormDefinitionDto
 
   /// <summary>
   /// 是否为最新版本
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public bool IsLatest { get; set; }
+  public int IsLatest { get; set; }
 
   /// <summary>
   /// 表单布局
@@ -62,8 +64,10 @@ public class LeanWorkflowFormDefinitionDto
 
   /// <summary>
   /// 是否启用
+  /// 0-停用
+  /// 1-启用
   /// </summary>
-  public bool Status { get; set; }
+  public int Status { get; set; }
 
   /// <summary>
   /// 备注

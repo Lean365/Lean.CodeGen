@@ -47,6 +47,7 @@ public class LeanApiResult
   /// </summary>
   /// <remarks>
   /// 标识当前操作的业务类型，用于业务分类和统计
+  /// 0-其他, 1-新增, 2-修改, 3-删除, 4-授权, 5-导出, 6-导入, 7-强退, 8-生成代码, 9-清空数据
   /// </remarks>
   [JsonProperty("businessType")]
   public LeanBusinessType BusinessType { get; protected set; }

@@ -124,7 +124,7 @@ public class LeanLoginExtendDto : LeanBaseDto
 /// <summary>
 /// 登录扩展查询参数
 /// </summary>
-public class LeanQueryLoginExtendDto : LeanPage
+public class LeanLoginExtendQueryDto : LeanPage
 {
   /// <summary>
   /// 用户ID
@@ -170,7 +170,7 @@ public class LeanQueryLoginExtendDto : LeanPage
 /// <summary>
 /// 登录扩展创建参数
 /// </summary>
-public class LeanCreateLoginExtendDto
+public class LeanLoginExtendCreateDto
 {
   /// <summary>
   /// 用户ID
@@ -217,7 +217,7 @@ public class LeanCreateLoginExtendDto
 /// <summary>
 /// 登录扩展更新参数
 /// </summary>
-public class LeanUpdateLoginExtendDto
+public class LeanLoginExtendUpdateDto
 {
   /// <summary>
   /// 登录扩展ID
@@ -264,7 +264,7 @@ public class LeanUpdateLoginExtendDto
 /// <summary>
 /// 登录扩展状态变更参数
 /// </summary>
-public class LeanChangeLoginExtendStatusDto
+public class LeanLoginExtendChangeStatusDto
 {
   /// <summary>
   /// 登录扩展ID
@@ -280,9 +280,9 @@ public class LeanChangeLoginExtendStatusDto
 }
 
 /// <summary>
-/// 登录扩展导出参数
+/// 登录扩展导出查询参数
 /// </summary>
-public class LeanExportLoginExtendDto : LeanQueryLoginExtendDto
+public class LeanLoginExtendExportQueryDto : LeanLoginExtendQueryDto
 {
   /// <summary>
   /// 导出字段列表
@@ -297,8 +297,10 @@ public class LeanExportLoginExtendDto : LeanQueryLoginExtendDto
 
   /// <summary>
   /// 是否导出全部
+  /// 0-否
+  /// 1-是
   /// </summary>
-  public bool IsExportAll { get; set; }
+  public int IsExportAll { get; set; }
 
   /// <summary>
   /// 选中的ID列表
@@ -309,7 +311,7 @@ public class LeanExportLoginExtendDto : LeanQueryLoginExtendDto
 /// <summary>
 /// 登录扩展删除参数
 /// </summary>
-public class LeanDeleteLoginExtendDto
+public class LeanLoginExtendDeleteDto
 {
   /// <summary>
   /// 登录扩展ID

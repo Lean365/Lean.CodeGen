@@ -106,7 +106,7 @@ namespace Lean.CodeGen.Application.Services.Audit
     /// <summary>
     /// 处理异常日志
     /// </summary>
-    public async Task<bool> HandleAsync(LeanHandleExceptionLogDto handleDto)
+    public async Task<bool> HandleAsync(LeanExceptionLogHandleDto handleDto)
     {
       var exceptionLog = await _exceptionLogRepository.FirstOrDefaultAsync(t => t.Id == handleDto.Id);
       if (exceptionLog == null)

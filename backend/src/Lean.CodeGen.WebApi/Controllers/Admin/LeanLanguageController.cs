@@ -4,14 +4,17 @@ using Lean.CodeGen.Common.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.IO;
 using Lean.CodeGen.Common.Enums;
+using Lean.CodeGen.Common.Attributes;
 using Microsoft.Extensions.Configuration;
+
 namespace Lean.CodeGen.WebApi.Controllers.Admin;
 
 /// <summary>
 /// 语言控制器
 /// </summary>
-[Route("api/admin/language")]
 [ApiController]
+[Route("api/[controller]")]
+[ApiExplorerSettings(GroupName = "admin")]
 public class LeanLanguageController : LeanBaseController
 {
   private readonly ILeanLanguageService _languageService;
@@ -32,7 +35,7 @@ public class LeanLanguageController : LeanBaseController
   /// 创建语言
   /// </summary>
   [HttpPost]
-  public async Task<IActionResult> CreateAsync([FromBody] LeanCreateLanguageDto input)
+  public async Task<IActionResult> CreateAsync([FromBody] LeanLanguageCreateDto input)
   {
     var result = await _languageService.CreateAsync(input);
     return Success(result, LeanBusinessType.Create);
@@ -42,7 +45,7 @@ public class LeanLanguageController : LeanBaseController
   /// 更新语言
   /// </summary>
   [HttpPut]
-  public async Task<IActionResult> UpdateAsync([FromBody] LeanUpdateLanguageDto input)
+  public async Task<IActionResult> UpdateAsync([FromBody] LeanLanguageUpdateDto input)
   {
     var result = await _languageService.UpdateAsync(input);
     return Success(result, LeanBusinessType.Update);
@@ -82,7 +85,7 @@ public class LeanLanguageController : LeanBaseController
   /// 分页查询语言
   /// </summary>
   [HttpGet("page")]
-  public async Task<IActionResult> GetPageAsync([FromQuery] LeanQueryLanguageDto input)
+  public async Task<IActionResult> GetPageAsync([FromQuery] LeanLanguageQueryDto input)
   {
     var result = await _languageService.GetPageAsync(input);
     return Success(result, LeanBusinessType.Query);
@@ -92,7 +95,7 @@ public class LeanLanguageController : LeanBaseController
   /// 修改语言状态
   /// </summary>
   [HttpPut("status")]
-  public async Task<IActionResult> SetStatusAsync([FromBody] LeanChangeLanguageStatusDto input)
+  public async Task<IActionResult> SetStatusAsync([FromBody] LeanLanguageChangeStatusDto input)
   {
     var result = await _languageService.SetStatusAsync(input);
     return Success(result, LeanBusinessType.Update);
@@ -122,7 +125,7 @@ public class LeanLanguageController : LeanBaseController
   /// 导出语言
   /// </summary>
   [HttpGet("export")]
-  public async Task<IActionResult> ExportAsync([FromQuery] LeanQueryLanguageDto input)
+  public async Task<IActionResult> ExportAsync([FromQuery] LeanLanguageQueryDto input)
   {
     var bytes = await _languageService.ExportAsync(input);
     return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "languages.xlsx");
@@ -131,19 +134,13 @@ public class LeanLanguageController : LeanBaseController
   /// <summary>
   /// 导入语言
   /// </summary>
+  /// <param name="file">Excel文件</param>
+  /// <returns>导入结果</returns>
   [HttpPost("import")]
-  public async Task<IActionResult> ImportAsync([FromForm] IFormFile file)
+  [LeanPermission("system:language:import", "导入语言")]
+  public async Task<IActionResult> ImportAsync([FromForm] LeanFileInfo file)
   {
-    using var ms = new MemoryStream();
-    await file.CopyToAsync(ms);
-    ms.Position = 0;
-    var fileInfo = new LeanFileInfo
-    {
-      Stream = ms,
-      FileName = file.FileName,
-      ContentType = file.ContentType
-    };
-    var result = await _languageService.ImportAsync(fileInfo);
+    var result = await _languageService.ImportAsync(file);
     return Success(result, LeanBusinessType.Import);
   }
 

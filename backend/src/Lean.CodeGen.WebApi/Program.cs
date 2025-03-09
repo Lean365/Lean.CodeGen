@@ -64,6 +64,10 @@ builder.Services.Configure<LeanDatabaseOptions>(
 builder.Services.Configure<LeanIpOptions>(
     builder.Configuration.GetSection("Ip"));
 
+// 配置邮件选项
+builder.Services.Configure<LeanMailOptions>(
+    builder.Configuration.GetSection("Mail"));
+
 // 添加数据库上下文
 builder.Services.AddScoped<LeanDbContext>();
 
@@ -150,6 +154,12 @@ builder.Services.AddScoped<LeanClientInfoHelper>();
 
 // 注册 IP 帮助类
 builder.Services.AddSingleton<LeanIpHelper>();
+
+// 注册邮件帮助类
+builder.Services.AddScoped<LeanMailHelper>();
+
+// 注册定时任务帮助类
+builder.Services.AddSingleton<LeanQuartzHelper>();
 
 // 构建应用程序
 var app = builder.Build();
