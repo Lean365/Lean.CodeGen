@@ -8,22 +8,22 @@ namespace Lean.CodeGen.Common.Exceptions;
 /// </summary>
 public class LeanException : Exception
 {
-  public LeanErrorCode ErrorCode { get; }
+    public LeanErrorCode ErrorCode { get; }
 
-  public LeanException(string message) : base(message)
-  {
-    ErrorCode = LeanErrorCode.UnknownError;
-  }
+    public LeanException(string message) : base(message)
+    {
+        ErrorCode = LeanErrorCode.UnknownError;
+    }
 
-  public LeanException(string message, LeanErrorCode errorCode) : base(message)
-  {
-    ErrorCode = errorCode;
-  }
+    public LeanException(string message, LeanErrorCode errorCode) : base(message)
+    {
+        ErrorCode = errorCode;
+    }
 
-  public LeanException(string message, Exception innerException) : base(message, innerException)
-  {
-    ErrorCode = LeanErrorCode.UnknownError;
-  }
+    public LeanException(string message, Exception innerException) : base(message, innerException)
+    {
+        ErrorCode = LeanErrorCode.UnknownError;
+    }
 }
 
 /// <summary>
@@ -31,10 +31,10 @@ public class LeanException : Exception
 /// </summary>
 public class LeanUnauthorizedException : LeanException
 {
-  public LeanUnauthorizedException(string message = "未授权的访问")
-      : base(message, LeanErrorCode.Unauthorized)
-  {
-  }
+    public LeanUnauthorizedException(string message = "未授权的访问")
+        : base(message, LeanErrorCode.Status401Unauthorized)
+    {
+    }
 }
 
 /// <summary>
@@ -42,10 +42,10 @@ public class LeanUnauthorizedException : LeanException
 /// </summary>
 public class LeanForbiddenException : LeanException
 {
-  public LeanForbiddenException(string message = "禁止访问")
-      : base(message, LeanErrorCode.Forbidden)
-  {
-  }
+    public LeanForbiddenException(string message = "禁止访问")
+        : base(message, LeanErrorCode.Status403Forbidden)
+    {
+    }
 }
 
 /// <summary>
@@ -53,10 +53,10 @@ public class LeanForbiddenException : LeanException
 /// </summary>
 public class LeanValidationException : LeanException
 {
-  public LeanValidationException(string message)
-      : base(message, LeanErrorCode.ValidationError)
-  {
-  }
+    public LeanValidationException(string message)
+        : base(message, LeanErrorCode.ValidationError)
+    {
+    }
 }
 
 /// <summary>
@@ -64,10 +64,10 @@ public class LeanValidationException : LeanException
 /// </summary>
 public class LeanBusinessException : LeanException
 {
-  public LeanBusinessException(string message)
-      : base(message, LeanErrorCode.BusinessError)
-  {
-  }
+    public LeanBusinessException(string message)
+        : base(message, LeanErrorCode.BusinessError)
+    {
+    }
 }
 
 /// <summary>
@@ -75,10 +75,10 @@ public class LeanBusinessException : LeanException
 /// </summary>
 public class LeanNotFoundException : LeanException
 {
-  public LeanNotFoundException(string message)
-      : base(message, LeanErrorCode.NotFound)
-  {
-  }
+    public LeanNotFoundException(string message)
+        : base(message, LeanErrorCode.NotFound)
+    {
+    }
 }
 
 /// <summary>
@@ -86,10 +86,10 @@ public class LeanNotFoundException : LeanException
 /// </summary>
 public class LeanConcurrencyException : LeanException
 {
-  public LeanConcurrencyException(string message)
-      : base(message, LeanErrorCode.ConcurrencyError)
-  {
-  }
+    public LeanConcurrencyException(string message)
+        : base(message, LeanErrorCode.ConcurrencyError)
+    {
+    }
 }
 
 /// <summary>
@@ -97,8 +97,8 @@ public class LeanConcurrencyException : LeanException
 /// </summary>
 public class LeanDuplicateException : LeanException
 {
-  public LeanDuplicateException(string message)
-      : base(message, LeanErrorCode.DuplicateError)
-  {
-  }
+    public LeanDuplicateException(string message)
+        : base(message, LeanErrorCode.DuplicateError)
+    {
+    }
 }

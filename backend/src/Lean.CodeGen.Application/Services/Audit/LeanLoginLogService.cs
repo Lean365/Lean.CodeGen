@@ -55,11 +55,12 @@ namespace Lean.CodeGen.Application.Services.Audit
       var predicate = BuildQueryPredicate(queryDto);
       var (total, items) = await _loginLogRepository.GetPageListAsync(predicate, queryDto.PageSize, queryDto.PageIndex);
       var list = items.Select(t => t.Adapt<LeanLoginLogDto>()).ToList();
-
       return new LeanPageResult<LeanLoginLogDto>
       {
         Total = total,
-        Items = list
+        Items = list,
+        PageIndex = queryDto.PageIndex,
+        PageSize = queryDto.PageSize
       };
     }
 
@@ -154,6 +155,54 @@ namespace Lean.CodeGen.Application.Services.Audit
       }
 
       return predicate;
+    }
+
+    /// <summary>
+    /// 记录登出日志
+    /// </summary>
+    /// <param name="userId">用户ID</param>
+    /// <param name="userName">用户名</param>
+    /// <param name="deviceId">设备ID</param>
+    /// <param name="loginIp">登录IP</param>
+    /// <param name="loginLocation">登录地点</param>
+    /// <param name="browser">浏览器</param>
+    /// <param name="os">操作系统</param>
+    /// <param name="errorMsg">错误消息</param>
+    /// <returns>记录结果</returns>
+    public async Task<bool> AddLogoutLogAsync(
+        long userId,
+        string userName,
+        string deviceId,
+        string loginIp,
+        string? loginLocation,
+        string? browser,
+        string? os,
+        string? errorMsg = null)
+    {
+      try
+      {
+        var log = new LeanLoginLog
+        {
+          UserId = userId,
+          UserName = userName,
+          DeviceId = deviceId,
+          LoginIp = loginIp,
+          LoginLocation = loginLocation,
+          Browser = browser,
+          Os = os,
+          LoginType = (int)LeanLoginType.Token,
+          LoginStatus = string.IsNullOrEmpty(errorMsg) ? 0 : 1,
+          ErrorMsg = errorMsg
+        };
+
+        await _loginLogRepository.CreateAsync(log);
+        return true;
+      }
+      catch (Exception ex)
+      {
+        _logger.Error(ex, "记录登出日志失败");
+        return false;
+      }
     }
   }
 }

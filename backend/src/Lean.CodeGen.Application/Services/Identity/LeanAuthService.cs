@@ -16,6 +16,7 @@ using Lean.CodeGen.Common.Security;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using Lean.CodeGen.Application.Dtos.Captcha;
+using Lean.CodeGen.Application.Services.Audit;
 
 namespace Lean.CodeGen.Application.Services.Identity;
 
@@ -79,14 +80,14 @@ public class LeanAuthService : ILeanAuthService
   private readonly LeanIpHelper _ipHelper;
 
   /// <summary>
-  /// 默认验证码宽度
+  /// 登录日志服务
   /// </summary>
-  private const int DefaultWidth = 280;
+  private readonly ILeanLoginLogService _loginLogService;
 
   /// <summary>
-  /// 默认验证码高度
+  /// 安全设置
   /// </summary>
-  private const int DefaultHeight = 155;
+  private readonly LeanSecurityOptions _securitySettings;
 
   /// <summary>
   /// 构造函数
@@ -94,6 +95,7 @@ public class LeanAuthService : ILeanAuthService
   /// <param name="cache">内存缓存服务</param>
   /// <param name="sliderCaptchaHelper">滑块验证码帮助类</param>
   /// <param name="options">滑块验证码配置</param>
+  /// <param name="securitySettings">安全设置</param>
   /// <param name="deviceExtendRepository">设备扩展仓储</param>
   /// <param name="loginExtendRepository">登录扩展仓储</param>
   /// <param name="userRepository">用户仓储</param>
@@ -102,10 +104,12 @@ public class LeanAuthService : ILeanAuthService
   /// <param name="serverInfoHelper">服务器系统信息帮助类</param>
   /// <param name="clientInfoHelper">客户端系统信息帮助类</param>
   /// <param name="ipHelper">IP 帮助类</param>
+  /// <param name="loginLogService">登录日志服务</param>
   public LeanAuthService(
       IMemoryCache cache,
       LeanSliderCaptchaHelper sliderCaptchaHelper,
       IOptions<LeanSliderCaptchaOptions> options,
+      IOptions<LeanSecurityOptions> securitySettings,
       ILeanRepository<LeanDeviceExtend> deviceExtendRepository,
       ILeanRepository<LeanLoginExtend> loginExtendRepository,
       ILeanRepository<LeanUser> userRepository,
@@ -113,11 +117,13 @@ public class LeanAuthService : ILeanAuthService
       IHttpContextAccessor httpContextAccessor,
       LeanServerInfoHelper serverInfoHelper,
       LeanClientInfoHelper clientInfoHelper,
-      LeanIpHelper ipHelper)
+      LeanIpHelper ipHelper,
+      ILeanLoginLogService loginLogService)
   {
     _cache = cache;
     _sliderCaptchaHelper = sliderCaptchaHelper;
     _options = options.Value;
+    _securitySettings = securitySettings.Value;
     _deviceExtendRepository = deviceExtendRepository;
     _loginExtendRepository = loginExtendRepository;
     _userRepository = userRepository;
@@ -126,6 +132,65 @@ public class LeanAuthService : ILeanAuthService
     _serverInfoHelper = serverInfoHelper;
     _clientInfoHelper = clientInfoHelper;
     _ipHelper = ipHelper;
+    _loginLogService = loginLogService;
+  }
+
+  /// <summary>
+  /// 检查账户锁定状态
+  /// </summary>
+  private (bool isLocked, string message) CheckAccountLockStatus(LeanLoginExtend loginExtend)
+  {
+    // 检查永久锁定
+    if (loginExtend.LockStatus == 2) // 永久锁定
+    {
+      return (true, "账户已被永久锁定，请联系管理员");
+    }
+
+    // 检查临时锁定
+    if (loginExtend.LockStatus == 1) // 临时锁定
+    {
+      var unlockTime = loginExtend.UnlockTime;
+      if (unlockTime.HasValue && unlockTime.Value > DateTime.Now)
+      {
+        var remainingMinutes = (int)(unlockTime.Value - DateTime.Now).TotalMinutes;
+        return (true, $"账户已被锁定，请{remainingMinutes}分钟后重试");
+      }
+
+      // 如果锁定时间已过，自动解锁
+      loginExtend.LockStatus = 0; // 正常状态
+      loginExtend.UnlockTime = null;
+      loginExtend.PasswordErrorCount = 0;
+    }
+
+    return (false, string.Empty);
+  }
+
+  /// <summary>
+  /// 更新账户锁定状态
+  /// </summary>
+  private void UpdateAccountLockStatus(LeanLoginExtend loginExtend)
+  {
+    loginExtend.PasswordErrorCount++;
+    loginExtend.LastPasswordErrorTime = DateTime.Now;
+
+    // 检查是否需要永久锁定
+    if (_securitySettings.Account.EnablePermanentLock &&
+        loginExtend.PasswordErrorCount >= _securitySettings.Account.PermanentLockThreshold)
+    {
+      loginExtend.LockStatus = 2; // 永久锁定
+      loginExtend.LockTime = DateTime.Now;
+      loginExtend.LockReason = "密码错误次数过多，账户已被永久锁定";
+      return;
+    }
+
+    // 检查是否需要临时锁定
+    if (loginExtend.PasswordErrorCount >= _securitySettings.Account.MaxPasswordErrorCount)
+    {
+      loginExtend.LockStatus = 1; // 临时锁定
+      loginExtend.LockTime = DateTime.Now;
+      loginExtend.UnlockTime = DateTime.Now.AddMinutes(_securitySettings.Account.LockDuration);
+      loginExtend.LockReason = $"密码错误{loginExtend.PasswordErrorCount}次，账户已被临时锁定";
+    }
   }
 
   /// <summary>
@@ -145,36 +210,80 @@ public class LeanAuthService : ILeanAuthService
 
     if (!captchaResult.Success)
     {
-      return LeanApiResult<LeanLoginResponseDto>.Error(captchaResult.Message);
+      return LeanApiResult<LeanLoginResponseDto>.Error(captchaResult.Message, LeanErrorCode.Status400BadRequest, LeanBusinessType.Grant);
     }
 
     // 验证用户名和密码
     var user = await _userRepository.FirstOrDefaultAsync(u => u.UserName == request.UserName);
     if (user == null)
     {
-      return LeanApiResult<LeanLoginResponseDto>.Error("用户名或密码错误");
+      return LeanApiResult<LeanLoginResponseDto>.Error("用户名或密码错误", LeanErrorCode.Status400BadRequest, LeanBusinessType.Grant);
+    }
+
+    // 生成设备ID
+    var deviceId = $"{request.UserName}_{DateTime.Now.Ticks}";
+
+    // 获取登录扩展信息
+    var loginExtend = await _loginExtendRepository.FirstOrDefaultAsync(l => l.UserId == user.Id);
+    if (loginExtend == null)
+    {
+      loginExtend = new LeanLoginExtend
+      {
+        UserId = user.Id,
+        PasswordErrorCount = 0,
+        LockStatus = 0, // 正常状态
+        FirstLoginIp = request.LoginIp ?? "未知",
+        FirstLoginTime = DateTime.Now,
+        FirstDeviceId = deviceId,
+        FirstBrowser = request.Browser ?? "未知",
+        FirstOs = request.Os ?? "未知",
+        FirstLoginType = (int)LeanLoginType.Password,
+        LastLoginIp = request.LoginIp ?? "未知",
+        LastLoginTime = DateTime.Now,
+        LastDeviceId = deviceId,
+        LastBrowser = request.Browser ?? "未知",
+        LastOs = request.Os ?? "未知",
+        LastLoginType = (int)LeanLoginType.Password
+      };
+      await _loginExtendRepository.CreateAsync(loginExtend);
+    }
+
+    // 检查账户锁定状态
+    var (isLocked, lockMessage) = CheckAccountLockStatus(loginExtend);
+    if (isLocked)
+    {
+      await _loginExtendRepository.UpdateAsync(loginExtend);
+      return LeanApiResult<LeanLoginResponseDto>.Error(lockMessage, LeanErrorCode.Status400BadRequest, LeanBusinessType.Grant);
     }
 
     // 验证密码
     if (!LeanPassword.VerifyPassword(request.Password, user.Password, user.Salt))
     {
-      // 更新密码错误次数
-      var loginExtend = await _loginExtendRepository.FirstOrDefaultAsync(l => l.UserId == user.Id);
-      if (loginExtend != null)
+      // 更新账户锁定状态
+      UpdateAccountLockStatus(loginExtend);
+      await _loginExtendRepository.UpdateAsync(loginExtend);
+
+      // 如果启用了通知，并且错误次数达到阈值，可以在这里发送通知
+      if (_securitySettings.Account.EnableNotification &&
+          loginExtend.PasswordErrorCount >= _securitySettings.Account.NotificationThreshold)
       {
-        loginExtend.PasswordErrorCount++;
-        loginExtend.LastPasswordErrorTime = DateTime.Now;
-        await _loginExtendRepository.UpdateAsync(loginExtend);
+        // TODO: 发送通知
       }
-      return LeanApiResult<LeanLoginResponseDto>.Error("用户名或密码错误");
+
+      return LeanApiResult<LeanLoginResponseDto>.Error("用户名或密码错误", LeanErrorCode.Status400BadRequest, LeanBusinessType.Grant);
     }
+
+    // 登录成功，重置错误次数和锁定状态
+    loginExtend.PasswordErrorCount = 0;
+    loginExtend.LockStatus = 0; // 正常状态
+    loginExtend.UnlockTime = loginExtend.LockStatus != 0 ? DateTime.Now : null;
+
+    // 删除验证码缓存
+    _cache.Remove($"slider_captcha:{request.CaptchaKey}");
 
     // 获取系统信息
     var serverInfo = _serverInfoHelper.GetSystemInfo();
     var clientInfo = _clientInfoHelper.GetSystemInfo();
-
-    // 生成设备ID
-    var deviceId = Guid.NewGuid().ToString("N");
 
     // 更新设备信息
     var device = await _deviceExtendRepository.FirstOrDefaultAsync(d => d.DeviceId == deviceId);
@@ -202,48 +311,29 @@ public class LeanAuthService : ILeanAuthService
     }
 
     // 更新登录扩展信息
-    var loginExtendInfo = await _loginExtendRepository.FirstOrDefaultAsync(l => l.UserId == user.Id);
-    if (loginExtendInfo == null)
+    var loginLocation = await _ipHelper.GetIpLocationAsync(clientInfo.IpAddress);
+    if (loginExtend.FirstLoginTime == null)
     {
-      var loginLocation = await _ipHelper.GetIpLocationAsync(clientInfo.IpAddress);
-      loginExtendInfo = new LeanLoginExtend
-      {
-        UserId = user.Id,
-        PasswordErrorCount = 0,
-        FirstLoginIp = clientInfo.IpAddress,
-        FirstLoginLocation = loginLocation,
-        FirstLoginTime = DateTime.Now,
-        FirstDeviceId = deviceId,
-        FirstBrowser = clientInfo.BrowserInfo.Browser,
-        FirstOs = clientInfo.BrowserInfo.Platform,
-        FirstLoginType = 0, // 0: Password
-        LastLoginIp = clientInfo.IpAddress,
-        LastLoginLocation = loginLocation,
-        LastLoginTime = DateTime.Now,
-        LastDeviceId = deviceId,
-        LastBrowser = clientInfo.BrowserInfo.Browser,
-        LastOs = clientInfo.BrowserInfo.Platform,
-        LastLoginType = 0, // 0: Password
-        LoginStatus = 0, // 0: Normal
-        SystemInfo = JsonConvert.SerializeObject(new { Server = serverInfo, Client = clientInfo })
-      };
-      await _loginExtendRepository.CreateAsync(loginExtendInfo);
+      loginExtend.FirstLoginIp = clientInfo.IpAddress;
+      loginExtend.FirstLoginLocation = loginLocation;
+      loginExtend.FirstLoginTime = DateTime.Now;
+      loginExtend.FirstDeviceId = deviceId;
+      loginExtend.FirstBrowser = clientInfo.BrowserInfo?.Browser ?? "未知";
+      loginExtend.FirstOs = clientInfo.BrowserInfo?.Platform ?? "未知";
+      loginExtend.FirstLoginType = (int)LeanLoginType.Password;
     }
-    else
-    {
-      var loginLocation = await _ipHelper.GetIpLocationAsync(clientInfo.IpAddress);
-      loginExtendInfo.PasswordErrorCount = 0;
-      loginExtendInfo.LastLoginIp = clientInfo.IpAddress;
-      loginExtendInfo.LastLoginLocation = loginLocation;
-      loginExtendInfo.LastLoginTime = DateTime.Now;
-      loginExtendInfo.LastDeviceId = deviceId;
-      loginExtendInfo.LastBrowser = clientInfo.BrowserInfo.Browser;
-      loginExtendInfo.LastOs = clientInfo.BrowserInfo.Platform;
-      loginExtendInfo.LoginStatus = 0; // 0: Normal
-      loginExtendInfo.SystemInfo = JsonConvert.SerializeObject(new { Server = serverInfo, Client = clientInfo });
-      loginExtendInfo.LastLoginType = 0; // 0: Password
-      await _loginExtendRepository.UpdateAsync(loginExtendInfo);
-    }
+
+    loginExtend.LastLoginIp = clientInfo.IpAddress;
+    loginExtend.LastLoginLocation = loginLocation;
+    loginExtend.LastLoginTime = DateTime.Now;
+    loginExtend.LastDeviceId = deviceId;
+    loginExtend.LastBrowser = clientInfo.BrowserInfo?.Browser ?? "未知";
+    loginExtend.LastOs = clientInfo.BrowserInfo?.Platform ?? "未知";
+    loginExtend.LoginStatus = 0;
+    loginExtend.SystemInfo = JsonConvert.SerializeObject(new { Server = serverInfo, Client = clientInfo });
+    loginExtend.LastLoginType = (int)LeanLoginType.Password;
+
+    await _loginExtendRepository.UpdateAsync(loginExtend);
 
     // 生成访问令牌
     var claims = new[]
@@ -268,7 +358,7 @@ public class LeanAuthService : ILeanAuthService
         Roles = [], // TODO: 获取用户角色
         Permissions = [] // TODO: 获取用户权限
       }
-    });
+    }, LeanBusinessType.Grant);
   }
 
   /// <summary>
@@ -333,10 +423,10 @@ public class LeanAuthService : ILeanAuthService
       BackgroundImage = Convert.ToBase64String(bgImage),
       SliderImage = Convert.ToBase64String(sliderImage),
       Y = y,
-      Width = DefaultWidth,
-      Height = DefaultHeight
+      Width = _options.Width,
+      Height = _options.Height
     };
-    return await Task.FromResult(LeanApiResult<LeanSliderCaptchaResponseDto>.Ok(response));
+    return await Task.FromResult(LeanApiResult<LeanSliderCaptchaResponseDto>.Ok(response, LeanBusinessType.Grant));
   }
 
   /// <summary>
@@ -350,25 +440,82 @@ public class LeanAuthService : ILeanAuthService
     var cacheKey = $"slider_captcha:{request.CaptchaKey}";
     if (!_cache.TryGetValue<(int x, int y)>(cacheKey, out var position))
     {
-      return await Task.FromResult(LeanApiResult.Error("验证码已过期"));
+      return await Task.FromResult(LeanApiResult.Error("验证码已过期", LeanErrorCode.Status400BadRequest, LeanBusinessType.Grant));
     }
 
     // 验证滑块位置
-    var isValid = _sliderCaptchaHelper.Validate(request.X, request.Y, position.x, position.y);
-    _cache.Remove(cacheKey);
+    var (isValid, message) = _sliderCaptchaHelper.Validate(request.X, request.Y, position.x, position.y);
 
     // 返回验证结果
     return await Task.FromResult(isValid
-      ? LeanApiResult.Ok()
-      : LeanApiResult.Error("验证失败"));
+      ? LeanApiResult.Ok(LeanBusinessType.Grant)
+      : LeanApiResult.Error(message, LeanErrorCode.Status400BadRequest, LeanBusinessType.Grant));
   }
 
   /// <summary>
   /// 用户登出
   /// </summary>
   /// <returns>登出结果</returns>
-  public Task<LeanApiResult> LogoutAsync()
+  public async Task<LeanApiResult> LogoutAsync()
   {
-    throw new NotImplementedException();
+    try
+    {
+      // 获取当前用户ID
+      var userIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier);
+      var userNameClaim = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Name);
+      if (userIdClaim == null || !long.TryParse(userIdClaim.Value, out var userId) || userNameClaim == null)
+      {
+        return LeanApiResult.Error("未登录", LeanErrorCode.Status401Unauthorized, LeanBusinessType.Grant);
+      }
+
+      // 获取系统信息
+      var serverInfo = _serverInfoHelper.GetSystemInfo();
+      var clientInfo = _clientInfoHelper.GetSystemInfo();
+
+      // 更新登录扩展信息
+      var loginExtend = await _loginExtendRepository.FirstOrDefaultAsync(l => l.UserId == userId);
+      if (loginExtend != null)
+      {
+        loginExtend.LastLogoutTime = DateTime.Now;
+        loginExtend.LastLogoutIp = clientInfo.IpAddress;
+        loginExtend.LastLogoutLocation = await _ipHelper.GetIpLocationAsync(clientInfo.IpAddress);
+        loginExtend.SystemInfo = JsonConvert.SerializeObject(new { Server = serverInfo, Client = clientInfo });
+        await _loginExtendRepository.UpdateAsync(loginExtend);
+      }
+
+      // 将当前令牌加入黑名单（可选：如果使用Redis可以实现令牌黑名单）
+      var token = _httpContextAccessor.HttpContext?.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+      if (!string.IsNullOrEmpty(token))
+      {
+        var cacheKey = $"token_blacklist:{token}";
+        var claims = _tokenService.GetTokenClaims(token);
+        var expirationTime = claims.FirstOrDefault(c => c.Type == "exp")?.Value;
+        if (expirationTime != null && long.TryParse(expirationTime, out var exp))
+        {
+          var expiration = DateTimeOffset.FromUnixTimeSeconds(exp).DateTime - DateTime.UtcNow;
+          if (expiration > TimeSpan.Zero)
+          {
+            _cache.Set(cacheKey, true, expiration);
+          }
+        }
+      }
+
+      // 记录登出日志
+      await _loginLogService.AddLogoutLogAsync(
+        userId,
+        userNameClaim.Value,
+        loginExtend?.LastDeviceId ?? "Unknown",
+        clientInfo.IpAddress,
+        await _ipHelper.GetIpLocationAsync(clientInfo.IpAddress),
+        clientInfo.BrowserInfo.Browser,
+        clientInfo.BrowserInfo.Platform
+      );
+
+      return LeanApiResult.Ok(LeanBusinessType.Grant);
+    }
+    catch (Exception ex)
+    {
+      return LeanApiResult.Error($"登出失败：{ex.Message}", LeanErrorCode.Status500InternalServerError, LeanBusinessType.Grant);
+    }
   }
 }

@@ -44,5 +44,19 @@ namespace Lean.CodeGen.Application.Services.Audit
     /// </summary>
     /// <returns>是否成功</returns>
     Task<bool> ClearAsync();
+
+    /// <summary>
+    /// 添加登出日志
+    /// </summary>
+    /// <param name="userId">用户ID</param>
+    /// <param name="userName">用户名</param>
+    /// <param name="deviceId">设备ID</param>
+    /// <param name="ip">IP地址</param>
+    /// <param name="location">登录地点</param>
+    /// <param name="browser">浏览器</param>
+    /// <param name="os">操作系统</param>
+    /// <param name="errorMsg">错误信息</param>
+    /// <returns>是否成功</returns>
+    Task<bool> AddLogoutLogAsync(long userId, string userName, string deviceId, string ip, string location, string browser, string os, string? errorMsg = null);
   }
 }

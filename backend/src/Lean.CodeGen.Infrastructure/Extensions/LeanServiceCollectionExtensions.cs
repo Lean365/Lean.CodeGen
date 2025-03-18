@@ -62,6 +62,7 @@ public static class LeanServiceCollectionExtensions
     services.AddScoped<ILeanMenuService, LeanMenuService>();
     services.AddScoped<ILeanDeptService, LeanDeptService>();
     services.AddScoped<ILeanPostService, LeanPostService>();
+    services.AddScoped<ILeanAuthService, LeanAuthService>();
 
     // 添加审计服务
     services.AddScoped<ILeanAuditLogService, LeanAuditLogService>();

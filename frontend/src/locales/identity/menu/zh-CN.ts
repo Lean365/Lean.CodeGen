@@ -1,0 +1,20 @@
+export default {
+  home: '首页',
+  dashboard: '仪表盘',
+  system: '系统管理',
+  user: '用户管理',
+  role: '角色管理',
+  permission: '权限管理',
+  menu: '菜单管理',
+  dept: '部门管理',
+  dict: '字典管理',
+  config: '参数配置',
+  notice: '通知公告',
+  log: '日志管理',
+  online: '在线用户',
+  job: '定时任务',
+  monitor: '系统监控',
+  server: '服务监控',
+  cache: '缓存监控',
+  swagger: '接口文档'
+} 

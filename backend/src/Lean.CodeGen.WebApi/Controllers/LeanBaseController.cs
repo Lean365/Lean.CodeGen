@@ -142,12 +142,12 @@ public abstract class LeanBaseController : ControllerBase
   {
     if (result == null)
     {
-      return StatusCode((int)LeanHttpStatusCode.BadRequest, "无效的API响应");
+      return StatusCode((int)LeanErrorCode.Status400BadRequest, "无效的API响应");
     }
 
     return result.Success
-      ? StatusCode((int)LeanHttpStatusCode.OK, result.Data)
-      : StatusCode((int)LeanHttpStatusCode.BadRequest, result.Message);
+      ? StatusCode((int)LeanErrorCode.Status200OK, result.Data)
+      : StatusCode((int)LeanErrorCode.Status400BadRequest, result.Message);
   }
 
   /// <summary>
@@ -157,12 +157,12 @@ public abstract class LeanBaseController : ControllerBase
   {
     if (result == null)
     {
-      return StatusCode((int)LeanHttpStatusCode.BadRequest, "无效的API响应");
+      return StatusCode((int)LeanErrorCode.Status400BadRequest, "无效的API响应");
     }
 
     return result.Success
-      ? StatusCode((int)LeanHttpStatusCode.OK)
-      : StatusCode((int)LeanHttpStatusCode.BadRequest, result.Message);
+      ? StatusCode((int)LeanErrorCode.Status200OK)
+      : StatusCode((int)LeanErrorCode.Status400BadRequest, result.Message);
   }
 
   /// <summary>
@@ -172,17 +172,17 @@ public abstract class LeanBaseController : ControllerBase
   {
     if (result == null)
     {
-      return StatusCode((int)LeanHttpStatusCode.BadRequest, "无效的文件下载响应");
+      return StatusCode((int)LeanErrorCode.Status400BadRequest, "无效的文件下载响应");
     }
 
     if (!result.Success)
     {
-      return StatusCode((int)LeanHttpStatusCode.BadRequest, result.Message);
+      return StatusCode((int)LeanErrorCode.Status400BadRequest, result.Message);
     }
 
     if (result.Data == null)
     {
-      return StatusCode((int)LeanHttpStatusCode.NotFound, "文件内容为空");
+      return StatusCode((int)LeanErrorCode.Status404NotFound, "文件内容为空");
     }
 
     // 处理字节数组类型
@@ -191,7 +191,7 @@ public abstract class LeanBaseController : ControllerBase
       return File(fileBytes, contentType, fileName, true);
     }
 
-    return StatusCode((int)LeanHttpStatusCode.UnsupportedMediaType, "不支持的文件类型");
+    return StatusCode((int)LeanErrorCode.Status415UnsupportedMediaType, "不支持的文件类型");
   }
 
   /// <summary>
@@ -239,7 +239,7 @@ public abstract class LeanBaseController : ControllerBase
   protected async Task<IActionResult> UnauthorizedAsync(string messageKey = "common.error.unauthorized", LeanBusinessType businessType = LeanBusinessType.Other)
   {
     var message = await GetUiTranslationAsync(messageKey);
-    var result = LeanApiResult.Error(message, LeanErrorCode.Unauthorized, businessType);
+    var result = LeanApiResult.Error(message, LeanErrorCode.Status401Unauthorized, businessType);
     return StatusCode(401, result);
   }
 
@@ -249,7 +249,7 @@ public abstract class LeanBaseController : ControllerBase
   protected async Task<IActionResult> ForbiddenAsync(string messageKey = "common.error.forbidden", LeanBusinessType businessType = LeanBusinessType.Other)
   {
     var message = await GetUiTranslationAsync(messageKey);
-    var result = LeanApiResult.Error(message, LeanErrorCode.Forbidden, businessType);
+    var result = LeanApiResult.Error(message, LeanErrorCode.Status403Forbidden, businessType);
     return StatusCode(403, result);
   }
 
@@ -264,9 +264,9 @@ public abstract class LeanBaseController : ControllerBase
   }
 
   /// <summary>
-  /// 返回自定义状态码结果
+  /// 返回状态码结果
   /// </summary>
-  protected IActionResult StatusResult(LeanHttpStatusCode statusCode, object? data = null)
+  protected IActionResult StatusResult(LeanErrorCode statusCode, object? data = null)
   {
     return StatusCode((int)statusCode, data);
   }

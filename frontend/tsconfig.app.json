@@ -1,0 +1,32 @@
+{
+  "extends": "@vue/tsconfig/tsconfig.dom.json",
+  "include": [
+    "env.d.ts",
+    "src/**/*",
+    "src/**/*.vue"
+  ],
+  "exclude": [
+    "src/**/__tests__/*"
+  ],
+  "compilerOptions": {
+    "composite": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ]
+    },
+    "module": "esnext",
+    "types": [
+      "vue",
+      "vue-router",
+      "vue-i18n",
+      "ant-design-vue"
+    ],
+    "lib": [
+      "ES2017",
+      "DOM"
+    ],
+    "moduleResolution": "node"
+  }
+}

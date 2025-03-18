@@ -45,8 +45,8 @@ public class LeanConfigSeed
     await CreateOrUpdateConfig("Database:DbType", "1", "数据库类型", "数据库类型：0-SqlServer, 1-MySql, 2-PostgreSql, 3-Oracle, 4-Sqlite", "system");
     await CreateOrUpdateConfig("Database:EnableUnderLine", "true", "启用下划线", "数据库表和字段命名是否使用下划线", "system");
     await CreateOrUpdateConfig("Database:EnableSqlLog", "false", "启用SQL日志", "是否启用SQL执行日志记录", "system");
-    await CreateOrUpdateConfig("Database:EnableAutoMigrate", "true", "启用自动迁移", "是否启用数据库自动迁移", "system");
-    await CreateOrUpdateConfig("Database:EnableInitData", "true", "启用初始数据", "是否启用初始化种子数据", "system");
+    await CreateOrUpdateConfig("Database:EnableAutoMigrate", "false", "启用自动迁移", "是否启用数据库自动迁移", "system");
+    await CreateOrUpdateConfig("Database:EnableInitData", "false", "启用初始数据", "是否启用初始化种子数据", "system");
 
     // 缓存配置
     await CreateOrUpdateConfig("Cache:DefaultExpiration", "01:00:00", "默认过期时间", "缓存默认过期时间", "system");

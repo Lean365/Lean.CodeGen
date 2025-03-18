@@ -47,7 +47,7 @@ public class LeanLanguageSeed
     {
       lang.OrderNum = 1;
       lang.Remark = "简体中文";
-      lang.LangStatus = 1; // 启用
+      lang.LangStatus = 0; // 正常
       lang.IsBuiltin = 1; // 是
       lang.OrderNum = defaultLanguages.IndexOf(lang) + 1;
     }

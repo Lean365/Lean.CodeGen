@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 背景渐变 -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0" y1="0" x2="1920" y2="1080" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" style="stop-color:#f0f2f5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e6e9f0;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- 主背景 -->
+  <rect width="1920" height="1080" fill="url(#bgGradient)"/>
+  
+  <!-- 装饰性圆形 -->
+  <circle cx="960" cy="540" r="400" fill="#ffffff" fill-opacity="0.1"/>
+  <circle cx="960" cy="540" r="300" fill="#ffffff" fill-opacity="0.05"/>
+  
+  <!-- 装饰性线条 -->
+  <path d="M0 540 L1920 540" stroke="#ffffff" stroke-width="1" stroke-opacity="0.1"/>
+  <path d="M960 0 L960 1080" stroke="#ffffff" stroke-width="1" stroke-opacity="0.1"/>
+  
+  <!-- 装饰性点 -->
+  <circle cx="480" cy="270" r="4" fill="#ffffff" fill-opacity="0.2"/>
+  <circle cx="1440" cy="270" r="4" fill="#ffffff" fill-opacity="0.2"/>
+  <circle cx="480" cy="810" r="4" fill="#ffffff" fill-opacity="0.2"/>
+  <circle cx="1440" cy="810" r="4" fill="#ffffff" fill-opacity="0.2"/>
+</svg> 

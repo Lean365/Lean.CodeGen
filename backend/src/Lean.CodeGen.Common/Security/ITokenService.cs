@@ -26,4 +26,11 @@ public interface ITokenService
   /// <param name="token">令牌</param>
   /// <returns>声明</returns>
   ClaimsPrincipal ValidateToken(string token);
+
+  /// <summary>
+  /// 获取令牌中的声明
+  /// </summary>
+  /// <param name="token">令牌</param>
+  /// <returns>声明列表</returns>
+  IEnumerable<Claim> GetTokenClaims(string token);
 }

@@ -16,9 +16,9 @@ public class JwtTokenService : ITokenService
 {
   private readonly LeanJwtOptions _jwtOptions;
 
-  public JwtTokenService(IOptions<LeanSecurityOptions> securityOptions)
+  public JwtTokenService(IOptions<LeanJwtOptions> jwtOptions)
   {
-    _jwtOptions = securityOptions.Value.Jwt;
+    _jwtOptions = jwtOptions.Value;
   }
 
   /// <summary>
@@ -76,5 +76,17 @@ public class JwtTokenService : ITokenService
     };
 
     return tokenHandler.ValidateToken(token, parameters, out _);
+  }
+
+  /// <summary>
+  /// 获取令牌中的声明
+  /// </summary>
+  /// <param name="token">令牌</param>
+  /// <returns>声明列表</returns>
+  public IEnumerable<Claim> GetTokenClaims(string token)
+  {
+    var tokenHandler = new JwtSecurityTokenHandler();
+    var jwtToken = tokenHandler.ReadJwtToken(token);
+    return jwtToken.Claims;
   }
 }

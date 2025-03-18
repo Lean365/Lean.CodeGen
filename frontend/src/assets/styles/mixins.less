@@ -1,0 +1,67 @@
+// 文本溢出省略号
+.text-ellipsis() {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+// 多行文本溢出省略号
+.text-ellipsis-multiple(@line: 2) {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: @line;
+  overflow: hidden;
+}
+
+// flex 布局
+.flex-center() {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between() {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+// 清除浮动
+.clearfix() {
+  &::before,
+  &::after {
+    content: '';
+    display: table;
+  }
+  &::after {
+    clear: both;
+  }
+}
+
+// 滚动条样式
+.scrollbar() {
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    opacity: 0.8;
+  }
+}
+
+// 禁用文本选择
+.disable-select() {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+} 

@@ -1,0 +1,20 @@
+export default {
+  home: 'Home',
+  dashboard: 'Dashboard',
+  system: 'System',
+  user: 'User',
+  role: 'Role',
+  permission: 'Permission',
+  menu: 'Menu',
+  dept: 'Department',
+  dict: 'Dictionary',
+  config: 'Config',
+  notice: 'Notice',
+  log: 'Log',
+  online: 'Online',
+  job: 'Job',
+  monitor: 'Monitor',
+  server: 'Server',
+  cache: 'Cache',
+  swagger: 'API Doc'
+} 

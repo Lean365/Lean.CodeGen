@@ -10,7 +10,7 @@
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.1" />
     <PackageReference Include="StackExchange.Redis" Version="2.8.31" />
-    <PackageReference Include="Scriban" Version="5.12.1" />
+    <PackageReference Include="Scriban" Version="6.0.0" />
   </ItemGroup>
 
   <ItemGroup>

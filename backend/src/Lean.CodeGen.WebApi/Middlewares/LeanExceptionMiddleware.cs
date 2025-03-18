@@ -47,7 +47,7 @@ public class LeanExceptionMiddleware
         break;
 
       case UnauthorizedAccessException:
-        result = LeanApiResult<object?>.Error("未授权", LeanErrorCode.Unauthorized);
+        result = LeanApiResult<object?>.Error("未授权",  LeanErrorCode.Status401Unauthorized);
         context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
         break;
 

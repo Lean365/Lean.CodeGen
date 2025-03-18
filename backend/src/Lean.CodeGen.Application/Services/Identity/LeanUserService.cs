@@ -58,6 +58,14 @@ namespace Lean.CodeGen.Application.Services.Identity
     private readonly ILeanRepository<LeanUserRole> _userRoleRepository;
 
     /// <summary>
+    /// 用户登录扩展关联仓储接口
+    /// </summary>
+    /// <remarks>
+    /// 用于管理用户登录扩展的关联关系
+    /// </remarks>
+    private readonly ILeanRepository<LeanLoginExtend> _loginExtendRepository;
+
+    /// <summary>
     /// 用户唯一性验证器
     /// </summary>
     /// <remarks>
@@ -76,12 +84,14 @@ namespace Lean.CodeGen.Application.Services.Identity
     /// <param name="userRepository">用户仓储接口</param>
     /// <param name="userDeptRepository">用户部门关联仓储接口</param>
     /// <param name="userRoleRepository">用户角色关联仓储接口</param>
+    /// <param name="loginExtendRepository">用户登录扩展关联仓储接口</param>
     /// <param name="context">基础服务上下文</param>
     /// <param name="logger">日志记录器</param>
     public LeanUserService(
         ILeanRepository<LeanUser> userRepository,
         ILeanRepository<LeanUserDept> userDeptRepository,
         ILeanRepository<LeanUserRole> userRoleRepository,
+        ILeanRepository<LeanLoginExtend> loginExtendRepository,
         ILogger logger,
         LeanBaseServiceContext context)
         : base(context)
@@ -89,8 +99,9 @@ namespace Lean.CodeGen.Application.Services.Identity
       _userRepository = userRepository;
       _userDeptRepository = userDeptRepository;
       _userRoleRepository = userRoleRepository;
-      _uniqueValidator = new LeanUniqueValidator<LeanUser>(_userRepository);
+      _loginExtendRepository = loginExtendRepository;
       _logger = logger;
+      _uniqueValidator = new LeanUniqueValidator<LeanUser>(_userRepository);
     }
 
     /// <summary>
@@ -374,36 +385,50 @@ namespace Lean.CodeGen.Application.Services.Identity
     /// 重置用户密码
     /// </summary>
     /// <param name="input">重置密码参数</param>
-    /// <remarks>
-    /// 重置用户密码时会进行以下操作：
-    /// 1. 检查用户是否存在
-    /// 2. 检查是否为内置用户
-    /// 3. 重置为默认密码
-    /// 4. 生成新的密码盐值
-    /// 5. 记录审计日志
-    /// </remarks>
+    /// <returns>操作结果</returns>
     public async Task ResetPasswordAsync(LeanUserResetPasswordDto input)
     {
-      await ExecuteInTransactionAsync(async () =>
+      try
       {
+        var loginExtend = await _loginExtendRepository.FirstOrDefaultAsync(l => l.UserId == input.Id);
+        if (loginExtend == null)
+        {
+          throw new LeanException("用户不存在");
+        }
+
+        // 更新用户密码
         var user = await _userRepository.GetByIdAsync(input.Id);
         if (user == null)
         {
           throw new LeanException("用户不存在");
         }
 
-        if (user.IsBuiltin == 1)
+        // 验证新密码强度
+        var (isValid, message) = LeanPassword.ValidatePasswordStrength(input.NewPassword);
+        if (!isValid)
         {
-          throw new LeanException("内置用户不能重置密码");
+          throw new LeanException($"新密码不符合要求: {message}");
         }
 
-        var (hashedPassword, salt) = LeanPassword.CreatePassword(SecurityOptions.DefaultPassword);
+        // 生成新的盐值和密码
+        var (hashedPassword, salt) = LeanPassword.CreatePassword(input.NewPassword);
         user.Password = hashedPassword;
         user.Salt = salt;
         await _userRepository.UpdateAsync(user);
 
+        // 重置登录扩展信息
+        loginExtend.PasswordErrorCount = 0;
+        loginExtend.LockStatus = 0;
+        loginExtend.UnlockTime = null;
+        await _loginExtendRepository.UpdateAsync(loginExtend);
+
         LogAudit("ResetUserPassword", $"重置用户密码: {user.UserName}");
-      }, "重置用户密码");
+      }
+      catch (Exception ex)
+      {
+        Logger.Error(ex, "重置用户密码失败");
+        throw new LeanException($"重置用户密码失败：{ex.Message}");
+      }
     }
 
     /// <summary>
@@ -555,6 +580,87 @@ namespace Lean.CodeGen.Application.Services.Identity
     };
 
       return await Task.FromResult(LeanExcelHelper.Export(template));
+    }
+
+    /// <summary>
+    /// 解锁用户
+    /// </summary>
+    /// <param name="userId">用户ID</param>
+    /// <param name="unlockReason">解锁原因</param>
+    /// <returns>操作结果</returns>
+    public async Task<LeanApiResult> UnlockUserAsync(long userId, string unlockReason)
+    {
+      try
+      {
+        var loginExtend = await _loginExtendRepository.FirstOrDefaultAsync(l => l.UserId == userId);
+        if (loginExtend == null)
+        {
+          return LeanApiResult.Error("用户不存在", LeanErrorCode.Status404NotFound, LeanBusinessType.Update);
+        }
+
+        // 检查用户是否已解锁
+        if (loginExtend.LockStatus == 0) // 正常状态
+        {
+          return LeanApiResult.Error("用户未锁定", LeanErrorCode.Status400BadRequest, LeanBusinessType.Update);
+        }
+
+        // 更新解锁状态
+        loginExtend.LockStatus = 0; // 正常状态
+        loginExtend.UnlockTime = DateTime.Now;
+        loginExtend.UnlockReason = unlockReason;
+        loginExtend.PasswordErrorCount = 0;
+
+        await _loginExtendRepository.UpdateAsync(loginExtend);
+
+        // TODO: 发送解锁通知
+
+        return LeanApiResult.Ok(LeanBusinessType.Update);
+      }
+      catch (Exception ex)
+      {
+        Logger.Error(ex, "解锁用户失败");
+        return LeanApiResult.Error($"解锁用户失败：{ex.Message}", LeanErrorCode.Status500InternalServerError, LeanBusinessType.Update);
+      }
+    }
+
+    /// <summary>
+    /// 锁定用户
+    /// </summary>
+    /// <param name="userId">用户ID</param>
+    /// <returns>操作结果</returns>
+    public async Task<LeanApiResult> LockUserAsync(long userId)
+    {
+      try
+      {
+        var loginExtend = await _loginExtendRepository.FirstOrDefaultAsync(l => l.UserId == userId);
+        if (loginExtend == null)
+        {
+          return LeanApiResult.Error("用户不存在", LeanErrorCode.Status404NotFound, LeanBusinessType.Update);
+        }
+
+        // 检查用户是否已锁定
+        if (loginExtend.LockStatus == 1) // 临时锁定
+        {
+          return LeanApiResult.Error("用户已锁定", LeanErrorCode.Status400BadRequest, LeanBusinessType.Update);
+        }
+
+        // 更新锁定状态
+        loginExtend.LockStatus = 1; // 临时锁定
+        loginExtend.LockTime = DateTime.Now;
+        loginExtend.PasswordErrorCount = 0;
+        loginExtend.LockReason = "管理员锁定";
+
+        await _loginExtendRepository.UpdateAsync(loginExtend);
+
+        // TODO: 发送锁定通知
+
+        return LeanApiResult.Ok(LeanBusinessType.Update);
+      }
+      catch (Exception ex)
+      {
+        Logger.Error(ex, "锁定用户失败");
+        return LeanApiResult.Error($"锁定用户失败：{ex.Message}", LeanErrorCode.Status500InternalServerError, LeanBusinessType.Update);
+      }
     }
   }
 }

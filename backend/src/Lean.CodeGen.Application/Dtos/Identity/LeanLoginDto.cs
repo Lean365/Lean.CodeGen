@@ -344,6 +344,24 @@ public class LeanLoginRequestDto
   /// </summary>
   [Required(ErrorMessage = "验证码键不能为空")]
   public string CaptchaKey { get; set; } = default!;
+
+  /// <summary>
+  /// 登录IP
+  /// </summary>
+  [StringLength(50, ErrorMessage = "登录IP长度不能超过50个字符")]
+  public string? LoginIp { get; set; }
+
+  /// <summary>
+  /// 浏览器
+  /// </summary>
+  [StringLength(50, ErrorMessage = "浏览器信息长度不能超过50个字符")]
+  public string? Browser { get; set; }
+
+  /// <summary>
+  /// 操作系统
+  /// </summary>
+  [StringLength(50, ErrorMessage = "操作系统信息长度不能超过50个字符")]
+  public string? Os { get; set; }
 }
 
 /// <summary>

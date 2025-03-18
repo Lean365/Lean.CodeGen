@@ -8,6 +8,9 @@ using System.Net.Http;
 using Path = System.IO.Path;
 using Lean.CodeGen.Common.Options;
 using Microsoft.Extensions.Options;
+using System.Numerics;
+using System.Threading.Tasks;
+using System.Threading;
 
 namespace Lean.CodeGen.Common.Helpers;
 
@@ -26,6 +29,8 @@ public class LeanSliderCaptchaHelper
   private readonly HttpClient _httpClient;
   private readonly string _webRootPath;
   private readonly LeanSliderCaptchaOptions _options;
+  private readonly Random _random;
+  private const int TEMPLATE_COUNT = 5;  // 模板数量
 
   /// <summary>
   /// 初始化滑块验证码帮助类
@@ -37,6 +42,7 @@ public class LeanSliderCaptchaHelper
     _webRootPath = webRootPath;
     _options = options.Value;
     _httpClient = new HttpClient();
+    _random = new Random();
   }
 
   /// <summary>
@@ -44,14 +50,14 @@ public class LeanSliderCaptchaHelper
   /// </summary>
   public async Task InitializeAsync()
   {
-    var cacheDir = Path.Combine(_webRootPath, _options.ImageCacheDir);
-    if (!Directory.Exists(cacheDir))
+    var backgroundDir = Path.Combine(_webRootPath, "images", "slider", "background");
+    if (!Directory.Exists(backgroundDir))
     {
-      Directory.CreateDirectory(cacheDir);
+      Directory.CreateDirectory(backgroundDir);
     }
 
     // 清理旧的图片文件
-    foreach (var file in Directory.GetFiles(cacheDir, "*.jpg"))
+    foreach (var file in Directory.GetFiles(backgroundDir, "*.jpg"))
     {
       try
       {
@@ -64,21 +70,23 @@ public class LeanSliderCaptchaHelper
       }
     }
 
-    // 并行下载新的随机图片
+    // 使用信号量限制并发下载数量
+    using var semaphore = new SemaphoreSlim(2); // 最多同时下载2张图片
     var tasks = new List<Task>();
     var retryCount = 3; // 最大重试次数
-    var retryDelay = TimeSpan.FromSeconds(1); // 重试延迟
+    var retryDelay = TimeSpan.FromSeconds(2); // 增加重试延迟到2秒
 
     for (int i = 1; i <= _options.ImageCount; i++)
     {
       var index = i;
       var task = Task.Run(async () =>
       {
-        var imagePath = Path.Combine(cacheDir, $"image_{index}.jpg");
+        var imagePath = Path.Combine(backgroundDir, $"image_{index}.jpg");
         for (int retry = 0; retry <= retryCount; retry++)
         {
           try
           {
+            await semaphore.WaitAsync();
             await DownloadImageAsync(index, imagePath);
             break; // 下载成功，跳出重试循环
           }
@@ -86,7 +94,11 @@ public class LeanSliderCaptchaHelper
           {
             Console.WriteLine($"第 {index} 张图片下载失败，第 {retry + 1} 次重试");
             Console.WriteLine($"错误: {ex.Message}");
-            await Task.Delay(retryDelay);
+            await Task.Delay(retryDelay * (retry + 1)); // 递增重试延迟
+          }
+          finally
+          {
+            semaphore.Release();
           }
         }
       });
@@ -121,8 +133,8 @@ public class LeanSliderCaptchaHelper
       Console.WriteLine($"开始下载第 {index} 张图片");
       Console.WriteLine($"下载URL: {url}");
 
-      // 设置超时时间
-      using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+      // 增加超时时间到30秒
+      using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
 
       // 下载图片
       using var response = await _httpClient.GetAsync(url, cts.Token);
@@ -176,15 +188,54 @@ public class LeanSliderCaptchaHelper
   /// </summary>
   private string GetRandomImagePath()
   {
-    var cacheDir = Path.Combine(_webRootPath, _options.ImageCacheDir);
-    var files = Directory.GetFiles(cacheDir, "*.jpg");
+    var backgroundDir = Path.Combine(_webRootPath, "images", "slider", "background");
+
+    // 检查目录是否存在
+    if (!Directory.Exists(backgroundDir))
+    {
+      throw new DirectoryNotFoundException($"背景图片目录不存在: {backgroundDir}");
+    }
+
+    var files = Directory.GetFiles(backgroundDir, "*.jpg");
     if (files.Length == 0)
     {
       throw new InvalidOperationException("没有可用的背景图片");
     }
 
-    var random = new Random();
-    return files[random.Next(files.Length)];
+    var selectedPath = files[_random.Next(files.Length)];
+    Console.WriteLine($"选择背景图片: {selectedPath}");
+    return selectedPath;
+  }
+
+  private (string sliderTemplatePath, string holeTemplatePath) GetRandomTemplate()
+  {
+    var templateIndex = _random.Next(1, TEMPLATE_COUNT + 1);
+    var templateDir = Path.Combine(_webRootPath, "images", "slider", "template", templateIndex.ToString());
+
+    // 检查目录是否存在
+    if (!Directory.Exists(templateDir))
+    {
+      throw new DirectoryNotFoundException($"模板目录不存在: {templateDir}");
+    }
+
+    var sliderPath = Path.Combine(templateDir, "slider.png");
+    var holePath = Path.Combine(templateDir, "hole.png");
+
+    // 检查文件是否存在
+    if (!File.Exists(sliderPath))
+    {
+      throw new FileNotFoundException($"滑块模板文件不存在: {sliderPath}");
+    }
+    if (!File.Exists(holePath))
+    {
+      throw new FileNotFoundException($"滑块缺口模板文件不存在: {holePath}");
+    }
+
+    Console.WriteLine($"使用模板目录: {templateDir}");
+    Console.WriteLine($"滑块模板: {sliderPath}");
+    Console.WriteLine($"缺口模板: {holePath}");
+
+    return (sliderPath, holePath);
   }
 
   /// <summary>
@@ -194,8 +245,8 @@ public class LeanSliderCaptchaHelper
   /// 返回一个元组，包含：
   /// - backgroundImage: 带有滑块缺口的背景图片字节数组
   /// - sliderImage: 可拖动的滑块图片字节数组
-  /// - x: 滑块正确位置的X坐标
-  /// - y: 滑块正确位置的Y坐标
+  /// - targetX: 滑块正确位置的X坐标
+  /// - targetY: 滑块正确位置的Y坐标
   /// </returns>
   /// <remarks>
   /// 生成过程包括：
@@ -206,44 +257,73 @@ public class LeanSliderCaptchaHelper
   /// 5. 在背景图上绘制滑块遮罩
   /// 6. 生成滑块图片
   /// </remarks>
-  public (byte[] backgroundImage, byte[] sliderImage, int x, int y) Generate()
+  public (byte[] backgroundImage, byte[] sliderImage, int targetX, int targetY) Generate()
   {
-    // 随机选择一张背景图
-    var imagePath = GetRandomImagePath();
-
-    // 加载并调整背景图片尺寸
-    using var originalImage = Image.Load<Rgba32>(imagePath);
-    originalImage.Mutate(x => x.Resize(_options.Width, _options.Height));
-
-    // 随机生成滑块位置
-    var random = new Random();
-    var x = random.Next(_options.MinX, _options.MaxX);
-    var y = random.Next(_options.MinY, _options.MaxY);
-
-    // 创建滑块形状
-    var sliderPath = CreateSliderPath(x, y);
-
-    // 从原图中裁剪出滑块
-    using var sliderImage = new Image<Rgba32>(_options.SliderWidth, _options.SliderHeight);
-    sliderImage.Mutate(ctx => ctx.DrawImage(originalImage, new Point(-x, -y), 1f));
-    sliderImage.Mutate(ctx => ctx.SetGraphicsOptions(new GraphicsOptions
+    try
     {
-      AlphaCompositionMode = PixelAlphaCompositionMode.DestOut
-    }).Fill(Color.Black, sliderPath));
+      Console.WriteLine($"WebRootPath: {_webRootPath}");
 
-    // 在背景图上绘制滑块遮罩
-    originalImage.Mutate(ctx => ctx.Fill(Color.Gray.WithAlpha(0.7f), sliderPath));
+      // 1. 加载原始图片和模板
+      var backgroundPath = GetRandomImagePath();
+      Console.WriteLine($"完整背景图片路径: {backgroundPath}");
+      Console.WriteLine($"背景图片是否存在: {File.Exists(backgroundPath)}");
 
-    // 转换为字节数组
-    using var backgroundStream = new MemoryStream();
-    originalImage.SaveAsJpeg(backgroundStream);
-    var backgroundBytes = backgroundStream.ToArray();
+      var (sliderTemplatePath, holeTemplatePath) = GetRandomTemplate();
+      Console.WriteLine($"完整滑块模板路径: {sliderTemplatePath}");
+      Console.WriteLine($"完整滑块缺口路径: {holeTemplatePath}");
+      Console.WriteLine($"滑块模板是否存在: {File.Exists(sliderTemplatePath)}");
+      Console.WriteLine($"滑块缺口是否存在: {File.Exists(holeTemplatePath)}");
 
-    using var sliderStream = new MemoryStream();
-    sliderImage.SaveAsPng(sliderStream);
-    var sliderBytes = sliderStream.ToArray();
+      using var originalImage = Image.Load<Rgba32>(backgroundPath);
+      using var sliderTemplate = Image.Load<Rgba32>(sliderTemplatePath);
+      using var holeTemplate = Image.Load<Rgba32>(holeTemplatePath);
 
-    return (backgroundBytes, sliderBytes, x, y);
+      // 调整背景图片尺寸
+      using var backgroundImage = originalImage.Clone();
+      backgroundImage.Mutate(ctx =>
+      {
+        ctx.Resize(new Size(_options.Width, _options.Height));
+      });
+
+      // 调整滑块模板尺寸
+      sliderTemplate.Mutate(ctx =>
+      {
+        ctx.Resize(new Size(_options.SliderWidth, _options.SliderHeight));
+      });
+
+      // 调整hole模板尺寸
+      holeTemplate.Mutate(ctx =>
+      {
+        ctx.Resize(new Size(_options.HoleWidth, _options.HoleHeight));
+      });
+
+      // 计算垂直中心位置（确保滑块和缺口在同一水平线上）
+      int centerY = (_options.Height - _options.SliderHeight) / 2;
+
+      // hole的位置（固定在右侧）
+      int holeX = _options.Width - _options.HoleWidth - 50;  // 距离右边50px
+      int holeY = centerY;  // 使用相同的centerY确保水平对齐
+
+      // 在背景图上叠加hole
+      backgroundImage.Mutate(ctx =>
+      {
+        ctx.DrawImage(holeTemplate, new Point(holeX, holeY), 1f);
+      });
+
+      // 保存图片
+      using var backgroundStream = new MemoryStream();
+      using var sliderStream = new MemoryStream();
+      backgroundImage.SaveAsJpeg(backgroundStream);
+      sliderTemplate.SaveAsPng(sliderStream);
+
+      return (backgroundStream.ToArray(), sliderStream.ToArray(), holeX, holeY);
+    }
+    catch (Exception ex)
+    {
+      Console.WriteLine($"生成滑块验证码时发生错误: {ex.Message}");
+      Console.WriteLine($"错误堆栈: {ex.StackTrace}");
+      throw;
+    }
   }
 
   /// <summary>
@@ -258,9 +338,37 @@ public class LeanSliderCaptchaHelper
   /// 验证时会考虑一定的误差范围（Tolerance），使验证码更易于使用。
   /// 水平和垂直方向的误差都必须在允许范围内才算验证通过。
   /// </remarks>
-  public bool Validate(int x, int y, int correctX, int correctY)
+  public (bool isValid, string message) Validate(int x, int y, int correctX, int correctY)
   {
-    return Math.Abs(x - correctX) <= _options.Tolerance && Math.Abs(y - correctY) <= _options.Tolerance;
+    try
+    {
+      Console.WriteLine("收到滑块验证请求");
+      var message = $"输入坐标: ({x}, {y}), 目标坐标: ({correctX}, {correctY})";
+      Console.WriteLine(message);
+
+      if (x < 0 || y < 0 || correctX < 0 || correctY < 0)
+      {
+        return (false, "坐标值不能为负数");
+      }
+
+      var xOffset = Math.Abs(x - correctX);
+      var yOffset = Math.Abs(y - correctY);
+
+      var offsetMessage = $"偏移量: X={xOffset}, Y={yOffset}, 允许误差={_options.Tolerance}";
+      Console.WriteLine(offsetMessage);
+
+      var result = xOffset <= _options.Tolerance && yOffset <= _options.Tolerance;
+      var resultMessage = $"验证{(result ? "通过" : "失败")} - {offsetMessage}";
+      Console.WriteLine(resultMessage);
+
+      return (result, resultMessage);
+    }
+    catch (Exception ex)
+    {
+      var errorMessage = $"验证异常: {ex.Message}";
+      Console.WriteLine(errorMessage);
+      return (false, errorMessage);
+    }
   }
 
   /// <summary>
@@ -277,49 +385,5 @@ public class LeanSliderCaptchaHelper
     using var rng = RandomNumberGenerator.Create();
     rng.GetBytes(bytes);
     return Convert.ToBase64String(bytes);
-  }
-
-  /// <summary>
-  /// 创建不规则的滑块形状
-  /// </summary>
-  /// <param name="x">滑块位置的X坐标</param>
-  /// <param name="y">滑块位置的Y坐标</param>
-  /// <returns>表示滑块形状的路径对象</returns>
-  /// <remarks>
-  /// 创建的滑块形状包括：
-  /// 1. 基本的矩形轮廓
-  /// 2. 顶部和底部的凸起
-  /// 这种不规则的形状可以增加验证码的辨识度和趣味性
-  /// </remarks>
-  private IPath CreateSliderPath(int x, int y)
-  {
-    var pathBuilder = new PathBuilder();
-
-    // 创建基本的矩形轮廓
-    pathBuilder.AddLine(x, y, x + _options.SliderWidth, y);
-    pathBuilder.AddLine(x + _options.SliderWidth, y, x + _options.SliderWidth, y + _options.SliderHeight);
-    pathBuilder.AddLine(x + _options.SliderWidth, y + _options.SliderHeight, x, y + _options.SliderHeight);
-    pathBuilder.AddLine(x, y + _options.SliderHeight, x, y);
-
-    // 添加顶部和底部的凸起
-    var points = new PointF[]
-    {
-            new(x + _options.SliderWidth / 2 - 10, y),
-            new(x + _options.SliderWidth / 2, y - 5),
-            new(x + _options.SliderWidth / 2 + 10, y),
-            new(x + _options.SliderWidth / 2 - 10, y + _options.SliderHeight),
-            new(x + _options.SliderWidth / 2, y + _options.SliderHeight + 5),
-            new(x + _options.SliderWidth / 2 + 10, y + _options.SliderHeight)
-    };
-
-    // 连接顶部凸起的点
-    pathBuilder.AddLine(points[0], points[1]);
-    pathBuilder.AddLine(points[1], points[2]);
-
-    // 连接底部凸起的点
-    pathBuilder.AddLine(points[3], points[4]);
-    pathBuilder.AddLine(points[4], points[5]);
-
-    return pathBuilder.Build();
   }
 }

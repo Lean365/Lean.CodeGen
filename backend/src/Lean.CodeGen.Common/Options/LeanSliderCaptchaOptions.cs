@@ -40,42 +40,52 @@ public class LeanSliderCaptchaOptions
   /// <summary>
   /// 图片宽度
   /// </summary>
-  public int Width { get; set; } = 280;
+  public int Width { get; set; } = 350;
 
   /// <summary>
   /// 图片高度
   /// </summary>
-  public int Height { get; set; } = 155;
+  public int Height { get; set; } = 150;
 
   /// <summary>
   /// 滑块宽度
   /// </summary>
-  public int SliderWidth { get; set; } = 50;
+  public int SliderWidth { get; set; } = 48;
 
   /// <summary>
   /// 滑块高度
   /// </summary>
-  public int SliderHeight { get; set; } = 50;
+  public int SliderHeight { get; set; } = 48;
+
+  /// <summary>
+  /// 滑块缺口宽度
+  /// </summary>
+  public int HoleWidth { get; set; } = 48;
+
+  /// <summary>
+  /// 滑块缺口高度
+  /// </summary>
+  public int HoleHeight { get; set; } = 48;
 
   /// <summary>
   /// 滑块X坐标最小值
   /// </summary>
-  public int MinX { get; set; } = 10;
+  public int MinX { get; set; } = 0;
 
   /// <summary>
   /// 滑块X坐标最大值
   /// </summary>
-  public int MaxX { get; set; } = 220;
+  public int MaxX { get; set; } = 302;
 
   /// <summary>
   /// 滑块Y坐标最小值
   /// </summary>
-  public int MinY { get; set; } = 10;
+  public int MinY { get; set; } = 0;
 
   /// <summary>
   /// 滑块Y坐标最大值
   /// </summary>
-  public int MaxY { get; set; } = 95;
+  public int MaxY { get; set; } = 102;
 
   /// <summary>
   /// 验证位置允许的误差范围（像素）

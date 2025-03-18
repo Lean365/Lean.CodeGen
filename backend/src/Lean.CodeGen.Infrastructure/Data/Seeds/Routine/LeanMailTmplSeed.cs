@@ -66,7 +66,25 @@ public class LeanMailTmplSeed
 
     foreach (var template in defaultTemplates)
     {
-      await template.SeedDataAsync(_db);
+      var exists = await _db.Queryable<LeanMailTmpl>()
+          .FirstAsync(x => x.TmplCode == template.TmplCode);
+
+      if (exists != null)
+      {
+        // 如果模板已存在，更新它
+        template.Id = exists.Id;
+        // 复制原有审计信息并初始化更新信息
+        template.CopyAuditFields(exists).InitAuditFields(true);
+        await _db.Updateable(template).ExecuteCommandAsync();
+        _logger.Info($"更新邮件模板: {template.TmplName} ({template.TmplCode})");
+      }
+      else
+      {
+        // 如果模板不存在，创建新的
+        template.InitAuditFields();
+        await _db.Insertable(template).ExecuteCommandAsync();
+        _logger.Info($"新增邮件模板: {template.TmplName} ({template.TmplCode})");
+      }
     }
 
     _logger.Info("邮件模板数据初始化完成");

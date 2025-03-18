@@ -306,7 +306,7 @@ public class LeanDictTranslationSeed
       TransValue = zhValue,
       ModuleName = "dict",
       OrderNum = 0,
-      TransStatus = 2,
+      TransStatus = 0,
       IsBuiltin = 1
     });
 
@@ -318,7 +318,7 @@ public class LeanDictTranslationSeed
       TransValue = enValue,
       ModuleName = "dict",
       OrderNum = 0,
-      TransStatus = 2,
+      TransStatus = 0,
       IsBuiltin = 1
     });
   }

@@ -30,9 +30,9 @@
     <PackageReference Include="SqlSugarCore" Version="5.1.4.182" />
     <PackageReference Include="System.Management" Version="8.0.0" />
     <PackageReference Include="IP2Region.Net" Version="2.0.2" />
-    <PackageReference Include="MailKit" Version="4.4.0" />
-    <PackageReference Include="MimeKit" Version="4.4.0" />
-    <PackageReference Include="Quartz" Version="3.8.1" />
+    <PackageReference Include="MailKit" Version="4.11.0" />
+    <PackageReference Include="MimeKit" Version="4.11.0" />
+    <PackageReference Include="Quartz" Version="3.14.0" />
   </ItemGroup>
 
 </Project>

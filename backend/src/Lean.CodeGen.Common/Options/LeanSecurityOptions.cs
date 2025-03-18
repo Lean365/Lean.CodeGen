@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Lean.CodeGen.Common.Options;
 
@@ -13,24 +14,19 @@ public class LeanSecurityOptions
   public const string Position = "Security";
 
   /// <summary>
+  /// 账户配置
+  /// </summary>
+  public LeanAccountOptions Account { get; set; } = new();
+
+  /// <summary>
+  /// 密码配置
+  /// </summary>
+  public LeanPasswordOptions Password { get; set; } = new();
+
+  /// <summary>
   /// 默认密码
   /// </summary>
   public string DefaultPassword { get; set; } = "123456";
-
-  /// <summary>
-  /// 最大密码错误次数
-  /// </summary>
-  public int MaxPasswordAttempts { get; set; } = 5;
-
-  /// <summary>
-  /// 密码锁定时间（分钟）
-  /// </summary>
-  public int PasswordLockMinutes { get; set; } = 30;
-
-  /// <summary>
-  /// 密码过期天数
-  /// </summary>
-  public int PasswordExpireDays { get; set; } = 90;
 
   /// <summary>
   /// JWT配置
@@ -69,19 +65,85 @@ public class LeanSecurityOptions
 }
 
 /// <summary>
-/// 防伪配置
+/// 账户配置选项
 /// </summary>
-public class AntiforgeryOptions
+public class LeanAccountOptions
 {
   /// <summary>
-  /// 请求头名称
+  /// 最大密码错误次数
   /// </summary>
-  public string HeaderName { get; set; } = "X-XSRF-TOKEN";
+  public int MaxPasswordErrorCount { get; set; } = 5;
 
   /// <summary>
-  /// Cookie名称
+  /// 锁定时长（分钟）
   /// </summary>
-  public string CookieName { get; set; } = "XSRF-TOKEN";
+  public int LockDuration { get; set; } = 30;
+
+  /// <summary>
+  /// 错误次数重置时间（小时）
+  /// </summary>
+  public int ErrorCountResetHours { get; set; } = 24;
+
+  /// <summary>
+  /// 是否启用永久锁定
+  /// </summary>
+  public bool EnablePermanentLock { get; set; } = true;
+
+  /// <summary>
+  /// 触发永久锁定的错误次数
+  /// </summary>
+  public int PermanentLockThreshold { get; set; } = 10;
+
+  /// <summary>
+  /// 是否启用通知
+  /// </summary>
+  public bool EnableNotification { get; set; } = true;
+
+  /// <summary>
+  /// 开始发送警告通知的错误次数阈值
+  /// </summary>
+  public int NotificationThreshold { get; set; } = 3;
+}
+
+/// <summary>
+/// 密码配置选项
+/// </summary>
+public class LeanPasswordOptions
+{
+  /// <summary>
+  /// 最小长度
+  /// </summary>
+  public int MinLength { get; set; } = 8;
+
+  /// <summary>
+  /// 必须包含数字
+  /// </summary>
+  public bool RequireDigit { get; set; } = true;
+
+  /// <summary>
+  /// 必须包含小写字母
+  /// </summary>
+  public bool RequireLowercase { get; set; } = true;
+
+  /// <summary>
+  /// 必须包含大写字母
+  /// </summary>
+  public bool RequireUppercase { get; set; } = true;
+
+  /// <summary>
+  /// 必须包含特殊字符
+  /// </summary>
+  public bool RequireSpecialChar { get; set; } = true;
+
+  /// <summary>
+  /// 密码过期天数
+  /// </summary>
+  public int ExpirationDays { get; set; } = 90;
+
+  /// <summary>
+  /// 密码历史记录限制
+  /// </summary>
+  public int HistoryLimit { get; set; } = 3;
 }
 
 /// <summary>

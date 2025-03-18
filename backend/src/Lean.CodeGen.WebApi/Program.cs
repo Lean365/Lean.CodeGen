@@ -52,6 +52,10 @@ builder.Host.UseNLog();
 builder.Services.Configure<LeanSecurityOptions>(
     builder.Configuration.GetSection(LeanSecurityOptions.Position));
 
+// 配置 JWT 选项
+builder.Services.Configure<LeanJwtOptions>(
+    builder.Configuration.GetSection("JwtSettings"));
+
 // 配置本地化选项
 builder.Services.Configure<LeanLocalizationOptions>(
     builder.Configuration.GetSection(LeanLocalizationOptions.Position));
@@ -109,6 +113,25 @@ builder.Services.AddControllers(options =>
   options.Filters.Add<LeanRateLimitFilter>();
 });
 
+// 添加CORS服务
+builder.Services.AddCors(options =>
+{
+  options.AddDefaultPolicy(policy =>
+  {
+    policy.WithOrigins(
+            "http://localhost:5173", // Vite 开发服务器默认端口
+            "http://localhost:5153",
+            "https://localhost:5153",
+            "https://localhost:7152",
+            "http://localhost:5152")
+          .AllowAnyMethod()
+          .AllowAnyHeader()
+          .AllowCredentials()
+          .WithExposedHeaders("Content-Disposition", "X-Suggested-Filename")
+          .SetPreflightMaxAge(TimeSpan.FromMinutes(10));
+  });
+});
+
 // 配置防伪服务
 var securityOptions = builder.Configuration
     .GetSection(LeanSecurityOptions.Position)
@@ -164,8 +187,6 @@ builder.Services.AddSingleton<LeanQuartzHelper>();
 // 构建应用程序
 var app = builder.Build();
 
-
-
 // 初始化数据库
 if (builder.Configuration.GetSection("Database:EnableInitData").Get<bool>())
 {
@@ -177,10 +198,16 @@ if (builder.Configuration.GetSection("Database:EnableInitData").Get<bool>())
 }
 
 // 配置中间件
-app.UseHttpsRedirection();
-
-// 启用静态文件
 app.UseStaticFiles();
+
+// 启用CORS（移到HTTPS重定向之前）
+app.UseCors();
+
+// 仅在生产环境启用HTTPS重定向
+if (!app.Environment.IsDevelopment())
+{
+  app.UseHttpsRedirection();
+}
 
 app.UseRouting();
 

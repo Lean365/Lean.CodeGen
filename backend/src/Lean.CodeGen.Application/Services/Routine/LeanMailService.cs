@@ -477,6 +477,67 @@ public class LeanMailService : LeanBaseService, ILeanMailService
   }
 
   /// <summary>
+  /// 发送邮件
+  /// </summary>
+  public async Task<LeanApiResult> SendAsync(long id)
+  {
+    try
+    {
+      var mail = await _repository.GetByIdAsync(id);
+      if (mail == null)
+      {
+        throw new LeanException("邮件不存在");
+      }
+
+      if (mail.SendStatus != 0)
+      {
+        throw new LeanException("邮件已发送");
+      }
+
+      bool success;
+      if (!string.IsNullOrEmpty(mail.AttachmentIds))
+      {
+        var attachmentIds = mail.AttachmentIds.Split(',').Select(long.Parse).ToList();
+        var attachments = await _fileRepository.GetListAsync(x => attachmentIds.Contains(x.Id));
+        var attachmentPaths = attachments.Select(x => Path.Combine(_httpContextAccessor.WebRootPath, x.FilePath))
+          .Where(File.Exists)
+          .ToArray();
+
+        success = await _mailHelper.SendWithAttachmentsAsync(
+          mail.FromAddress,
+          mail.FromName,
+          mail.ToAddresses,
+          mail.Subject,
+          mail.Body,
+          attachmentPaths,
+          mail.IsBodyHtml == 1);
+      }
+      else
+      {
+        success = await _mailHelper.SendAsync(
+          mail.FromAddress,
+          mail.FromName,
+          mail.ToAddresses,
+          mail.Subject,
+          mail.Body,
+          mail.IsBodyHtml == 1);
+      }
+
+      mail.SendStatus = success ? 1 : 2;
+      mail.SendTime = success ? DateTime.Now : null;
+      mail.FailureReason = success ? null : "发送失败";
+      await _repository.UpdateAsync(mail);
+
+      return success ? LeanApiResult.Ok() : LeanApiResult.Error("发送失败");
+    }
+    catch (Exception ex)
+    {
+      _logger.Error(ex, "发送邮件失败");
+      return LeanApiResult.Error("发送邮件失败：" + ex.Message);
+    }
+  }
+
+  /// <summary>
   /// 批量发送邮件
   /// </summary>
   public async Task<LeanApiResult> BatchSendAsync(List<long> ids)

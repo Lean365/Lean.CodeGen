@@ -100,6 +100,13 @@ public interface ILeanMailService
   Task<LeanApiResult> SendAsync(string[] to, string subject, string body, bool isHtml = true);
 
   /// <summary>
+  /// 发送邮件
+  /// </summary>
+  /// <param name="id">邮件ID</param>
+  /// <returns>是否成功</returns>
+  Task<LeanApiResult> SendAsync(long id);
+
+  /// <summary>
   /// 批量发送邮件
   /// </summary>
   /// <param name="ids">主键列表</param>

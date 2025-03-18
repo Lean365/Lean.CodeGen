@@ -51,7 +51,7 @@ public class LeanTranslationSeed
                 TransValue = "操作成功",
                 ModuleName = "common",
                 OrderNum = 1,
-                TransStatus = 1,
+                TransStatus = 0,
                 IsBuiltin = 1,
                 CreateTime = DateTime.Now,
                 UpdateTime = DateTime.Now
@@ -63,7 +63,7 @@ public class LeanTranslationSeed
                 TransValue = "操作失败",
                 ModuleName = "common",
                 OrderNum = 2,
-                TransStatus = 1,
+                TransStatus = 0,
                 IsBuiltin = 1,
                 CreateTime = DateTime.Now,
                 UpdateTime = DateTime.Now
@@ -76,7 +76,7 @@ public class LeanTranslationSeed
                 TransValue = "Operation successful",
                 ModuleName = "common",
                 OrderNum = 1,
-                TransStatus = 1,
+                TransStatus = 0,
                 IsBuiltin = 1,
                 CreateTime = DateTime.Now,
                 UpdateTime = DateTime.Now
@@ -88,7 +88,7 @@ public class LeanTranslationSeed
                 TransValue = "Operation failed",
                 ModuleName = "common",
                 OrderNum = 2,
-                TransStatus = 1,
+                TransStatus = 0,
                 IsBuiltin = 1,
                 CreateTime = DateTime.Now,
                 UpdateTime = DateTime.Now
@@ -106,7 +106,7 @@ public class LeanTranslationSeed
                 TransValue = "保存",
                 ModuleName = "button",
                 OrderNum = 1,
-                TransStatus = 1,
+                TransStatus = 0,
                 IsBuiltin = 1,
                 CreateTime = DateTime.Now,
                 UpdateTime = DateTime.Now
@@ -118,7 +118,7 @@ public class LeanTranslationSeed
                 TransValue = "取消",
                 ModuleName = "button",
                 OrderNum = 2,
-                TransStatus = 1,
+                TransStatus = 0,
                 IsBuiltin = 1,
                 CreateTime = DateTime.Now,
                 UpdateTime = DateTime.Now
@@ -131,7 +131,7 @@ public class LeanTranslationSeed
                 TransValue = "Save",
                 ModuleName = "button",
                 OrderNum = 1,
-                TransStatus = 1,
+                TransStatus = 0,
                 IsBuiltin = 1,
                 CreateTime = DateTime.Now,
                 UpdateTime = DateTime.Now
@@ -143,7 +143,7 @@ public class LeanTranslationSeed
                 TransValue = "Cancel",
                 ModuleName = "button",
                 OrderNum = 2,
-                TransStatus = 1,
+                TransStatus = 0,
                 IsBuiltin = 1,
                 CreateTime = DateTime.Now,
                 UpdateTime = DateTime.Now

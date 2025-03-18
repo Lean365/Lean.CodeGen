@@ -27,7 +27,7 @@ public static class LeanJwtSetup
   public static IServiceCollection AddLeanJwt(this IServiceCollection services, IConfiguration configuration)
   {
     var jwtSettings = configuration.GetSection("JwtSettings");
-    var secretKey = Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]!);
+    var secretKey = Encoding.UTF8.GetBytes(jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey not found in configuration."));
 
     services.AddAuthentication(options =>
     {
