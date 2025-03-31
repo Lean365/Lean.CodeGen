@@ -68,7 +68,7 @@ public abstract class LeanAuditService<TEntity> : LeanBaseService where TEntity 
       }
 
       entity.AuditStatus = 2;
-      entity.AuditUserId = Context.CurrentUserId;
+      entity.AuditBy = Context.CurrentUserName;
       await Repository.UpdateAsync(entity);
 
       return LeanApiResult.Ok();
@@ -94,7 +94,7 @@ public abstract class LeanAuditService<TEntity> : LeanBaseService where TEntity 
       }
 
       entity.AuditStatus = 3;
-      entity.AuditUserId = Context.CurrentUserId;
+      entity.AuditBy = Context.CurrentUserName;
       await Repository.UpdateAsync(entity);
 
       // 记录驳回原因

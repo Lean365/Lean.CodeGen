@@ -1,7 +1,7 @@
 namespace Lean.CodeGen.Common.Options;
 
 /// <summary>
-/// 本地化配置选项
+/// 本地化选项
 /// </summary>
 public class LeanLocalizationOptions
 {
@@ -44,6 +44,16 @@ public class LeanLocalizationOptions
   /// 语言Cookie过期天数
   /// </summary>
   public int LanguageCookieExpireDays { get; set; } = 30;
+
+  /// <summary>
+  /// 缓存过期时间（分钟）
+  /// </summary>
+  public int CacheExpirationMinutes { get; set; } = 30;
+
+  /// <summary>
+  /// 是否启用缓存
+  /// </summary>
+  public bool EnableCache { get; set; } = true;
 }
 
 /// <summary>

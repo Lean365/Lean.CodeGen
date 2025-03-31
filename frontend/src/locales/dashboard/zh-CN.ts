@@ -3,7 +3,12 @@ export default {
     title: '仪表盘',
     welcome: {
       title: '欢迎回来',
-      subtitle: '今天是个不错的日子'
+      subtitle: '今天是个不错的日子',
+      morning: '早上好',
+      afternoon: '下午好',
+      evening: '晚上好',
+      greeting: '{time}，{name}',
+      description: '欢迎使用 Lean.CodeGen 代码生成平台'
     },
     stats: {
       users: '用户总数',
@@ -68,6 +73,22 @@ export default {
         },
         time: '时间',
         content: '内容'
+      }
+    },
+    notification: {
+      title: '通知中心',
+      empty: '暂无通知',
+      viewAll: '查看全部',
+      markAllRead: '全部已读',
+      clear: '清空通知',
+      types: {
+        system: '系统通知',
+        business: '业务通知',
+        warning: '预警通知'
+      },
+      status: {
+        unread: '未读',
+        read: '已读'
       }
     }
   }

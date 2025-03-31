@@ -3,7 +3,12 @@ export default {
     title: 'Dashboard',
     welcome: {
       title: 'Welcome Back',
-      subtitle: 'Have a great day'
+      subtitle: 'Have a great day',
+      morning: 'Good Morning',
+      afternoon: 'Good Afternoon',
+      evening: 'Good Evening',
+      greeting: '{time}, {name}',
+      description: 'Welcome to Lean.CodeGen Code Generator Platform'
     },
     stats: {
       users: 'Total Users',
@@ -68,6 +73,22 @@ export default {
         },
         time: 'Time',
         content: 'Content'
+      }
+    },
+    notification: {
+      title: 'Notification Center',
+      empty: 'No notifications',
+      viewAll: 'View All',
+      markAllRead: 'Mark All as Read',
+      clear: 'Clear All',
+      types: {
+        system: 'System',
+        business: 'Business',
+        warning: 'Warning'
+      },
+      status: {
+        unread: 'Unread',
+        read: 'Read'
       }
     }
   }

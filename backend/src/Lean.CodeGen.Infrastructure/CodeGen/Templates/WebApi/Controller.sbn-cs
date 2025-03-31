@@ -322,9 +322,9 @@ public class {{ entity_name }}Controller : LeanBaseController
     {{~ if action.permissions ~}}
     [LeanPermission("{{ action.permissions }}")]
     {{~ end ~}}
-    public async Task<IActionResult> GetImportTemplateAsync()
+    public async Task<IActionResult> GetTemplateAsync()
     {
-        var fileBytes = await _service.GetImportTemplateAsync();
+        var fileBytes = await _service.GetTemplateAsync();
         return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "{{ entity_name }}-import-template.xlsx");
     }
     {{~ end ~}}

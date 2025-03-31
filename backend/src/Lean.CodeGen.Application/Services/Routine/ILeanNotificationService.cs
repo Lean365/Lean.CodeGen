@@ -78,7 +78,7 @@ public interface ILeanNotificationService
   /// 获取导入模板
   /// </summary>
   /// <returns>导入模板</returns>
-  Task<byte[]> GetImportTemplateAsync();
+  Task<byte[]> GetTemplateAsync();
 
   /// <summary>
   /// 发布通知
@@ -121,4 +121,21 @@ public interface ILeanNotificationService
   /// <param name="id">主键</param>
   /// <returns>是否成功</returns>
   Task<LeanApiResult> ConfirmAsync(long id);
+
+  /// <summary>
+  /// 发送用户登录尝试通知
+  /// </summary>
+  /// <param name="userId">用户ID</param>
+  /// <param name="message">消息</param>
+  /// <param name="loginTime">登录时间</param>
+  /// <param name="loginIp">登录IP</param>
+  /// <param name="loginLocation">登录地点</param>
+  Task NotifyUserLoginAttemptAsync(long userId, string message, DateTime loginTime, string loginIp, string loginLocation);
+
+  /// <summary>
+  /// 发送通知
+  /// </summary>
+  /// <param name="userId">用户ID</param>
+  /// <param name="notification">通知内容</param>
+  Task SendNotificationAsync(long userId, LeanNotificationDto notification);
 }

@@ -20,6 +20,7 @@ namespace Lean.CodeGen.WebApi.Controllers.Identity;
 [ApiController]
 [Route("api/[controller]")]
 [ApiExplorerSettings(GroupName = "identity")]
+[LeanPermission("identity:post", "岗位管理")]
 public class LeanPostController : LeanBaseController
 {
   private readonly ILeanPostService _postService;
@@ -30,103 +31,81 @@ public class LeanPostController : LeanBaseController
   /// <param name="postService">岗位服务</param>
   /// <param name="localizationService">本地化服务</param>
   /// <param name="configuration">配置</param>
+  /// <param name="userContext">用户上下文</param>
   public LeanPostController(
       ILeanPostService postService,
       ILeanLocalizationService localizationService,
-      IConfiguration configuration)
-      : base(localizationService, configuration)
+      IConfiguration configuration,
+      ILeanUserContext userContext)
+      : base(localizationService, configuration, userContext)
   {
     _postService = postService;
   }
 
   /// <summary>
-  /// 创建岗位
+  /// 分页查询岗位列表
   /// </summary>
-  /// <param name="input">岗位创建参数</param>
-  /// <returns>创建成功的岗位信息</returns>
-  [HttpPost]
-  public async Task<IActionResult> CreateAsync([FromBody] LeanPostCreateDto input)
+  [LeanPermission("identity:post:list", "查询岗位")]
+  [HttpGet("list")]
+  public async Task<LeanApiResult<LeanPageResult<LeanPostDto>>> GetPageAsync([FromQuery] LeanPostQueryDto input)
   {
-    var result = await _postService.CreateAsync(input);
-    return Success(result, LeanBusinessType.Create);
+    return await _postService.GetPageAsync(input);
+  }
+
+  /// <summary>
+  /// 获取岗位详情
+  /// </summary>
+  [LeanPermission("identity:post:query", "查询岗位")]
+  [HttpGet("{id}")]
+  public async Task<LeanApiResult<LeanPostDto>> GetAsync(long id)
+  {
+    return await _postService.GetAsync(id);
+  }
+
+  /// <summary>
+  /// 新增岗位
+  /// </summary>
+  [LeanPermission("identity:post:add", "新增岗位")]
+  [HttpPost]
+  public async Task<LeanApiResult> CreateAsync([FromBody] LeanPostCreateDto input)
+  {
+    return await _postService.CreateAsync(input);
   }
 
   /// <summary>
   /// 更新岗位
   /// </summary>
-  /// <param name="input">岗位更新参数</param>
-  /// <returns>更新后的岗位信息</returns>
+  [LeanPermission("identity:post:edit", "修改岗位")]
   [HttpPut]
-  public async Task<IActionResult> UpdateAsync([FromBody] LeanPostUpdateDto input)
+  public async Task<LeanApiResult> UpdateAsync([FromBody] LeanPostUpdateDto input)
   {
-    var result = await _postService.UpdateAsync(input);
-    return Success(result, LeanBusinessType.Update);
+    return await _postService.UpdateAsync(input);
   }
 
   /// <summary>
   /// 删除岗位
   /// </summary>
-  /// <param name="id">岗位ID</param>
+  [LeanPermission("identity:post:delete", "删除岗位")]
   [HttpDelete("{id}")]
-  public async Task<IActionResult> DeleteAsync(long id)
+  public async Task<LeanApiResult> DeleteAsync(long id)
   {
-    var result = await _postService.DeleteAsync(id);
-    return Success(result, LeanBusinessType.Delete);
+    return await _postService.DeleteAsync(id);
   }
 
   /// <summary>
   /// 批量删除岗位
   /// </summary>
-  /// <param name="ids">岗位ID列表</param>
-  /// <returns>删除结果</returns>
-  [HttpDelete]
-  public async Task<IActionResult> BatchDeleteAsync([FromBody] List<long> ids)
+  [LeanPermission("identity:post:delete", "删除岗位")]
+  [HttpDelete("batch")]
+  public async Task<LeanApiResult> BatchDeleteAsync([FromBody] List<long> ids)
   {
-    var result = await _postService.BatchDeleteAsync(ids);
-    return Success(result, LeanBusinessType.Delete);
+    return await _postService.BatchDeleteAsync(ids);
   }
 
   /// <summary>
-  /// 获取岗位信息
+  /// 导出岗位列表
   /// </summary>
-  /// <param name="id">岗位ID</param>
-  /// <returns>岗位详细信息</returns>
-  [HttpGet("{id}")]
-  public async Task<IActionResult> GetAsync(long id)
-  {
-    var result = await _postService.GetAsync(id);
-    return Success(result, LeanBusinessType.Query);
-  }
-
-  /// <summary>
-  /// 分页查询岗位
-  /// </summary>
-  /// <param name="input">查询参数</param>
-  /// <returns>岗位列表</returns>
-  [HttpGet]
-  public async Task<IActionResult> GetPageAsync([FromQuery] LeanPostQueryDto input)
-  {
-    var result = await _postService.GetPageAsync(input);
-    return Success(result, LeanBusinessType.Query);
-  }
-
-  /// <summary>
-  /// 设置岗位状态
-  /// </summary>
-  /// <param name="input">状态修改参数</param>
-  /// <returns>修改后的岗位信息</returns>
-  [HttpPut("status")]
-  public async Task<IActionResult> SetStatusAsync([FromBody] LeanPostChangeStatusDto input)
-  {
-    var result = await _postService.SetStatusAsync(input);
-    return Success(result, LeanBusinessType.Update);
-  }
-
-  /// <summary>
-  /// 导出岗位数据
-  /// </summary>
-  /// <param name="input">查询参数</param>
-  /// <returns>岗位数据导出结果</returns>
+  [LeanPermission("identity:post:export", "导出岗位")]
   [HttpGet("export")]
   public async Task<IActionResult> ExportAsync([FromQuery] LeanPostQueryDto input)
   {
@@ -135,12 +114,21 @@ public class LeanPostController : LeanBaseController
   }
 
   /// <summary>
-  /// 导入岗位数据
+  /// 获取岗位导入模板
   /// </summary>
-  /// <param name="file">Excel文件</param>
-  /// <returns>导入结果</returns>
+  [LeanPermission("identity:post:import", "导入岗位")]
+  [HttpGet("template")]
+  public async Task<IActionResult> GetTemplateAsync()
+  {
+    var bytes = await _postService.GetTemplateAsync();
+    return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "post-template.xlsx");
+  }
+
+  /// <summary>
+  /// 导入岗位列表
+  /// </summary>
+  [LeanPermission("identity:post:import", "导入岗位")]
   [HttpPost("import")]
-  [LeanPermission("system:post:import", "导入岗位")]
   public async Task<IActionResult> ImportAsync([FromForm] LeanFileInfo file)
   {
     var result = await _postService.ImportAsync(file);
@@ -148,13 +136,22 @@ public class LeanPostController : LeanBaseController
   }
 
   /// <summary>
-  /// 获取导入模板
+  /// 获取用户岗位列表
   /// </summary>
-  /// <returns>岗位导入模板文件</returns>
-  [HttpGet("template")]
-  public async Task<IActionResult> GetImportTemplateAsync()
+  [LeanPermission("identity:post:query", "查询岗位")]
+  [HttpGet("user/{userId}")]
+  public async Task<LeanApiResult<List<LeanPostDto>>> GetUserPostsAsync(long userId)
   {
-    var bytes = await _postService.GetImportTemplateAsync();
-    return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "post-template.xlsx");
+    return await _postService.GetUserPostsAsync(userId);
+  }
+
+  /// <summary>
+  /// 设置用户岗位
+  /// </summary>
+  [LeanPermission("identity:post:edit", "修改岗位")]
+  [HttpPut("user")]
+  public async Task<LeanApiResult> SetUserPostsAsync([FromBody] LeanUserPostDto input)
+  {
+    return await _postService.SetUserPostsAsync(input);
   }
 }

@@ -22,7 +22,9 @@ export default {
       email: '邮箱',
       phone: '电话',
       address: '地址'
-    }
+    },
+    terms: '服务条款',
+    privacy: '隐私政策'
   },
   // 公司简介
   company: '公司简介',

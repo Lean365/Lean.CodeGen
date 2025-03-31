@@ -14,6 +14,9 @@ using Lean.CodeGen.Domain.Interfaces.Repositories;
 using Lean.CodeGen.Application.Services.Base;
 using Lean.CodeGen.Application.Services.Security;
 using Lean.CodeGen.Application.Dtos.Signalr;
+using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Http;
+using Newtonsoft.Json;
 
 namespace Lean.CodeGen.Application.Services.Signalr;
 
@@ -31,38 +34,93 @@ namespace Lean.CodeGen.Application.Services.Signalr;
 public class LeanOnlineUserService : LeanBaseService, ILeanOnlineUserService
 {
   private readonly ILeanRepository<LeanOnlineUser> _userRepository;
-  private readonly ILogger _logger;
+  private readonly ILogger<LeanOnlineUserService> _logger;
+  private readonly IHttpContextAccessor _httpContextAccessor;
 
   /// <summary>
   /// 构造函数
   /// </summary>
+  /// <param name="userRepository">在线用户仓储接口</param>
+  /// <param name="context">基础服务上下文</param>
+  /// <param name="logger">日志记录器</param>
+  /// <param name="httpContextAccessor">HTTP上下文访问器</param>
   public LeanOnlineUserService(
       ILeanRepository<LeanOnlineUser> userRepository,
-      LeanBaseServiceContext context)
+      LeanBaseServiceContext context,
+      ILogger<LeanOnlineUserService> logger,
+      IHttpContextAccessor httpContextAccessor)
       : base(context)
   {
     _userRepository = userRepository;
-    _logger = context.Logger;
+    _logger = logger;
+    _httpContextAccessor = httpContextAccessor;
   }
 
   /// <summary>
   /// 获取在线用户列表
   /// </summary>
-  public async Task<List<LeanOnlineUserDto>> GetOnlineUsersAsync()
+  public async Task<List<LeanOnlineUser>> GetOnlineUsersAsync()
   {
     var users = await _userRepository.GetListAsync(u => u.IsOnline == 1);
-    return users.Adapt<List<LeanOnlineUserDto>>();
+    return users;
+  }
+
+  /// <summary>
+  /// 获取指定用户的在线状态
+  /// </summary>
+  /// <param name="userIds">用户ID列表</param>
+  /// <returns>在线用户列表</returns>
+  public async Task<List<LeanOnlineUserDto>> GetOnlineUsersAsync(long[] userIds)
+  {
+    var users = await _userRepository.GetListAsync(u => userIds.Contains(u.UserId));
+    return users.Select(u => new LeanOnlineUserDto
+    {
+      UserId = u.UserId,
+      UserName = u.UserName ?? string.Empty,
+      Avatar = u.Avatar,
+      ConnectionId = u.ConnectionId,
+      DeviceId = u.DeviceId,
+      IsOnline = u.IsOnline,
+      LastActiveTime = u.LastActiveTime,
+      CreateTime = u.CreateTime,
+      UpdateTime = u.UpdateTime
+    }).ToList();
   }
 
   /// <summary>
   /// 检查用户是否在线
   /// </summary>
   /// <param name="userId">用户ID</param>
+  /// <param name="deviceId">设备指纹</param>
   /// <returns>用户是否在线</returns>
-  public async Task<bool> IsUserOnlineAsync(string userId)
+  public async Task<bool> IsUserOnlineAsync(long userId, string deviceId)
   {
-    var user = await _userRepository.FirstOrDefaultAsync(u => u.UserId == userId);
+    var user = await _userRepository.FirstOrDefaultAsync(u =>
+        u.UserId == userId &&
+        u.DeviceId == deviceId);
     return user?.IsOnline == 1;
+  }
+
+  /// <summary>
+  /// 更新用户在线状态
+  /// </summary>
+  /// <param name="connectionId">连接ID</param>
+  /// <param name="isOnline">是否在线</param>
+  /// <param name="userId">用户ID</param>
+  /// <param name="deviceId">设备ID</param>
+  public async Task UpdateUserStatusAsync(string connectionId, bool isOnline, long userId, string deviceId)
+  {
+    var user = await _userRepository.FirstOrDefaultAsync(x =>
+        x.UserId == userId &&
+        x.DeviceId == deviceId);
+
+    if (user != null)
+    {
+      user.ConnectionId = connectionId;
+      user.LastActiveTime = DateTime.Now;
+      user.IsOnline = isOnline ? 1 : 0;
+      await _userRepository.UpdateAsync(user);
+    }
   }
 
   /// <summary>
@@ -72,9 +130,13 @@ public class LeanOnlineUserService : LeanBaseService, ILeanOnlineUserService
   /// <param name="userId">用户ID</param>
   /// <param name="userName">用户名</param>
   /// <param name="avatar">头像</param>
-  public async Task UpdateUserInfoAsync(string connectionId, string userId, string userName, string? avatar)
+  /// <param name="deviceFingerprint">设备指纹</param>
+  public async Task UpdateUserInfoAsync(string connectionId, long userId, string? userName, string? avatar, string deviceFingerprint)
   {
-    var user = await _userRepository.FirstOrDefaultAsync(u => u.ConnectionId == connectionId);
+    var user = await _userRepository.FirstOrDefaultAsync(x =>
+        x.UserId == userId &&
+        x.DeviceId == deviceFingerprint);
+
     if (user == null)
     {
       user = new LeanOnlineUser
@@ -85,26 +147,34 @@ public class LeanOnlineUserService : LeanBaseService, ILeanOnlineUserService
         Avatar = avatar,
         IsOnline = 1,
         LastActiveTime = DateTime.Now,
-        CreateTime = DateTime.Now,
-        UpdateTime = DateTime.Now
+        DeviceId = deviceFingerprint,
+        IpAddress = _httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString(),
+        Browser = _httpContextAccessor.HttpContext?.Request.Headers["User-Agent"].ToString(),
+        Os = _httpContextAccessor.HttpContext?.Request.Headers["User-Agent"].ToString()
       };
       await _userRepository.CreateAsync(user);
     }
     else
     {
-      user.UserId = userId;
+      user.ConnectionId = connectionId;
       user.UserName = userName;
       user.Avatar = avatar;
-      user.UpdateTime = DateTime.Now;
+      user.LastActiveTime = DateTime.Now;
+      user.IsOnline = 1;
+      user.IpAddress = _httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
+      user.Browser = _httpContextAccessor.HttpContext?.Request.Headers["User-Agent"].ToString();
+      user.Os = _httpContextAccessor.HttpContext?.Request.Headers["User-Agent"].ToString();
       await _userRepository.UpdateAsync(user);
     }
+
+    _logger.LogInformation($"更新用户信息成功，ConnectionId: {connectionId}, UserId: {userId}, DeviceId: {deviceFingerprint}");
   }
 
   /// <summary>
   /// 强制用户登出
   /// </summary>
   /// <param name="userId">用户ID</param>
-  public async Task ForceLogoutAsync(string userId)
+  public async Task ForceLogoutAsync(long userId)
   {
     var user = await _userRepository.FirstOrDefaultAsync(u => u.UserId == userId);
     if (user != null)
@@ -131,28 +201,11 @@ public class LeanOnlineUserService : LeanBaseService, ILeanOnlineUserService
   /// </summary>
   public async Task<LeanPageResult<LeanOnlineUserDto>> GetPageListAsync(LeanOnlineUserQueryDto input)
   {
-    Expression<Func<LeanOnlineUser, bool>> predicate = BuildQueryPredicate(input);
-    var result = await _userRepository.GetPageListAsync(
-        predicate,
-        input.PageSize,
-        input.PageIndex,
-        u => u.CreateTime,
-        false);
-
-    return new LeanPageResult<LeanOnlineUserDto>
-    {
-      Total = result.Total,
-      Items = result.Items.Adapt<List<LeanOnlineUserDto>>()
-    };
-  }
-
-  private Expression<Func<LeanOnlineUser, bool>> BuildQueryPredicate(LeanOnlineUserQueryDto input)
-  {
     Expression<Func<LeanOnlineUser, bool>> predicate = u => true;
 
-    if (!string.IsNullOrEmpty(input.UserId))
+    if (input.UserId.HasValue)
     {
-      predicate = predicate.And(u => u.UserId == input.UserId);
+      predicate = predicate.And(u => u.UserId == input.UserId.Value);
     }
 
     if (!string.IsNullOrEmpty(input.UserName))
@@ -167,45 +220,64 @@ public class LeanOnlineUserService : LeanBaseService, ILeanOnlineUserService
 
     if (input.StartTime.HasValue)
     {
-      predicate = predicate.And(u => u.CreateTime >= input.StartTime.Value);
+      predicate = predicate.And(u => u.LastActiveTime >= input.StartTime.Value);
     }
 
     if (input.EndTime.HasValue)
     {
-      predicate = predicate.And(u => u.CreateTime <= input.EndTime.Value);
+      predicate = predicate.And(u => u.LastActiveTime <= input.EndTime.Value);
     }
 
-    return predicate;
+    var result = await _userRepository.GetPageListAsync(
+        predicate,
+        input.PageSize,
+        input.PageIndex,
+        u => u.LastActiveTime,
+        false);
+
+    return new LeanPageResult<LeanOnlineUserDto>
+    {
+      Total = result.Total,
+      Items = result.Items.Select(u => new LeanOnlineUserDto
+      {
+        UserId = u.UserId,
+        UserName = u.UserName ?? string.Empty,
+        Avatar = u.Avatar,
+        ConnectionId = u.ConnectionId,
+        DeviceId = u.DeviceId,
+        IsOnline = u.IsOnline,
+        LastActiveTime = u.LastActiveTime,
+        CreateTime = u.CreateTime,
+        UpdateTime = u.UpdateTime
+      }).ToList()
+    };
   }
 
-  public async Task<string?> GetUserConnectionIdAsync(string userId)
+  /// <summary>
+  /// 获取用户连接ID
+  /// </summary>
+  public async Task<string?> GetUserConnectionIdAsync(long userId)
   {
-    var user = await _userRepository.FirstOrDefaultAsync(u => u.UserId == userId && u.IsOnline == 1);
+    var user = await _userRepository.FirstOrDefaultAsync(x => x.UserId == userId && x.IsOnline == 1);
     return user?.ConnectionId;
   }
 
-  public async Task UpdateUserStatusAsync(string connectionId, bool isOnline)
+  /// <summary>
+  /// 更新最后活动时间
+  /// </summary>
+  /// <param name="connectionId">连接ID</param>
+  /// <param name="userId">用户ID</param>
+  /// <param name="deviceId">设备ID</param>
+  public async Task UpdateLastActiveTimeAsync(string connectionId, long userId, string deviceId)
   {
-    var user = await _userRepository.FirstOrDefaultAsync(u => u.ConnectionId == connectionId);
-    if (user != null)
-    {
-      user.IsOnline = isOnline ? 1 : 0;
-      user.UpdateTime = DateTime.Now;
-      if (!isOnline)
-      {
-        user.LastActiveTime = DateTime.Now;
-      }
-      await _userRepository.UpdateAsync(user);
-    }
-  }
+    var user = await _userRepository.FirstOrDefaultAsync(x =>
+        x.UserId == userId &&
+        x.DeviceId == deviceId);
 
-  public async Task UpdateLastActiveTimeAsync(string connectionId)
-  {
-    var user = await _userRepository.FirstOrDefaultAsync(u => u.ConnectionId == connectionId);
     if (user != null)
     {
+      user.ConnectionId = connectionId;
       user.LastActiveTime = DateTime.Now;
-      user.UpdateTime = DateTime.Now;
       await _userRepository.UpdateAsync(user);
     }
   }

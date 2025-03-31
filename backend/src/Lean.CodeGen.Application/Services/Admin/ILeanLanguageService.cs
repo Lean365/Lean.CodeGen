@@ -72,5 +72,5 @@ public interface ILeanLanguageService
     /// 获取导入模板
     /// </summary>
     /// <returns>导入模板Excel文件字节数组</returns>
-    Task<byte[]> GetImportTemplateAsync();
+    Task<byte[]> GetTemplateAsync();
 }

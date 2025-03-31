@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Lean.CodeGen.Application.Dtos.Identity;
 using Lean.CodeGen.Application.Services.Identity;
@@ -6,11 +10,13 @@ using Lean.CodeGen.Common.Enums;
 using Lean.CodeGen.Common.Attributes;
 using Microsoft.Extensions.Configuration;
 using Lean.CodeGen.Application.Services.Admin;
+using Lean.CodeGen.WebApi.Controllers;
+using System.Security.Claims;
 
 namespace Lean.CodeGen.WebApi.Controllers.Identity;
 
 /// <summary>
-/// 菜单控制器
+/// 菜单管理控制器
 /// </summary>
 /// <remarks>
 /// 提供菜单管理相关的API接口，包括：
@@ -19,9 +25,10 @@ namespace Lean.CodeGen.WebApi.Controllers.Identity;
 /// 3. 菜单树形结构管理
 /// 4. 菜单权限管理
 /// </remarks>
+[Authorize]
+[LeanPermission("identity:menu", "菜单管理")]
 [ApiController]
 [Route("api/[controller]")]
-[ApiExplorerSettings(GroupName = "identity")]
 public class LeanMenuController : LeanBaseController
 {
   private readonly ILeanMenuService _menuService;
@@ -32,180 +39,174 @@ public class LeanMenuController : LeanBaseController
   /// <param name="menuService">菜单服务</param>
   /// <param name="localizationService">本地化服务</param>
   /// <param name="configuration">配置</param>
+  /// <param name="userContext">用户上下文</param>
   public LeanMenuController(
       ILeanMenuService menuService,
       ILeanLocalizationService localizationService,
-      IConfiguration configuration)
-      : base(localizationService, configuration)
+      IConfiguration configuration,
+      ILeanUserContext userContext)
+      : base(localizationService, configuration, userContext)
   {
     _menuService = menuService;
   }
 
   /// <summary>
-  /// 创建菜单
+  /// 分页查询菜单
   /// </summary>
-  /// <param name="input">菜单创建参数</param>
-  /// <returns>创建成功的菜单信息</returns>
-  [HttpPost]
-  public async Task<IActionResult> CreateAsync([FromBody] LeanMenuCreateDto input)
-  {
-    var result = await _menuService.CreateAsync(input);
-    return Success(result, LeanBusinessType.Create);
-  }
+  [LeanPermission("identity:menu:list", "查询菜单")]
+  [HttpGet("list")]
 
-  /// <summary>
-  /// 更新菜单
-  /// </summary>
-  /// <param name="input">菜单更新参数</param>
-  /// <returns>更新后的菜单信息</returns>
-  [HttpPut]
-  public async Task<IActionResult> UpdateAsync([FromBody] LeanMenuUpdateDto input)
+  public async Task<LeanApiResult<LeanPageResult<LeanMenuDto>>> GetPageAsync([FromQuery] LeanMenuQueryDto input)
   {
-    var result = await _menuService.UpdateAsync(input);
-    return Success(result, LeanBusinessType.Update);
-  }
-
-  /// <summary>
-  /// 删除菜单
-  /// </summary>
-  /// <param name="id">菜单ID</param>
-  /// <returns>删除结果</returns>
-  [HttpDelete("{id}")]
-  public async Task<IActionResult> DeleteAsync(long id)
-  {
-    var result = await _menuService.DeleteAsync(id);
-    return Success(result, LeanBusinessType.Delete);
-  }
-
-  /// <summary>
-  /// 批量删除菜单
-  /// </summary>
-  /// <param name="ids">菜单ID列表</param>
-  /// <returns>删除结果</returns>
-  [HttpDelete]
-  public async Task<IActionResult> BatchDeleteAsync([FromBody] List<long> ids)
-  {
-    var result = await _menuService.BatchDeleteAsync(ids);
-    return Success(result, LeanBusinessType.Delete);
+    return await _menuService.GetPageAsync(input);
   }
 
   /// <summary>
   /// 获取菜单信息
   /// </summary>
-  /// <param name="id">菜单ID</param>
-  /// <returns>菜单详细信息</returns>
+  [LeanPermission("identity:menu:query", "查询菜单")]
   [HttpGet("{id}")]
-  public async Task<IActionResult> GetAsync(long id)
+  public async Task<LeanApiResult<LeanMenuDto>> GetAsync(long id)
   {
-    var result = await _menuService.GetAsync(id);
-    return Success(result, LeanBusinessType.Query);
+    return await _menuService.GetAsync(id);
   }
 
   /// <summary>
-  /// 查询菜单列表
+  /// 创建菜单
   /// </summary>
-  /// <param name="input">查询参数</param>
-  /// <returns>菜单列表</returns>
-  [HttpGet]
-  public async Task<IActionResult> GetPageAsync([FromQuery] LeanMenuQueryDto input)
+  [LeanPermission("identity:menu:create", "新增菜单")]
+  [HttpPost]
+  public async Task<LeanApiResult<long>> CreateAsync([FromBody] LeanMenuCreateDto input)
   {
-    var result = await _menuService.GetPageAsync(input);
-    return Success(result, LeanBusinessType.Query);
+    return await _menuService.CreateAsync(input);
   }
 
   /// <summary>
-  /// 设置菜单状态
+  /// 更新菜单
   /// </summary>
-  /// <param name="input">状态修改参数</param>
-  /// <returns>修改后的菜单状态</returns>
-  [HttpPut("status")]
-  public async Task<IActionResult> SetStatusAsync([FromBody] LeanMenuChangeStatusDto input)
+  [LeanPermission("identity:menu:update", "修改菜单")]
+  [HttpPut]
+  public async Task<LeanApiResult> UpdateAsync([FromBody] LeanMenuUpdateDto input)
   {
-    var result = await _menuService.SetStatusAsync(input);
-    return Success(result, LeanBusinessType.Update);
+    return await _menuService.UpdateAsync(input);
   }
 
   /// <summary>
-  /// 获取菜单树形结构
+  /// 排序菜单
   /// </summary>
-  /// <param name="input">查询参数</param>
-  /// <returns>菜单树形结构</returns>
-  [HttpGet("tree")]
-  public async Task<IActionResult> GetTreeAsync([FromQuery] LeanMenuQueryDto input)
+  [LeanPermission("identity:menu:sort", "修改菜单")]
+  [HttpPut("sort")]
+  public async Task<LeanApiResult> SortAsync([FromBody] List<LeanMenuSortDto> input)
   {
-    var result = await _menuService.GetTreeAsync(input);
-    return Success(result, LeanBusinessType.Query);
+    return await _menuService.SortAsync(input);
+  }
+
+  /// <summary>
+  /// 删除菜单
+  /// </summary>
+  [LeanPermission("identity:menu:delete", "删除菜单")]
+  [HttpDelete("{id}")]
+  public async Task<LeanApiResult> DeleteAsync(long id)
+  {
+    return await _menuService.DeleteAsync(id);
+  }
+
+  /// <summary>
+  /// 批量删除菜单
+  /// </summary>
+  [LeanPermission("identity:menu:delete", "删除菜单")]
+  [HttpDelete("batch")]
+  public async Task<LeanApiResult> BatchDeleteAsync([FromBody] List<long> ids)
+  {
+    return await _menuService.BatchDeleteAsync(ids);
   }
 
   /// <summary>
   /// 导出菜单数据
   /// </summary>
-  /// <param name="input">查询参数</param>
-  /// <returns>菜单数据导出结果</returns>
+  [LeanPermission("identity:menu:export", "导出菜单")]
   [HttpGet("export")]
   public async Task<IActionResult> ExportAsync([FromQuery] LeanMenuQueryDto input)
   {
-    var bytes = await _menuService.ExportAsync(input);
-    return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "menus.xlsx");
-  }
-
-  /// <summary>
-  /// 导入菜单数据
-  /// </summary>
-  /// <param name="file">Excel文件</param>
-  /// <returns>导入结果</returns>
-  [HttpPost("import")]
-  [LeanPermission("system:menu:import", "导入菜单")]
-  public async Task<IActionResult> ImportAsync([FromForm] LeanFileInfo file)
-  {
-    var result = await _menuService.ImportAsync(file);
-    return Success(result, LeanBusinessType.Import);
+    var data = await _menuService.ExportAsync(input);
+    return File(data, "application/vnd.ms-excel", "菜单数据.xlsx");
   }
 
   /// <summary>
   /// 获取导入模板
   /// </summary>
-  /// <returns>菜单导入模板文件</returns>
+  [LeanPermission("identity:menu:import", "导入菜单")]
   [HttpGet("template")]
-  public async Task<IActionResult> GetImportTemplateAsync()
+  public async Task<IActionResult> GetTemplateAsync()
   {
-    var bytes = await _menuService.GetImportTemplateAsync();
-    return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "menu-template.xlsx");
+    var data = await _menuService.GetTemplateAsync();
+    return File(data, "application/vnd.ms-excel", "菜单导入模板.xlsx");
+  }
+
+  /// <summary>
+  /// 导入菜单数据
+  /// </summary>
+  [LeanPermission("identity:menu:import", "导入菜单")]
+  [HttpPost("import")]
+  public async Task<LeanApiResult<LeanMenuImportResultDto>> ImportAsync([FromForm] LeanFileInfo file)
+  {
+    var result = await _menuService.ImportAsync(file);
+    return LeanApiResult<LeanMenuImportResultDto>.Ok(result);
+  }
+
+  /// <summary>
+  /// 设置菜单状态
+  /// </summary>
+  [LeanPermission("identity:menu:update", "修改菜单")]
+  [HttpPut("status")]
+  public async Task<LeanApiResult> SetStatusAsync([FromBody] LeanMenuChangeStatusDto input)
+  {
+    return await _menuService.SetStatusAsync(input);
+  }
+
+  /// <summary>
+  /// 获取菜单树形结构
+  /// </summary>
+  [LeanPermission("identity:menu:query", "查询菜单")]
+  [HttpGet("tree")]
+  public async Task<List<LeanMenuTreeDto>> GetTreeAsync([FromQuery] LeanMenuQueryDto input)
+  {
+    return await _menuService.GetTreeAsync(input);
   }
 
   /// <summary>
   /// 获取角色菜单树
   /// </summary>
-  /// <param name="roleId">角色ID</param>
-  /// <returns>角色菜单树</returns>
-  [HttpGet("role/{roleId}")]
-  public async Task<IActionResult> GetRoleMenuTreeAsync(long roleId)
+  [LeanPermission("identity:menu:query", "查询菜单")]
+  [HttpGet("role/{roleId}/tree")]
+  public async Task<List<LeanMenuTreeDto>> GetRoleMenuTreeAsync(long roleId)
   {
-    var result = await _menuService.GetRoleMenuTreeAsync(roleId);
-    return Success(result, LeanBusinessType.Query);
+    return await _menuService.GetRoleMenuTreeAsync(roleId);
   }
 
   /// <summary>
-  /// 获取用户菜单树
+  /// 获取当前登录用户的菜单树
   /// </summary>
-  /// <param name="userId">用户ID</param>
-  /// <returns>用户菜单树</returns>
-  [HttpGet("user/{userId}")]
-  public async Task<IActionResult> GetUserMenuTreeAsync(long userId)
+  [LeanPermission("identity:menu:list", "查询菜单")]
+  [HttpGet("user/tree")]
+  public async Task<LeanApiResult<List<LeanMenuTreeDto>>> GetUserMenuTreeAsync()
   {
-    var result = await _menuService.GetUserMenuTreeAsync(userId);
-    return Success(result, LeanBusinessType.Query);
+    var userId = long.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+      ?? throw new UnauthorizedAccessException("未登录"));
+    var menuTree = await _menuService.GetUserMenuTreeAsync(userId);
+    return LeanApiResult<List<LeanMenuTreeDto>>.Ok(menuTree);
   }
 
   /// <summary>
-  /// 获取用户权限列表
+  /// 获取当前登录用户的权限清单
   /// </summary>
-  /// <param name="userId">用户ID</param>
-  /// <returns>用户权限列表</returns>
-  [HttpGet("user/{userId}/permissions")]
-  public async Task<IActionResult> GetUserPermissionsAsync(long userId)
+  [LeanPermission("identity:menu:list", "查询菜单")]
+  [HttpGet("user/permissions")]
+  public async Task<LeanApiResult<List<string>>> GetUserPermissionsAsync()
   {
-    var result = await _menuService.GetUserPermissionsAsync(userId);
-    return Success(result, LeanBusinessType.Query);
+    var userId = long.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+      ?? throw new UnauthorizedAccessException("未登录"));
+    var permissions = await _menuService.GetUserPermissionsAsync(userId);
+    return LeanApiResult<List<string>>.Ok(permissions, LeanBusinessType.Query);
   }
 }

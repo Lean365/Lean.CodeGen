@@ -24,8 +24,9 @@ namespace Lean.CodeGen.WebApi.Controllers.Audit
     public LeanQuartzLogController(
         ILeanQuartzLogService quartzLogService,
         ILeanLocalizationService localizationService,
-        IConfiguration configuration)
-        : base(localizationService, configuration)
+        IConfiguration configuration,
+        ILeanUserContext userContext)
+        : base(localizationService, configuration, userContext)
     {
       _quartzLogService = quartzLogService;
     }

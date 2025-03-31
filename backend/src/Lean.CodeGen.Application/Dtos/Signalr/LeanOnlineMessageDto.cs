@@ -11,12 +11,12 @@ public class LeanOnlineMessageQueryDto : LeanPage
   /// <summary>
   /// 发送者ID
   /// </summary>
-  public string? SenderId { get; set; }
+  public long? SenderId { get; set; }
 
   /// <summary>
   /// 接收者ID
   /// </summary>
-  public string? ReceiverId { get; set; }
+  public long? ReceiverId { get; set; }
 
   /// <summary>
   /// 是否已读
@@ -54,7 +54,7 @@ public class LeanOnlineMessageDto
   /// <summary>
   /// 发送者ID
   /// </summary>
-  public string SenderId { get; set; } = null!;
+  public long SenderId { get; set; }
 
   /// <summary>
   /// 发送者名称
@@ -69,7 +69,7 @@ public class LeanOnlineMessageDto
   /// <summary>
   /// 接收者ID
   /// </summary>
-  public string? ReceiverId { get; set; }
+  public long? ReceiverId { get; set; }
 
   /// <summary>
   /// 接收者名称
@@ -123,12 +123,12 @@ public class LeanOnlineMessageSendDto
   /// 发送者ID
   /// </summary>
   [Required(ErrorMessage = "发送者ID不能为空")]
-  public string SenderId { get; set; } = null!;
+  public long SenderId { get; set; }
 
   /// <summary>
   /// 接收者ID
   /// </summary>
-  public string? ReceiverId { get; set; }
+  public long? ReceiverId { get; set; }
 
   /// <summary>
   /// 消息内容
@@ -151,11 +151,11 @@ public class LeanOnlineMessageMarkAsReadDto
   /// 用户ID
   /// </summary>
   [Required(ErrorMessage = "用户ID不能为空")]
-  public string UserId { get; set; } = null!;
+  public long UserId { get; set; }
 
   /// <summary>
   /// 发送者ID
   /// </summary>
   [Required(ErrorMessage = "发送者ID不能为空")]
-  public string SenderId { get; set; } = null!;
+  public long SenderId { get; set; }
 }

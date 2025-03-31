@@ -36,7 +36,7 @@ public class LeanLogService : ILeanLogService
 
   public LeanLogService()
   {
-    _logger = LogManager.GetCurrentClassLogger();
+    _logger = LogManager.GetLogger("LeanLog");
   }
 
   /// <summary>

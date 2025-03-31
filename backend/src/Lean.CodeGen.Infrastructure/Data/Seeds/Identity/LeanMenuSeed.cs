@@ -101,15 +101,15 @@ public class LeanMenuSeed
         MenuName = displayName,
         ParentId = 0,
         OrderNum = GetNextOrderNum(0),
-        Path = name.ToLower(),
+        Path = "/" + name.ToLower(),
         Component = "Layout",
         IsFrame = 0,
         IsCached = 0,
         Visible = 0,
-        MenuStatus = 1,
-        MenuType = 2,
+        MenuStatus = 0,
+        MenuType = 0,
         Icon = icon,
-        TransKey = $"menu.{name.ToLower()}",
+        TransKey = $"menu.{name.ToLower()}._self",
         Perms = $"{name.ToLower()}:list",
         IsBuiltin = 1
       };
@@ -268,8 +268,8 @@ public class LeanMenuSeed
       IsFrame = 0,
       IsCached = 0,
       Visible = 0,
-      MenuStatus = 1,
-      MenuType = 2,
+      MenuStatus = 0,
+      MenuType = 0,
       Icon = GetDirectoryIcon(dirName.ToLower()),
       TransKey = $"menu.{dirName.ToLower()}",
       Perms = $"{dirName.ToLower()}:list",
@@ -340,12 +340,14 @@ public class LeanMenuSeed
       MenuName = menuName,
       ParentId = parentId,
       OrderNum = GetNextOrderNum(parentId),
-      Path = routeName,
-      Component = $"{permPrefix.ToLower()}{routeName}/index",
+      // 路由路径应该是完整的URL路径
+      Path = "/" + permPrefix.ToLower() + "/" + routeName,
+      // 组件路径应该是相对于views目录的路径，不需要开头的斜杠
+      Component = $"{permPrefix.ToLower()}/{routeName}/index",
       IsFrame = 0,
       IsCached = 0,
       Visible = 0,
-      MenuStatus = 1,
+      MenuStatus = 0,
       MenuType = 1,
       Icon = GetControllerIcon(menuName.ToLower()),
       TransKey = $"menu.{permPrefix.ToLower()}.{routeName}",
@@ -457,62 +459,52 @@ public class LeanMenuSeed
   /// </remarks>
   private async Task CreateMenuButtons(long parentId, string routeName, string permPrefix)
   {
-    // 验证父菜单是否存在
-    var parentMenu = await _db.Queryable<LeanMenu>()
-        .FirstAsync(m => m.Id == parentId);
+    _logger.Info($"开始为菜单 {routeName} 创建按钮...");
 
-    if (parentMenu == null)
-    {
-      _logger.Error($"未找到父菜单: {parentId}");
-      return;
-    }
-
-    // 所有按钮的统一定义
+    // 创建标准按钮权限
     var buttons = new[]
     {
-      ("查询", "query", "SearchOutlined"),         // 查询数据按钮
-      ("新增", "create", "PlusOutlined"),          // 新增数据按钮
-      ("更新", "update", "EditOutlined"),          // 更新数据按钮
-      ("删除", "delete", "DeleteOutlined"),        // 删除数据按钮
-      ("清空", "clear", "ClearOutlined"),          // 清空数据按钮
-      ("模板", "template", "FileExcelOutlined"),   // 下载模板按钮
-      ("导入", "import", "ImportOutlined"),        // 导入数据按钮
-      ("导出", "export", "ExportOutlined"),        // 导出数据按钮
-      ("预览", "preview", "EyeOutlined"),          // 预览数据按钮
-      ("打印", "print", "PrinterOutlined"),        // 打印数据按钮
-      ("审核", "audit", "CheckOutlined"),          // 审核数据按钮
-      ("撤消", "revoke", "UndoOutlined"),         // 撤消操作按钮
-      ("翻译", "translate", "TranslationOutlined"), // 翻译按钮
-      ("图标", "icon", "FontColorsOutlined")       // 图标按钮
+      ("query", "查询", "SearchOutlined"),
+      ("create", "新增", "PlusOutlined"),
+      ("update", "修改", "EditOutlined"),
+      ("delete", "删除", "DeleteOutlined"),
+      ("clear", "清空", "ClearOutlined"),
+      ("template", "模板", "FileOutlined"),
+      ("import", "导入", "ImportOutlined"),
+      ("export", "导出", "ExportOutlined"),
+      ("preview", "预览", "EyeOutlined"),
+      ("print", "打印", "PrinterOutlined"),
+      ("audit", "审核", "AuditOutlined"),
+      ("revoke", "撤销", "RollbackOutlined"),
+      ("translate", "翻译", "TranslationOutlined"),
+      ("icon", "图标", "IconOutlined")
     };
 
-    // 为每个按钮创建菜单项
-    foreach (var (name, action, icon) in buttons)
+    foreach (var (action, name, icon) in buttons)
     {
       var button = new LeanMenu
       {
         MenuName = name,
         ParentId = parentId,
         OrderNum = GetNextOrderNum(parentId),
-        Path = "#",
-        Component = "",
+        Path = string.Empty,
+        Component = string.Empty,
         IsFrame = 0,
         IsCached = 0,
         Visible = 0,
-        MenuStatus = 1,
+        MenuStatus = 0,
         MenuType = 2,
         Icon = icon,
-        Perms = $"{permPrefix.ToLower()}:{routeName.Replace("lean", "")}:{action}",
+        TransKey = $"button.{action}",
+        Perms = $"{permPrefix}:{routeName}:{action}",
         IsBuiltin = 1
       };
 
-      // 检查是否存在
       var exists = await _db.Queryable<LeanMenu>()
           .FirstAsync(m => m.Perms == button.Perms);
 
       if (exists != null)
       {
-        // 更新现有记录
         button.Id = exists.Id;
         button.CopyAuditFields(exists).InitAuditFields(true);
         await _db.Updateable(button).ExecuteCommandAsync();
@@ -520,7 +512,6 @@ public class LeanMenuSeed
       }
       else
       {
-        // 插入新记录
         button.InitAuditFields();
         await _db.Insertable(button).ExecuteCommandAsync();
         _logger.Info($"新增按钮: {button.MenuName}, 权限: {button.Perms}");

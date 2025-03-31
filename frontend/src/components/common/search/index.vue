@@ -3,7 +3,7 @@
     <a-button type="text" class="action-button" @click="showSearch">
       <SearchOutlined />
     </a-button>
-    <a-modal v-model:visible="visible" :footer="null" :closable="false" width="600px" wrapClassName="search-modal">
+    <a-modal v-model:open="visible" :footer="null" :closable="false" width="600px" wrapClassName="search-modal">
       <a-input-search v-model:value="searchText" placeholder="搜索..." size="large" @search="onSearch" @change="onChange">
         <template #prefix>
           <SearchOutlined />

@@ -174,5 +174,18 @@ export default {
     about: 'About Us',
     privacy: 'Privacy Policy',
     terms: 'Terms of Service'
+  },
+
+  /** Browser Compatibility */
+  browser: {
+    unsupported: {
+      browser: 'Please use one of the following browsers: Chrome, Firefox, Safari, Edge, Opera, Brave, or Vivaldi',
+      windows: 'Please use Windows 7 or above',
+      macos: 'Please use macOS Big Sur (11.0) or above',
+      linux: 'Please use mainstream Linux distributions like Ubuntu, Debian, Fedora, CentOS, or Arch Linux',
+      android: 'Please use Android 11 or above',
+      ios: 'Please use iOS 14 or above',
+      os: 'Please use one of the following operating systems: Windows, macOS, Linux, Android, or iOS'
+    }
   }
 } 

@@ -10,72 +10,62 @@ namespace Lean.CodeGen.Application.Services.Identity;
 /// <remarks>
 /// 提供岗位管理相关的业务功能，包括：
 /// 1. 岗位的增删改查
-/// 2. 岗位状态管理
+/// 2. 用户岗位管理
 /// </remarks>
 public interface ILeanPostService
 {
-    /// <summary>
-    /// 创建岗位
-    /// </summary>
-    /// <param name="input">岗位创建参数</param>
-    /// <returns>创建成功的岗位信息</returns>
-    Task<LeanApiResult<long>> CreateAsync(LeanPostCreateDto input);
+  /// <summary>
+  /// 分页查询岗位列表
+  /// </summary>
+  Task<LeanApiResult<LeanPageResult<LeanPostDto>>> GetPageAsync(LeanPostQueryDto input);
 
-    /// <summary>
-    /// 更新岗位
-    /// </summary>
-    /// <param name="input">岗位更新参数</param>
-    /// <returns>更新后的岗位信息</returns>
-    Task<LeanApiResult> UpdateAsync(LeanPostUpdateDto input);
+  /// <summary>
+  /// 获取岗位详情
+  /// </summary>
+  Task<LeanApiResult<LeanPostDto>> GetAsync(long id);
 
-    /// <summary>
-    /// 删除岗位
-    /// </summary>
-    /// <param name="input">岗位删除参数</param>
-    Task<LeanApiResult> DeleteAsync(long id);
+  /// <summary>
+  /// 新增岗位
+  /// </summary>
+  Task<LeanApiResult> CreateAsync(LeanPostCreateDto input);
 
-    /// <summary>
-    /// 批量删除岗位
-    /// </summary>
-    Task<LeanApiResult> BatchDeleteAsync(List<long> ids);
+  /// <summary>
+  /// 更新岗位
+  /// </summary>
+  Task<LeanApiResult> UpdateAsync(LeanPostUpdateDto input);
 
-    /// <summary>
-    /// 获取岗位信息
-    /// </summary>
-    /// <param name="id">岗位ID</param>
-    /// <returns>岗位详细信息</returns>
-    Task<LeanApiResult<LeanPostDto>> GetAsync(long id);
+  /// <summary>
+  /// 删除岗位
+  /// </summary>
+  Task<LeanApiResult> DeleteAsync(long id);
 
-    /// <summary>
-    /// 查询岗位列表
-    /// </summary>
-    /// <param name="input">查询参数</param>
-    /// <returns>岗位列表</returns>
-    Task<List<LeanPostDto>> QueryAsync(LeanPostQueryDto input);
+  /// <summary>
+  /// 批量删除岗位
+  /// </summary>
+  Task<LeanApiResult> BatchDeleteAsync(List<long> ids);
 
-    /// <summary>
-    /// 分页查询岗位
-    /// </summary>
-    Task<LeanApiResult<LeanPageResult<LeanPostDto>>> GetPageAsync(LeanPostQueryDto input);
+  /// <summary>
+  /// 导出岗位列表
+  /// </summary>
+  Task<byte[]> ExportAsync(LeanPostQueryDto input);
 
-    /// <summary>
-    /// 修改岗位状态
-    /// </summary>
-    /// <param name="input">状态修改参数</param>
-    Task<LeanApiResult> SetStatusAsync(LeanPostChangeStatusDto input);
+  /// <summary>
+  /// 获取岗位导入模板
+  /// </summary>
+  Task<byte[]> GetTemplateAsync();
 
-    /// <summary>
-    /// 导出岗位数据
-    /// </summary>
-    Task<byte[]> ExportAsync(LeanPostQueryDto input);
+  /// <summary>
+  /// 导入岗位列表
+  /// </summary>
+  Task<LeanPostImportResultDto> ImportAsync(LeanFileInfo file);
 
-    /// <summary>
-    /// 导入岗位数据
-    /// </summary>
-    Task<LeanPostImportResultDto> ImportAsync(LeanFileInfo file);
+  /// <summary>
+  /// 获取用户岗位列表
+  /// </summary>
+  Task<LeanApiResult<List<LeanPostDto>>> GetUserPostsAsync(long userId);
 
-    /// <summary>
-    /// 获取导入模板
-    /// </summary>
-    Task<byte[]> GetImportTemplateAsync();
+  /// <summary>
+  /// 设置用户岗位
+  /// </summary>
+  Task<LeanApiResult> SetUserPostsAsync(LeanUserPostDto input);
 }

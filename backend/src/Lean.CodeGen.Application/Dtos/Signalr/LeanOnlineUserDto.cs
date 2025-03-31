@@ -11,7 +11,7 @@ public class LeanOnlineUserQueryDto : LeanPage
   /// <summary>
   /// 用户ID
   /// </summary>
-  public string? UserId { get; set; }
+  public long? UserId { get; set; }
 
   /// <summary>
   /// 用户名
@@ -44,7 +44,8 @@ public class LeanOnlineUserDto
   /// <summary>
   /// 用户ID
   /// </summary>
-  public string UserId { get; set; } = null!;
+  [Required(ErrorMessage = "用户ID不能为空")]
+  public long UserId { get; set; }
 
   /// <summary>
   /// 用户名
@@ -60,6 +61,25 @@ public class LeanOnlineUserDto
   /// 连接ID
   /// </summary>
   public string ConnectionId { get; set; } = null!;
+
+  /// <summary>
+  /// 设备ID
+  /// </summary>
+  public string DeviceId { get; set; } = null!;
+
+  /// <summary>
+  /// 设备名称
+  /// </summary>
+  public string? DeviceName { get; set; }
+
+  /// <summary>
+  /// 设备类型
+  /// 0-PC
+  /// 1-Mobile
+  /// 2-Tablet
+  /// 3-Other
+  /// </summary>
+  public int? DeviceType { get; set; }
 
   /// <summary>
   /// 是否在线
@@ -93,7 +113,7 @@ public class LeanOnlineUserUpdateDto
   /// 用户ID
   /// </summary>
   [Required(ErrorMessage = "用户ID不能为空")]
-  public string UserId { get; set; } = null!;
+  public long UserId { get; set; }
 
   /// <summary>
   /// 用户名

@@ -184,4 +184,37 @@ public class LeanLocalizationService : ILeanLocalizationService
       _logger.Error(ex, "Error refreshing translation cache");
     }
   }
+
+  /// <summary>
+  /// 获取本地化文本
+  /// </summary>
+  public string GetLocalizedText(string key)
+  {
+    return GetLocalizedTextAsync(key).GetAwaiter().GetResult();
+  }
+
+  /// <summary>
+  /// 异步获取本地化文本
+  /// </summary>
+  public async Task<string> GetLocalizedTextAsync(string key)
+  {
+    var currentLang = await GetCurrentLanguageAsync();
+    return await GetTranslationAsync(currentLang, key);
+  }
+
+  /// <summary>
+  /// 获取当前语言
+  /// </summary>
+  public string GetCurrentLanguage()
+  {
+    return GetCurrentLanguageAsync().GetAwaiter().GetResult();
+  }
+
+  /// <summary>
+  /// 异步获取当前语言
+  /// </summary>
+  public async Task<string> GetCurrentLanguageAsync()
+  {
+    return _options.DefaultLanguage;
+  }
 }

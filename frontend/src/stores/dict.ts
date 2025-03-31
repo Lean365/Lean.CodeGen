@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { DictData } from '@/types/system/dict'
+import type { DictData } from '@/types/admin/dictData'
+import type { DictData } from '@/types/admin/dictType'
 
 export const useDictStore = defineStore('dict', () => {
   const dictData = ref<Record<string, DictData[]>>({})

@@ -18,3 +18,4 @@ global using System.ComponentModel.DataAnnotations;
 global using Lean.CodeGen.Common.Enums;
 global using Lean.CodeGen.Common.Models;
 global using Lean.CodeGen.Domain.Entities;
+global using Lean.CodeGen.Common.Localization;

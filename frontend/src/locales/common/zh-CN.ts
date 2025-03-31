@@ -183,5 +183,18 @@ export default {
     about: '关于我们',
     privacy: '隐私政策',
     terms: '服务条款'
+  },
+
+  /** 浏览器兼容性 */
+  browser: {
+    unsupported: {
+      browser: '请使用以下浏览器访问：Chrome、Firefox、Safari、Edge、Opera、Brave 或 Vivaldi',
+      windows: '请使用 Windows 7 及以上版本的操作系统',
+      macos: '请使用 macOS Big Sur (11.0) 及以上版本的操作系统',
+      linux: '请使用 Ubuntu、Debian、Fedora、CentOS 或 Arch Linux 等主流 Linux 发行版',
+      android: '请使用 Android 11 及以上版本的操作系统',
+      ios: '请使用 iOS 14 及以上版本的操作系统',
+      os: '请使用以下操作系统：Windows、macOS、Linux、Android 或 iOS'
+    }
   }
 } 

@@ -15,6 +15,7 @@ using Lean.CodeGen.Application.Dtos.Signalr;
 using System.Linq.Expressions;
 using System.IO;
 using Lean.CodeGen.Common.Extensions;
+using Microsoft.Extensions.Logging;
 
 namespace Lean.CodeGen.Application.Services.Signalr;
 
@@ -32,18 +33,73 @@ namespace Lean.CodeGen.Application.Services.Signalr;
 public class LeanOnlineMessageService : LeanBaseService, ILeanOnlineMessageService
 {
   private readonly ILeanRepository<LeanOnlineMessage> _messageRepository;
-  private readonly ILogger _logger;
+  private readonly ILogger<LeanOnlineMessageService> _logger;
 
   /// <summary>
   /// 构造函数
   /// </summary>
+  /// <param name="messageRepository">在线消息仓储接口</param>
+  /// <param name="context">基础服务上下文</param>
+  /// <param name="logger">日志记录器</param>
   public LeanOnlineMessageService(
       ILeanRepository<LeanOnlineMessage> messageRepository,
-      LeanBaseServiceContext context)
+      LeanBaseServiceContext context,
+      ILogger<LeanOnlineMessageService> logger)
       : base(context)
   {
     _messageRepository = messageRepository;
-    _logger = context.Logger;
+    _logger = logger;
+  }
+
+  /// <summary>
+  /// 创建消息
+  /// </summary>
+  public async Task CreateMessageAsync(LeanOnlineMessage message)
+  {
+    message.CreateTime = DateTime.Now;
+    message.UpdateTime = DateTime.Now;
+    await _messageRepository.CreateAsync(message);
+
+    _logger.LogInformation($"创建消息成功，MessageId: {message.Id}, SenderId: {message.SenderId}, ReceiverId: {message.ReceiverId}");
+  }
+
+  /// <summary>
+  /// 获取未读消息
+  /// </summary>
+  public async Task<List<LeanOnlineMessageDto>> GetUnreadMessagesAsync(long userId)
+  {
+    var messages = await _messageRepository.GetListAsync(
+      x => x.ReceiverId == userId && x.IsRead == 0
+    );
+
+    return messages.OrderByDescending(x => x.CreateTime)
+                  .Select(x => x.Adapt<LeanOnlineMessageDto>())
+                  .ToList();
+  }
+
+  /// <summary>
+  /// 标记消息为已读
+  /// </summary>
+  public async Task MarkMessageAsReadAsync(long messageId)
+  {
+    var message = await _messageRepository.FirstOrDefaultAsync(x => x.Id == messageId);
+    if (message != null)
+    {
+      message.IsRead = 1;
+      message.UpdateTime = DateTime.Now;
+      await _messageRepository.UpdateAsync(message);
+
+      _logger.LogInformation($"标记消息已读成功，MessageId: {messageId}");
+    }
+  }
+
+  /// <summary>
+  /// 获取消息详情
+  /// </summary>
+  public async Task<LeanOnlineMessageDto> GetMessageByIdAsync(long messageId)
+  {
+    var message = await _messageRepository.FirstOrDefaultAsync(x => x.Id == messageId);
+    return message.Adapt<LeanOnlineMessageDto>();
   }
 
   /// <summary>
@@ -56,7 +112,7 @@ public class LeanOnlineMessageService : LeanBaseService, ILeanOnlineMessageServi
     var message = new LeanOnlineMessage
     {
       SenderId = input.SenderId,
-      ReceiverId = input.ReceiverId,
+      ReceiverId = input.ReceiverId ?? 0L,
       Content = input.Content,
       MessageType = input.MessageType,
       SendTime = DateTime.Now,
@@ -70,26 +126,13 @@ public class LeanOnlineMessageService : LeanBaseService, ILeanOnlineMessageServi
   }
 
   /// <summary>
-  /// 获取用户未读消息列表
-  /// </summary>
-  /// <param name="userId">用户ID</param>
-  /// <returns>未读消息列表</returns>
-  public async Task<List<LeanOnlineMessageDto>> GetUnreadMessagesAsync(string userId)
-  {
-    var messages = await _messageRepository.GetListAsync(m =>
-        m.ReceiverId == userId &&
-        m.IsRead == 0);
-    return messages.Adapt<List<LeanOnlineMessageDto>>();
-  }
-
-  /// <summary>
   /// 获取用户消息历史
   /// </summary>
   /// <param name="userId">用户ID</param>
   /// <param name="pageSize">每页大小</param>
   /// <param name="pageIndex">页码</param>
   /// <returns>分页消息列表</returns>
-  public async Task<LeanPageResult<LeanOnlineMessageDto>> GetMessageHistoryAsync(string userId, int pageSize, int pageIndex)
+  public async Task<LeanPageResult<LeanOnlineMessageDto>> GetMessageHistoryAsync(long userId, int pageSize, int pageIndex)
   {
     Expression<Func<LeanOnlineMessage, bool>> predicate = m =>
         m.ReceiverId == userId || m.SenderId == userId;
@@ -106,21 +149,6 @@ public class LeanOnlineMessageService : LeanBaseService, ILeanOnlineMessageServi
       Total = result.Total,
       Items = result.Items.Adapt<List<LeanOnlineMessageDto>>()
     };
-  }
-
-  /// <summary>
-  /// 标记消息为已读
-  /// </summary>
-  /// <param name="messageId">消息ID</param>
-  public async Task MarkMessageAsReadAsync(long messageId)
-  {
-    var message = await _messageRepository.GetByIdAsync(messageId);
-    if (message != null && message.IsRead == 0)
-    {
-      message.IsRead = 1;
-      message.UpdateTime = DateTime.Now;
-      await _messageRepository.UpdateAsync(message);
-    }
   }
 
   /// <summary>
@@ -172,14 +200,14 @@ public class LeanOnlineMessageService : LeanBaseService, ILeanOnlineMessageServi
   {
     Expression<Func<LeanOnlineMessage, bool>> predicate = m => true;
 
-    if (!string.IsNullOrEmpty(queryDto.SenderId))
+    if (queryDto.SenderId.HasValue)
     {
-      predicate = predicate.And(m => m.SenderId == queryDto.SenderId);
+      predicate = predicate.And(m => m.SenderId == queryDto.SenderId.Value);
     }
 
-    if (!string.IsNullOrEmpty(queryDto.ReceiverId))
+    if (queryDto.ReceiverId.HasValue)
     {
-      predicate = predicate.And(m => m.ReceiverId == queryDto.ReceiverId);
+      predicate = predicate.And(m => m.ReceiverId == queryDto.ReceiverId.Value);
     }
 
     if (queryDto.IsRead.HasValue)

@@ -81,6 +81,11 @@ public class LeanMenuDto
   public int IsChecked { get; set; }
 
   /// <summary>
+  /// 翻译键
+  /// </summary>
+  public string TransKey { get; set; }
+
+  /// <summary>
   /// 创建时间
   /// </summary>
   public DateTime CreateTime { get; set; }
@@ -89,6 +94,29 @@ public class LeanMenuDto
   /// 更新时间
   /// </summary>
   public DateTime? UpdateTime { get; set; }
+}
+
+/// <summary>
+/// 菜单排序参数
+/// </summary>
+public class LeanMenuSortDto
+{
+  /// <summary>
+  /// 菜单ID
+  /// </summary>
+  [Required(ErrorMessage = "菜单ID不能为空")]
+  public long Id { get; set; }
+
+  /// <summary>
+  /// 排序号
+  /// </summary>
+  [Required(ErrorMessage = "排序号不能为空")]
+  public int OrderNum { get; set; }
+
+  /// <summary>
+  /// 父级ID
+  /// </summary>
+  public long ParentId { get; set; }
 }
 
 /// <summary>
@@ -210,6 +238,12 @@ public class LeanMenuCreateDto
   /// 1-停用
   /// </summary>
   public int MenuStatus { get; set; } = 0;
+
+  /// <summary>
+  /// 翻译键
+  /// </summary>
+  [StringLength(100, ErrorMessage = "翻译键长度不能超过100个字符")]
+  public string TransKey { get; set; }
 }
 
 /// <summary>
@@ -321,6 +355,12 @@ public class LeanMenuImportDto
   /// </summary>
   [LeanExcelColumn("图标", DataType = LeanExcelDataType.String)]
   public string Icon { get; set; } = default!;
+
+  /// <summary>
+  /// 翻译键
+  /// </summary>
+  [LeanExcelColumn("翻译键", DataType = LeanExcelDataType.String)]
+  public string TransKey { get; set; } = default!;
 }
 
 /// <summary>
@@ -378,6 +418,12 @@ public class LeanMenuImportTemplateDto
   /// </summary>
   [StringLength(200, ErrorMessage = "组件路径长度不能超过200个字符")]
   public string Component { get; set; } = default!;
+
+  /// <summary>
+  /// 翻译键
+  /// </summary>
+  [StringLength(100, ErrorMessage = "翻译键长度不能超过100个字符")]
+  public string TransKey { get; set; } = default!;
 }
 
 /// <summary>
@@ -404,7 +450,7 @@ public class LeanMenuImportResultDto : LeanImportResult
   /// <summary>
   /// 错误消息
   /// </summary>
-  public string? ErrorMessage { get; set; }
+  public new string ErrorMessage { get; set; } = string.Empty;
 
   /// <summary>
   /// 添加错误
@@ -527,4 +573,10 @@ public class LeanMenuExportDto
   /// </summary>
   [LeanExcelColumn("创建时间", DataType = LeanExcelDataType.DateTime)]
   public DateTime CreateTime { get; set; }
+
+  /// <summary>
+  /// 翻译键
+  /// </summary>
+  [LeanExcelColumn("翻译键", DataType = LeanExcelDataType.String)]
+  public string TransKey { get; set; } = default!;
 }

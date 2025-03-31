@@ -343,7 +343,7 @@ public class LeanConfigService : LeanBaseService, ILeanConfigService
     /// <summary>
     /// 获取导入模板
     /// </summary>
-    public Task<byte[]> GetImportTemplateAsync()
+    public Task<byte[]> GetTemplateAsync()
     {
         var template = new List<LeanConfigImportTemplateDto>
     {

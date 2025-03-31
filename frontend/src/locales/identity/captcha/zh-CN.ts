@@ -15,6 +15,7 @@ export default {
       background: '背景图片加载失败',
       slider: '滑块图片加载失败'
     },
-    validate: '请先完成滑块验证'
+    validate: '请先完成滑块验证',
+    refreshFailed: '刷新验证码失败'
   }
 } 

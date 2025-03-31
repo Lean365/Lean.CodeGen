@@ -1,13 +1,19 @@
 <template>
   <a-breadcrumb class="breadcrumb">
+    <a-breadcrumb-item>
+      <router-link to="/dashboard/index">
+        <HomeOutlined class="breadcrumb-icon" />
+        <span>{{ t('menu.dashboard.index') }}</span>
+      </router-link>
+    </a-breadcrumb-item>
     <a-breadcrumb-item v-for="item in breadcrumbItems" :key="item.path">
       <router-link v-if="item.path && !item.isLast" :to="item.path">
-        <component :is="item.icon || 'HomeOutlined'" class="breadcrumb-icon" />
-        <span>{{ t(item.title) }}</span>
+        <component :is="item.icon" class="breadcrumb-icon" />
+        <span>{{ item.transKey ? t(item.transKey) : item.title }}</span>
       </router-link>
       <span v-else>
-        <component :is="item.icon || 'HomeOutlined'" class="breadcrumb-icon" />
-        <span>{{ t(item.title) }}</span>
+        <component :is="item.icon" class="breadcrumb-icon" />
+        <span>{{ item.transKey ? t(item.transKey) : item.title }}</span>
       </span>
     </a-breadcrumb-item>
   </a-breadcrumb>
@@ -17,6 +23,7 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { HomeOutlined } from '@ant-design/icons-vue'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -26,16 +33,20 @@ interface BreadcrumbItem {
   path?: string
   isLast?: boolean
   icon?: string
+  transKey?: string
 }
 
-const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
+const breadcrumbItems = computed(() => {
   const { matched } = route
-  return matched.map((item, index) => ({
-    title: item.meta?.title as string || '',
-    path: item.path,
-    isLast: index === matched.length - 1,
-    icon: item.meta?.icon || 'HomeOutlined'
-  }))
+  return matched
+    .filter(item => item.path !== '/' && item.path !== '/dashboard/index')
+    .map((item, index, filteredMatched) => ({
+      title: item.meta?.title as string || '',
+      path: item.path,
+      isLast: index === filteredMatched.length - 1,
+      icon: item.meta?.icon as string,
+      transKey: item.meta?.transKey as string
+    }))
 })
 </script>
 
@@ -49,7 +60,6 @@ const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
 
   :deep(.ant-breadcrumb-separator) {
     margin: 0 8px;
-    color: rgba(0, 0, 0, 0.45);
     display: inline-flex;
     align-items: center;
     height: 22px;
@@ -71,20 +81,13 @@ const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
     }
 
     a {
-      color: rgba(0, 0, 0, 0.45);
-      transition: color 0.3s;
       display: inline-flex;
       align-items: center;
       height: inherit;
       line-height: inherit;
-
-      &:hover {
-        color: var(--ant-primary-color);
-      }
     }
 
     span {
-      color: rgba(0, 0, 0, 0.85);
       font-weight: 500;
       display: inline-flex;
       align-items: center;

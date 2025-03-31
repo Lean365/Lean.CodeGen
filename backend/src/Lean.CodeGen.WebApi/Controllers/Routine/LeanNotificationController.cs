@@ -43,8 +43,9 @@ public class LeanNotificationController : LeanBaseController
       ILeanNotificationService notificationService,
       ILeanLocalizationService localizationService,
       IConfiguration configuration,
+      ILeanUserContext userContext,
       NLog.ILogger logger)
-      : base(localizationService, configuration)
+      : base(localizationService, configuration, userContext)
   {
     _notificationService = notificationService;
     _logger = logger;
@@ -183,9 +184,9 @@ public class LeanNotificationController : LeanBaseController
   /// </summary>
   [HttpGet("template")]
   [LeanPermission("routine:notification:import", "导入通知")]
-  public async Task<IActionResult> GetImportTemplateAsync()
+  public async Task<IActionResult> GetTemplateAsync()
   {
-    var bytes = await _notificationService.GetImportTemplateAsync();
+    var bytes = await _notificationService.GetTemplateAsync();
     var fileName = $"notification_template_{DateTime.Now:yyyyMMddHHmmss}.xlsx";
     return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
   }

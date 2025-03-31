@@ -22,6 +22,7 @@ namespace Lean.CodeGen.WebApi.Controllers.Identity;
 [ApiController]
 [Route("api/[controller]")]
 [ApiExplorerSettings(GroupName = "identity")]
+[LeanPermission("identity:user", "用户管理")]
 public class LeanUserController : LeanBaseController
 {
   private readonly ILeanUserService _userService;
@@ -32,13 +33,41 @@ public class LeanUserController : LeanBaseController
   /// <param name="userService">用户服务</param>
   /// <param name="localizationService">本地化服务</param>
   /// <param name="configuration">配置</param>
+  /// <param name="userContext">用户上下文</param>
   public LeanUserController(
       ILeanUserService userService,
       ILeanLocalizationService localizationService,
-      IConfiguration configuration)
-      : base(localizationService, configuration)
+      IConfiguration configuration,
+      ILeanUserContext userContext)
+      : base(localizationService, configuration, userContext)
   {
     _userService = userService;
+  }
+
+  /// <summary>
+  /// 分页查询用户
+  /// </summary>
+  /// <param name="input">查询参数</param>
+  /// <returns>分页查询结果</returns>
+  [LeanPermission("identity:user:list", "查询用户")]
+  [HttpGet("list")]
+  public async Task<IActionResult> GetPageAsync([FromQuery] LeanUserQueryDto input)
+  {
+    var result = await _userService.GetPageAsync(input);
+    return Success(result, LeanBusinessType.Query);
+  }
+
+  /// <summary>
+  /// 获取用户信息
+  /// </summary>
+  /// <param name="id">用户ID</param>
+  /// <returns>用户详细信息</returns>
+  [LeanPermission("identity:user:query", "查询用户")]
+  [HttpGet("{id}")]
+  public async Task<IActionResult> GetAsync(long id)
+  {
+    var result = await _userService.GetAsync(id);
+    return Success(result, LeanBusinessType.Query);
   }
 
   /// <summary>
@@ -46,6 +75,7 @@ public class LeanUserController : LeanBaseController
   /// </summary>
   /// <param name="input">用户创建参数</param>
   /// <returns>创建成功的用户信息</returns>
+  [LeanPermission("identity:user:create", "新增用户")]
   [HttpPost]
   public async Task<IActionResult> CreateAsync([FromBody] LeanUserCreateDto input)
   {
@@ -58,6 +88,7 @@ public class LeanUserController : LeanBaseController
   /// </summary>
   /// <param name="input">用户更新参数</param>
   /// <returns>更新后的用户信息</returns>
+  [LeanPermission("identity:user:update", "修改用户")]
   [HttpPut]
   public async Task<IActionResult> UpdateAsync([FromBody] LeanUserUpdateDto input)
   {
@@ -69,6 +100,7 @@ public class LeanUserController : LeanBaseController
   /// 删除用户
   /// </summary>
   /// <param name="input">用户删除参数</param>
+  [LeanPermission("identity:user:delete", "删除用户")]
   [HttpDelete]
   public async Task<IActionResult> DeleteAsync([FromBody] LeanUserDeleteDto input)
   {
@@ -77,49 +109,41 @@ public class LeanUserController : LeanBaseController
   }
 
   /// <summary>
-  /// 获取用户信息
+  /// 导出用户
   /// </summary>
-  /// <param name="id">用户ID</param>
-  /// <returns>用户详细信息</returns>
-  [HttpGet("{id}")]
-  public async Task<IActionResult> GetAsync(long id)
+  /// <param name="input">导出参数</param>
+  /// <returns>导出的文件</returns>
+  [LeanPermission("identity:user:export", "导出用户")]
+  [HttpGet("export")]
+  public async Task<IActionResult> ExportAsync([FromQuery] LeanUserExportDto input)
   {
-    var result = await _userService.GetAsync(id);
-    return Success(result, LeanBusinessType.Query);
+    var fileBytes = await _userService.ExportAsync(input);
+    return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "users.xlsx");
   }
 
   /// <summary>
-  /// 分页查询用户
+  /// 导入用户
   /// </summary>
-  /// <param name="input">查询参数</param>
-  /// <returns>分页查询结果</returns>
-  [HttpGet]
-  public async Task<IActionResult> QueryAsync([FromQuery] LeanUserQueryDto input)
+  /// <param name="file">Excel文件</param>
+  /// <returns>导入结果</returns>
+  [LeanPermission("identity:user:import", "导入用户")]
+  [HttpPost("import")]
+  public async Task<IActionResult> ImportAsync([FromForm] LeanFileInfo file)
   {
-    var result = await _userService.QueryAsync(input);
-    return Success(result, LeanBusinessType.Query);
+    var result = await _userService.ImportAsync(file);
+    return Success(result, LeanBusinessType.Import);
   }
 
   /// <summary>
-  /// 修改用户状态
+  /// 获取导入模板
   /// </summary>
-  /// <param name="input">状态修改参数</param>
-  [HttpPut("status")]
-  public async Task<IActionResult> ChangeStatusAsync([FromBody] LeanUserChangeStatusDto input)
+  /// <returns>模板文件</returns>
+  [LeanPermission("identity:user:import", "导入用户")]
+  [HttpGet("import-template")]
+  public async Task<IActionResult> GetTemplateAsync()
   {
-    await _userService.ChangeStatusAsync(input);
-    return Success(LeanBusinessType.Update);
-  }
-
-  /// <summary>
-  /// 重置用户密码
-  /// </summary>
-  /// <param name="input">重置密码参数</param>
-  [HttpPut("reset-password")]
-  public async Task<IActionResult> ResetPasswordAsync([FromBody] LeanUserResetPasswordDto input)
-  {
-    await _userService.ResetPasswordAsync(input);
-    return Success(LeanBusinessType.Update);
+    var fileBytes = await _userService.GetTemplateAsync();
+    return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "user-import-template.xlsx");
   }
 
   /// <summary>
@@ -134,38 +158,26 @@ public class LeanUserController : LeanBaseController
   }
 
   /// <summary>
-  /// 导出用户
+  /// 重置用户密码
   /// </summary>
-  /// <param name="input">导出参数</param>
-  /// <returns>导出的文件</returns>
-  [HttpGet("export")]
-  public async Task<IActionResult> ExportAsync([FromQuery] LeanUserExportDto input)
+  /// <param name="input">重置密码参数</param>
+  [LeanPermission("identity:user:update", "修改用户")]
+  [HttpPut("reset-password")]
+  public async Task<IActionResult> ResetPasswordAsync([FromBody] LeanUserResetPasswordDto input)
   {
-    var fileBytes = await _userService.ExportAsync(input);
-    return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "users.xlsx");
+    await _userService.ResetPasswordAsync(input);
+    return Success(LeanBusinessType.Update);
   }
 
   /// <summary>
-  /// 导入用户
+  /// 修改用户状态
   /// </summary>
-  /// <param name="file">Excel文件</param>
-  /// <returns>导入结果</returns>
-  [HttpPost("import")]
-  [LeanPermission("system:user:import", "导入用户")]
-  public async Task<IActionResult> ImportAsync([FromForm] LeanFileInfo file)
+  /// <param name="input">状态修改参数</param>
+  [LeanPermission("identity:user:update", "修改用户")]
+  [HttpPut("status")]
+  public async Task<IActionResult> ChangeStatusAsync([FromBody] LeanUserChangeStatusDto input)
   {
-    var result = await _userService.ImportAsync(file);
-    return Success(result, LeanBusinessType.Import);
-  }
-
-  /// <summary>
-  /// 获取导入模板
-  /// </summary>
-  /// <returns>模板文件</returns>
-  [HttpGet("import-template")]
-  public async Task<IActionResult> GetImportTemplateAsync()
-  {
-    var fileBytes = await _userService.GetImportTemplateAsync();
-    return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "user-import-template.xlsx");
+    await _userService.ChangeStatusAsync(input);
+    return Success(LeanBusinessType.Update);
   }
 }

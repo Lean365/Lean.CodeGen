@@ -8,13 +8,14 @@ global using System.Threading.Tasks;
 // Microsoft 扩展
 global using Microsoft.Extensions.DependencyInjection;
 global using Microsoft.Extensions.Configuration;
-global  using NLog;
+global using NLog;
 global using Microsoft.Extensions.Options;
 
 // 第三方库
 global using SqlSugar;
 
 // 项目命名空间
+global using Lean.CodeGen.Common.Localization;
 //global using Lean.CodeGen.Common.Enums;
 //global using Lean.CodeGen.Common.Extensions;
 //global using Lean.CodeGen.Common.Helpers;

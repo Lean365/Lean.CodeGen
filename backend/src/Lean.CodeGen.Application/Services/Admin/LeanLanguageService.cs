@@ -346,7 +346,7 @@ public class LeanLanguageService : LeanBaseService, ILeanLanguageService
   /// <summary>
   /// 获取导入模板
   /// </summary>
-  public Task<byte[]> GetImportTemplateAsync()
+  public Task<byte[]> GetTemplateAsync()
   {
     var template = new List<LeanLanguageImportTemplateDto>
     {

@@ -25,8 +25,17 @@ public class LeanOnlineMessage : LeanBaseEntity
   /// <remarks>
   /// 消息发送者的用户ID
   /// </remarks>
-  [SugarColumn(ColumnName = "sender_id", ColumnDescription = "发送者ID", Length = 50, IsNullable = false, ColumnDataType = "nvarchar")]
-  public string SenderId { get; set; } = default!;
+  [SugarColumn(ColumnName = "sender_id", ColumnDescription = "发送者ID", IsNullable = false, ColumnDataType = "bigint")]
+  public long SenderId { get; set; }
+
+  /// <summary>
+  /// 发送者设备ID
+  /// </summary>
+  /// <remarks>
+  /// 发送者设备的唯一标识
+  /// </remarks>
+  [SugarColumn(ColumnName = "sender_device_id", ColumnDescription = "发送者设备ID", Length = 100, IsNullable = false, ColumnDataType = "nvarchar")]
+  public string SenderDeviceId { get; set; } = default!;
 
   /// <summary>
   /// 发送者名称
@@ -50,10 +59,19 @@ public class LeanOnlineMessage : LeanBaseEntity
   /// 接收者ID
   /// </summary>
   /// <remarks>
-  /// 消息接收者的用户ID，为空表示群发消息
+  /// 消息接收者的用户ID
   /// </remarks>
-  [SugarColumn(ColumnName = "receiver_id", ColumnDescription = "接收者ID", Length = 50, IsNullable = true, ColumnDataType = "nvarchar")]
-  public string? ReceiverId { get; set; }
+  [SugarColumn(ColumnName = "receiver_id", ColumnDescription = "接收者ID", IsNullable = false, ColumnDataType = "bigint")]
+  public long ReceiverId { get; set; }
+
+  /// <summary>
+  /// 接收者设备ID
+  /// </summary>
+  /// <remarks>
+  /// 接收者设备的唯一标识
+  /// </remarks>
+  [SugarColumn(ColumnName = "receiver_device_id", ColumnDescription = "接收者设备ID", Length = 100, IsNullable = false, ColumnDataType = "nvarchar")]
+  public string ReceiverDeviceId { get; set; } = default!;
 
   /// <summary>
   /// 接收者名称
@@ -61,8 +79,8 @@ public class LeanOnlineMessage : LeanBaseEntity
   /// <remarks>
   /// 消息接收者的显示名称
   /// </remarks>
-  [SugarColumn(ColumnName = "receiver_name", ColumnDescription = "接收者名称", Length = 50, IsNullable = true, ColumnDataType = "nvarchar")]
-  public string? ReceiverName { get; set; }
+  [SugarColumn(ColumnName = "receiver_name", ColumnDescription = "接收者名称", Length = 50, IsNullable = false, ColumnDataType = "nvarchar")]
+  public string ReceiverName { get; set; } = default!;
 
   /// <summary>
   /// 消息内容

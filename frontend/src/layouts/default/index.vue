@@ -6,7 +6,7 @@
         <img src="@/assets/images/logo/logo.svg" alt="logo" />
         <h1 v-show="!collapsed">{{ t('app.name') }}</h1>
       </div>
-      <HbtMenu />
+      <Sidemenu />
     </a-layout-sider>
 
     <a-layout>
@@ -42,7 +42,7 @@
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import HbtHeader from '@/components/navigation/header/index.vue'
-import HbtMenu from '@/components/navigation/menu/index.vue'
+import Sidemenu from '@/components/navigation/sidemenu/index.vue'
 import HbtFooter from '@/components/navigation/footer/index.vue'
 import HbtBreadcrumb from '@/components/navigation/breadcrumb/index.vue'
 
@@ -56,16 +56,23 @@ const handleCollapse = (value: boolean) => {
 
 <style lang="less" scoped>
 .layout-container {
-  min-height: 100vh;
+  height: 100vh;
+  display: flex;
+  overflow: hidden;
 
   .layout-sider {
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+
     .logo {
       height: 64px;
       padding: 16px;
       display: flex;
       align-items: center;
       overflow: hidden;
-      border-bottom: 1px solid var(--color-border);
+      flex-shrink: 0;
 
       img {
         width: 32px;
@@ -74,7 +81,6 @@ const handleCollapse = (value: boolean) => {
 
       h1 {
         margin: 0 0 0 12px;
-        color: var(--color-text);
         font-weight: 600;
         font-size: 18px;
         line-height: 32px;
@@ -82,28 +88,49 @@ const handleCollapse = (value: boolean) => {
         overflow: hidden;
       }
     }
+
+    :deep(.ant-menu) {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
   }
 
-  .content-header {
-    padding: 16px 24px;
-    background: var(--color-bg-container);
-    border-bottom: 1px solid var(--color-border);
-  }
+  .ant-layout {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 
-  .content-main {
-    margin: 24px 16px;
-    padding: 24px;
-    background: var(--color-bg-container);
-    border-radius: 4px;
-    min-height: 280px;
-  }
+    .ant-layout-header {
+      flex-shrink: 0;
+    }
 
-  .layout-footer {
-    text-align: center;
-    padding: 16px 50px;
-    color: var(--color-text-secondary);
-    background: var(--color-bg-container);
-    border-top: 1px solid var(--color-border);
+    .ant-layout-content {
+      flex: 1;
+      overflow: auto;
+      padding: 16px 24px;
+      background: var(--color-bg-container);
+
+      .content-header {
+        margin-bottom: 8px;
+        height: 32px;
+        line-height: 32px;
+      }
+
+      .content-main {
+        background: var(--color-bg-container);
+        padding: 16px;
+        border-radius: 4px;
+        min-height: 280px;
+      }
+    }
+
+    .ant-layout-footer {
+      flex-shrink: 0;
+      text-align: center;
+      padding: 16px 50px;
+    }
   }
 }
 

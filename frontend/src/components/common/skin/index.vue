@@ -1,91 +1,115 @@
 <template>
-  <a-dropdown>
-    <a-button type="text" class="action-button">
-      <SkinOutlined />
-    </a-button>
-    <template #overlay>
-      <a-menu @click="handleSkinChange">
-        <a-menu-item key="default">
-          <CheckOutlined v-if="currentSkin === 'default'" />
-          <span>默认皮肤</span>
-        </a-menu-item>
-        <a-menu-item key="blue">
-          <CheckOutlined v-if="currentSkin === 'blue'" />
-          <span>蓝色</span>
-        </a-menu-item>
-        <a-menu-item key="green">
-          <CheckOutlined v-if="currentSkin === 'green'" />
-          <span>绿色</span>
-        </a-menu-item>
-        <a-menu-item key="purple">
-          <CheckOutlined v-if="currentSkin === 'purple'" />
-          <span>紫色</span>
-        </a-menu-item>
-        <a-menu-divider />
-        <a-menu-item key="custom">
-          <SettingOutlined />
-          <span>自定义</span>
-        </a-menu-item>
-      </a-menu>
-    </template>
-  </a-dropdown>
+  <a-config-provider :theme="themeConfig">
+    <a-dropdown>
+      <a-button type="text" class="action-button">
+        <SkinOutlined />
+      </a-button>
+      <template #overlay>
+        <a-menu @click="handleSkinChange">
+          <a-menu-item key="default">
+            <CheckOutlined v-if="currentSkin === 'default'" />
+            <span>{{ t('skin.default') }}</span>
+          </a-menu-item>
+          <a-menu-item key="blue">
+            <CheckOutlined v-if="currentSkin === 'blue'" />
+            <span>{{ t('skin.blue') }}</span>
+          </a-menu-item>
+          <a-menu-item key="green">
+            <CheckOutlined v-if="currentSkin === 'green'" />
+            <span>{{ t('skin.green') }}</span>
+          </a-menu-item>
+          <a-menu-item key="purple">
+            <CheckOutlined v-if="currentSkin === 'purple'" />
+            <span>{{ t('skin.purple') }}</span>
+          </a-menu-item>
+          <a-menu-divider />
+          <a-menu-item key="custom">
+            <SettingOutlined />
+            <span>{{ t('skin.custom') }}</span>
+          </a-menu-item>
+        </a-menu>
+      </template>
+    </a-dropdown>
 
-  <a-modal v-model:visible="customVisible" title="自定义皮肤" @ok="handleCustomSave" @cancel="handleCustomCancel">
-    <div class="custom-skin-form">
-      <a-form :model="customForm" layout="vertical">
-        <a-form-item label="主色调">
-          <a-color-picker v-model:value="customForm.primary" />
-          <a-select v-model:value="customForm.borderRadius" style="width: 120px; margin-left: 8px;">
-            <a-select-option value="2">圆角 2px</a-select-option>
-            <a-select-option value="4">圆角 4px</a-select-option>
-            <a-select-option value="6">圆角 6px</a-select-option>
-            <a-select-option value="8">圆角 8px</a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item label="背景色">
-          <a-color-picker v-model:value="customForm.background" />
-          <a-select v-model:value="customForm.colorSaturation" style="width: 120px; margin-left: 8px;">
-            <a-select-option value="95">浅色</a-select-option>
-            <a-select-option value="85">适中</a-select-option>
-            <a-select-option value="75">深色</a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item label="文字颜色">
-          <a-color-picker v-model:value="customForm.text" />
-          <a-select v-model:value="customForm.fontSize" style="width: 120px; margin-left: 8px;">
-            <a-select-option value="12">小号</a-select-option>
-            <a-select-option value="14">中号</a-select-option>
-            <a-select-option value="16">大号</a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item label="链接颜色">
-          <a-color-picker v-model:value="customForm.link" />
-          <a-switch v-model:checked="customForm.enableHover" checkedChildren="悬停效果" unCheckedChildren="无效果"
-            style="margin-left: 8px;" />
-        </a-form-item>
-        <a-form-item label="阴影效果">
-          <a-select v-model:value="customForm.shadowStyle" style="width: 100%;">
-            <a-select-option value="none">无阴影</a-select-option>
-            <a-select-option value="light">浅阴影</a-select-option>
-            <a-select-option value="medium">中等阴影</a-select-option>
-            <a-select-option value="strong">深阴影</a-select-option>
-          </a-select>
-        </a-form-item>
-      </a-form>
-    </div>
-  </a-modal>
+    <a-modal v-model:open="customVisible" :title="t('skin.customTitle')" @ok="handleCustomSave"
+      @cancel="handleCustomCancel">
+      <div class="custom-skin-form">
+        <a-form :model="customForm" layout="vertical">
+          <a-form-item :label="t('skin.primaryColor')">
+            <a-input v-model:value="customForm.primary" type="color" style="width: 180px;" />
+            <a-select v-model:value="customForm.borderRadius" style="width: 120px; margin-left: 8px;">
+              <a-select-option value="2">{{ t('skin.borderRadius2') }}</a-select-option>
+              <a-select-option value="4">{{ t('skin.borderRadius4') }}</a-select-option>
+              <a-select-option value="6">{{ t('skin.borderRadius6') }}</a-select-option>
+              <a-select-option value="8">{{ t('skin.borderRadius8') }}</a-select-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item :label="t('skin.backgroundColor')">
+            <a-input v-model:value="customForm.background" type="color" style="width: 180px;" />
+            <a-select v-model:value="customForm.colorSaturation" style="width: 120px; margin-left: 8px;">
+              <a-select-option value="95">{{ t('skin.lightColor') }}</a-select-option>
+              <a-select-option value="85">{{ t('skin.mediumColor') }}</a-select-option>
+              <a-select-option value="75">{{ t('skin.darkColor') }}</a-select-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item :label="t('skin.textColor')">
+            <a-input v-model:value="customForm.text" type="color" style="width: 180px;" />
+            <a-select v-model:value="customForm.fontSize" style="width: 120px; margin-left: 8px;">
+              <a-select-option value="12">{{ t('skin.smallFont') }}</a-select-option>
+              <a-select-option value="14">{{ t('skin.mediumFont') }}</a-select-option>
+              <a-select-option value="16">{{ t('skin.largeFont') }}</a-select-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item :label="t('skin.linkColor')">
+            <a-input v-model:value="customForm.link" type="color" style="width: 180px;" />
+            <a-switch v-model:checked="customForm.enableHover" :checked-children="t('skin.hoverEffect')"
+              :un-checked-children="t('skin.noEffect')" style="margin-left: 8px;" />
+          </a-form-item>
+          <a-form-item :label="t('skin.shadowStyle')">
+            <a-select v-model:value="customForm.shadowStyle" style="width: 100%;">
+              <a-select-option value="none">{{ t('skin.noShadow') }}</a-select-option>
+              <a-select-option value="light">{{ t('skin.lightShadow') }}</a-select-option>
+              <a-select-option value="medium">{{ t('skin.mediumShadow') }}</a-select-option>
+              <a-select-option value="strong">{{ t('skin.strongShadow') }}</a-select-option>
+            </a-select>
+          </a-form-item>
+        </a-form>
+      </div>
+    </a-modal>
+  </a-config-provider>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue'
 import { SkinOutlined, CheckOutlined, SettingOutlined } from '@ant-design/icons-vue'
+import { useI18n } from 'vue-i18n'
 import { useSkinStore } from '@/stores/skin'
 import type { SkinType } from '@/stores/skin'
+import type { MenuClickEventHandler } from 'ant-design-vue/es/menu/src/interface'
+import { theme } from 'ant-design-vue'
 
+const { t } = useI18n()
 const skinStore = useSkinStore()
 const customVisible = ref(false)
 
 const currentSkin = computed(() => skinStore.currentSkin)
+
+const themeConfig = computed(() => ({
+  token: {
+    colorPrimary: customForm.primary,
+    borderRadius: parseInt(customForm.borderRadius),
+    colorBgContainer: customForm.background,
+    colorText: customForm.text,
+    colorLink: customForm.link,
+    fontSize: parseInt(customForm.fontSize),
+    colorBgElevated: customForm.background,
+    boxShadow: customForm.shadowStyle === 'none' ? 'none' :
+      customForm.shadowStyle === 'light' ? '0 2px 8px rgba(0, 0, 0, 0.15)' :
+        customForm.shadowStyle === 'medium' ? '0 4px 12px rgba(0, 0, 0, 0.15)' :
+          '0 8px 24px rgba(0, 0, 0, 0.15)',
+    algorithm: theme.defaultAlgorithm
+  }
+}))
 
 const customForm = reactive({
   primary: '#1890ff',
@@ -99,11 +123,11 @@ const customForm = reactive({
   shadowStyle: 'light'
 })
 
-const handleSkinChange = (e: { key: SkinType }) => {
+const handleSkinChange: MenuClickEventHandler = (e) => {
   if (e.key === 'custom') {
     customVisible.value = true
   } else {
-    skinStore.setSkin(e.key)
+    skinStore.setSkin(e.key as SkinType)
   }
 }
 
@@ -142,10 +166,6 @@ const handleCustomCancel = () => {
 
   :deep(.ant-form-item) {
     margin-bottom: 16px;
-  }
-
-  :deep(.ant-color-picker) {
-    width: 180px;
   }
 }
 </style>

@@ -62,5 +62,5 @@ public interface ILeanDictDataService
     /// <summary>
     /// 获取导入模板
     /// </summary>
-    Task<byte[]> GetImportTemplateAsync();
+    Task<byte[]> GetTemplateAsync();
 }

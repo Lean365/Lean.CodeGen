@@ -35,7 +35,7 @@ public static class LeanSwaggerSetup
   /// <summary>
   /// 日志记录器实例
   /// </summary>
-  private static readonly NLog.ILogger _logger = LogManager.GetCurrentClassLogger();
+  private static readonly NLog.ILogger _logger = LogManager.GetLogger("LeanLog");
 
   /// <summary>
   /// 添加Swagger服务到依赖注入容器

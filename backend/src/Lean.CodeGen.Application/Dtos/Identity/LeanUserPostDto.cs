@@ -1,31 +1,21 @@
-using Lean.CodeGen.Common.Enums;
+using System.ComponentModel.DataAnnotations;
 
 namespace Lean.CodeGen.Application.Dtos.Identity;
 
 /// <summary>
-/// 用户岗位关联参数
+/// 用户岗位DTO
 /// </summary>
 public class LeanUserPostDto
 {
   /// <summary>
-  /// 岗位ID
+  /// 用户ID
   /// </summary>
-  public long PostId { get; set; }
+  [Required(ErrorMessage = "用户ID不能为空")]
+  public long UserId { get; set; }
 
   /// <summary>
-  /// 岗位名称
+  /// 岗位ID列表
   /// </summary>
-  public string PostName { get; set; } = string.Empty;
-
-  /// <summary>
-  /// 岗位编码
-  /// </summary>
-  public string PostCode { get; set; } = string.Empty;
-
-  /// <summary>
-  /// 是否主岗位
-  /// 0-否
-  /// 1-是
-  /// </summary>
-  public int IsPrimary { get; set; }
+  [Required(ErrorMessage = "岗位ID列表不能为空")]
+  public List<long> PostIds { get; set; } = new();
 }

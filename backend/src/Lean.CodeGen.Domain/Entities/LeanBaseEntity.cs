@@ -35,6 +35,15 @@ public abstract class LeanBaseEntity
   #region 创建信息
 
   /// <summary>
+  /// 创建者
+  /// </summary>
+  /// <remarks>
+  /// 记录创建实体的用户信息
+  /// </remarks>
+  [SugarColumn(ColumnName = "create_by", ColumnDescription = "创建者", Length = 50, IsNullable = true, ColumnDataType = "nvarchar")]
+  public string? CreateBy { get; set; }
+
+  /// <summary>
   /// 创建时间
   /// </summary>
   /// <remarks>
@@ -43,27 +52,18 @@ public abstract class LeanBaseEntity
   [SugarColumn(ColumnName = "create_time", ColumnDescription = "创建时间", IsNullable = false, ColumnDataType = "datetime")]
   public DateTime CreateTime { get; set; }
 
-  /// <summary>
-  /// 创建者ID
-  /// </summary>
-  /// <remarks>
-  /// 记录创建实体的用户ID
-  /// </remarks>
-  [SugarColumn(ColumnName = "create_user_id", ColumnDescription = "创建者ID", IsNullable = true, ColumnDataType = "bigint")]
-  public long? CreateUserId { get; set; }
-
-  /// <summary>
-  /// 创建者
-  /// </summary>
-  /// <remarks>
-  /// 记录创建实体的用户名称
-  /// </remarks>
-  [SugarColumn(ColumnName = "create_user_name", ColumnDescription = "创建者", Length = 50, IsNullable = true, ColumnDataType = "nvarchar")]
-  public string? CreateUserName { get; set; }
-
   #endregion
 
   #region 更新信息
+
+  /// <summary>
+  /// 更新者
+  /// </summary>
+  /// <remarks>
+  /// 记录最后一次更新实体的用户信息
+  /// </remarks>
+  [SugarColumn(ColumnName = "update_by", ColumnDescription = "更新者", Length = 50, IsNullable = true, ColumnDataType = "nvarchar")]
+  public string? UpdateBy { get; set; }
 
   /// <summary>
   /// 更新时间
@@ -73,24 +73,6 @@ public abstract class LeanBaseEntity
   /// </remarks>
   [SugarColumn(ColumnName = "update_time", ColumnDescription = "更新时间", IsNullable = true, ColumnDataType = "datetime")]
   public DateTime? UpdateTime { get; set; }
-
-  /// <summary>
-  /// 更新者ID
-  /// </summary>
-  /// <remarks>
-  /// 记录最后一次更新实体的用户ID
-  /// </remarks>
-  [SugarColumn(ColumnName = "update_user_id", ColumnDescription = "更新者ID", IsNullable = true, ColumnDataType = "bigint")]
-  public long? UpdateUserId { get; set; }
-
-  /// <summary>
-  /// 更新者
-  /// </summary>
-  /// <remarks>
-  /// 记录最后一次更新实体的用户名称
-  /// </remarks>
-  [SugarColumn(ColumnName = "update_user_name", ColumnDescription = "更新者", Length = 50, IsNullable = true, ColumnDataType = "nvarchar")]
-  public string? UpdateUserName { get; set; }
 
   #endregion
 
@@ -106,22 +88,13 @@ public abstract class LeanBaseEntity
   public int AuditStatus { get; set; }
 
   /// <summary>
-  /// 审核人员ID
-  /// </summary>
-  /// <remarks>
-  /// 记录执行审核操作的用户ID
-  /// </remarks>
-  [SugarColumn(ColumnName = "audit_user_id", ColumnDescription = "审核人员ID", IsNullable = true, ColumnDataType = "bigint")]
-  public long? AuditUserId { get; set; }
-
-  /// <summary>
   /// 审核人员
   /// </summary>
   /// <remarks>
-  /// 记录执行审核操作的用户名称
+  /// 记录执行审核操作的用户信息
   /// </remarks>
-  [SugarColumn(ColumnName = "audit_user_name", ColumnDescription = "审核人员", Length = 50, IsNullable = true, ColumnDataType = "nvarchar")]
-  public string? AuditUserName { get; set; }
+  [SugarColumn(ColumnName = "audit_by", ColumnDescription = "审核人员", Length = 50, IsNullable = true, ColumnDataType = "nvarchar")]
+  public string? AuditBy { get; set; }
 
   /// <summary>
   /// 审核时间
@@ -146,22 +119,13 @@ public abstract class LeanBaseEntity
   #region 撤销信息
 
   /// <summary>
-  /// 撤销人员ID
-  /// </summary>
-  /// <remarks>
-  /// 记录执行撤销操作的用户ID
-  /// </remarks>
-  [SugarColumn(ColumnName = "revoke_user_id", ColumnDescription = "撤销人员ID", IsNullable = true, ColumnDataType = "bigint")]
-  public long? RevokeUserId { get; set; }
-
-  /// <summary>
   /// 撤销人员
   /// </summary>
   /// <remarks>
-  /// 记录执行撤销操作的用户名称
+  /// 记录执行撤销操作的用户信息
   /// </remarks>
-  [SugarColumn(ColumnName = "revoke_user_name", ColumnDescription = "撤销人员", Length = 50, IsNullable = true, ColumnDataType = "nvarchar")]
-  public string? RevokeUserName { get; set; }
+  [SugarColumn(ColumnName = "revoke_by", ColumnDescription = "撤销人员", Length = 50, IsNullable = true, ColumnDataType = "nvarchar")]
+  public string? RevokeBy { get; set; }
 
   /// <summary>
   /// 撤销时间
@@ -195,6 +159,15 @@ public abstract class LeanBaseEntity
   public int IsDeleted { get; set; }
 
   /// <summary>
+  /// 删除者
+  /// </summary>
+  /// <remarks>
+  /// 记录执行软删除操作的用户信息
+  /// </remarks>
+  [SugarColumn(ColumnName = "delete_by", ColumnDescription = "删除者", Length = 50, IsNullable = true, ColumnDataType = "nvarchar")]
+  public string? DeleteBy { get; set; }
+
+  /// <summary>
   /// 删除时间
   /// </summary>
   /// <remarks>
@@ -202,24 +175,6 @@ public abstract class LeanBaseEntity
   /// </remarks>
   [SugarColumn(ColumnName = "delete_time", ColumnDescription = "删除时间", IsNullable = true, ColumnDataType = "datetime")]
   public DateTime? DeleteTime { get; set; }
-
-  /// <summary>
-  /// 删除者ID
-  /// </summary>
-  /// <remarks>
-  /// 记录执行软删除操作的用户ID
-  /// </remarks>
-  [SugarColumn(ColumnName = "delete_user_id", ColumnDescription = "删除者ID", IsNullable = true, ColumnDataType = "bigint")]
-  public long? DeleteUserId { get; set; }
-
-  /// <summary>
-  /// 删除者
-  /// </summary>
-  /// <remarks>
-  /// 记录执行软删除操作的用户名称
-  /// </remarks>
-  [SugarColumn(ColumnName = "delete_user_name", ColumnDescription = "删除者", Length = 50, IsNullable = true, ColumnDataType = "nvarchar")]
-  public string? DeleteUserName { get; set; }
 
   #endregion
 

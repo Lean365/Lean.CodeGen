@@ -16,7 +16,7 @@ using Lean.CodeGen.Domain.Validators;
 using Lean.CodeGen.Application.Services.Security;
 using Lean.CodeGen.Application.Services.Admin;
 using Lean.CodeGen.Common.Excel;
-using Lean.CodeGen.Application.Hubs;
+using Lean.CodeGen.Domain.Interfaces.Hubs;
 using Mapster;
 using SqlSugar;
 using System;
@@ -25,6 +25,13 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Linq.Expressions;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Options;
+using NLog;
+using Lean.CodeGen.Common.Enums;
+using Lean.CodeGen.Common.Helpers;
+using Lean.CodeGen.Common.Options;
+using Lean.CodeGen.Common.Security;
+using Lean.CodeGen.Common.Http;
 
 namespace Lean.CodeGen.Application.Services.Routine;
 
@@ -37,8 +44,11 @@ public class LeanNotificationService : LeanBaseService, ILeanNotificationService
   private readonly LeanUniqueValidator<LeanNotification> _uniqueValidator;
   private readonly ILeanLocalizationService _localizationService;
   private readonly ILogger _logger;
-  private readonly IHubContext<LeanNotificationHub> _hubContext;
+  private readonly ILeanSignalRHub _signalRHub;
   private readonly ILeanMailService _mailService;
+  private readonly ILeanHttpContextAccessor _httpContextAccessor;
+  private readonly ILeanSqlSafeService _sqlSafeService;
+  private readonly LeanSecurityOptions _securityOptions;
 
   /// <summary>
   /// 初始化通知服务实现
@@ -46,22 +56,31 @@ public class LeanNotificationService : LeanBaseService, ILeanNotificationService
   /// <param name="repository">通知仓储</param>
   /// <param name="context">服务上下文</param>
   /// <param name="localizationService">本地化服务</param>
-  /// <param name="hubContext">SignalR Hub上下文</param>
+  /// <param name="signalRHub">SignalR Hub</param>
   /// <param name="mailService">邮件服务</param>
+  /// <param name="httpContextAccessor">HTTP上下文访问器</param>
+  /// <param name="sqlSafeService">SQL安全服务</param>
+  /// <param name="securityOptions">安全选项</param>
   public LeanNotificationService(
       ILeanRepository<LeanNotification> repository,
       LeanBaseServiceContext context,
       ILeanLocalizationService localizationService,
-      IHubContext<LeanNotificationHub> hubContext,
-      ILeanMailService mailService)
+      ILeanSignalRHub signalRHub,
+      ILeanMailService mailService,
+      ILeanHttpContextAccessor httpContextAccessor,
+      ILeanSqlSafeService sqlSafeService,
+      IOptions<LeanSecurityOptions> securityOptions)
       : base(context)
   {
     _repository = repository;
     _uniqueValidator = new LeanUniqueValidator<LeanNotification>(_repository);
     _localizationService = localizationService;
-    _logger = LogManager.GetCurrentClassLogger();
-    _hubContext = hubContext;
+    _logger = context.Logger;
+    _signalRHub = signalRHub;
     _mailService = mailService;
+    _httpContextAccessor = httpContextAccessor;
+    _sqlSafeService = sqlSafeService;
+    _securityOptions = securityOptions.Value;
   }
 
   /// <inheritdoc/>
@@ -133,8 +152,10 @@ public class LeanNotificationService : LeanBaseService, ILeanNotificationService
         var userIds = input.ReceiverIds.Split(';');
         foreach (var userId in userIds)
         {
-          await _hubContext.Clients.Group($"User_{userId}")
-            .SendAsync("ReceiveNotification", dto);
+          if (long.TryParse(userId, out var userIdLong))
+          {
+            await _signalRHub.SendNotificationAsync(userIdLong, dto);
+          }
         }
       }
 
@@ -345,8 +366,10 @@ public class LeanNotificationService : LeanBaseService, ILeanNotificationService
         var userIds = entity.ReceiverIds.Split(';');
         foreach (var userId in userIds)
         {
-          await _hubContext.Clients.Group($"User_{userId}")
-            .SendAsync("ReceiveNotification", dto);
+          if (long.TryParse(userId, out var userIdLong))
+          {
+            await _signalRHub.SendNotificationAsync(userIdLong, dto);
+          }
         }
       }
 
@@ -508,7 +531,7 @@ public class LeanNotificationService : LeanBaseService, ILeanNotificationService
   }
 
   /// <inheritdoc/>
-  public async Task<byte[]> GetImportTemplateAsync()
+  public async Task<byte[]> GetTemplateAsync()
   {
     try
     {
@@ -530,6 +553,72 @@ public class LeanNotificationService : LeanBaseService, ILeanNotificationService
     catch (Exception ex)
     {
       Logger.Error(ex, "获取导入模板失败");
+      throw;
+    }
+  }
+
+  /// <inheritdoc/>
+  public async Task NotifyUserLoginAttemptAsync(long userId, string message, DateTime loginTime, string loginIp, string loginLocation)
+  {
+    try
+    {
+      // 参数验证
+      if (userId <= 0)
+      {
+        throw new ArgumentException("用户ID必须大于0", nameof(userId));
+      }
+
+      if (string.IsNullOrEmpty(message))
+      {
+        throw new ArgumentException("消息不能为空", nameof(message));
+      }
+
+      if (string.IsNullOrEmpty(loginIp))
+      {
+        throw new ArgumentException("登录IP不能为空", nameof(loginIp));
+      }
+
+      if (string.IsNullOrEmpty(loginLocation))
+      {
+        throw new ArgumentException("登录地点不能为空", nameof(loginLocation));
+      }
+
+      // 发送通知
+      await _signalRHub.SendUserLoginAttemptAsync(userId, message, loginTime, loginIp, loginLocation);
+
+      _logger.Info($"已发送用户登录尝试通知 - 用户ID: {userId}, 消息: {message}");
+    }
+    catch (Exception ex)
+    {
+      _logger.Error(ex, $"发送用户登录尝试通知失败 - 用户ID: {userId}");
+      throw;
+    }
+  }
+
+  /// <inheritdoc/>
+  public async Task SendNotificationAsync(long userId, LeanNotificationDto notification)
+  {
+    try
+    {
+      // 参数验证
+      if (userId <= 0)
+      {
+        throw new ArgumentException("用户ID必须大于0", nameof(userId));
+      }
+
+      if (notification == null)
+      {
+        throw new ArgumentNullException(nameof(notification));
+      }
+
+      // 发送通知
+      await _signalRHub.SendNotificationAsync(userId, notification);
+
+      _logger.Info($"已发送通知 - 用户ID: {userId}, 通知类型: {notification.Type}");
+    }
+    catch (Exception ex)
+    {
+      _logger.Error(ex, $"发送通知失败 - 用户ID: {userId}");
       throw;
     }
   }

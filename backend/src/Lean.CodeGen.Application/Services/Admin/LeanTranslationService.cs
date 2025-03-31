@@ -361,7 +361,7 @@ public class LeanTranslationService : LeanBaseService, ILeanTranslationService
     /// <summary>
     /// 获取导入模板
     /// </summary>
-    public Task<byte[]> GetImportTemplateAsync()
+    public Task<byte[]> GetTemplateAsync()
     {
         var template = new List<LeanTranslationImportDto> { new LeanTranslationImportDto() };
         return Task.FromResult(LeanExcelHelper.Export(template));

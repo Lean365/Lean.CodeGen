@@ -65,6 +65,10 @@ import type { Rule } from 'ant-design-vue/es/form'
 import { useAppStore } from '@/stores/app'
 import type { Locale } from '@/stores/app'
 import { useUserStore } from '@/stores/user'
+import { useMenuStore } from '@/stores/modules/menu'
+import { getBrowserInfo } from '@/utils/browser'
+import type { BrowserInfo } from '@/utils/browser'
+import type { SliderCaptcha } from '@/types/identity/auth'
 
 import {
   UserOutlined,
@@ -75,6 +79,7 @@ const { t } = useI18n()
 const router = useRouter()
 const appStore = useAppStore()
 const userStore = useUserStore()
+const menuStore = useMenuStore()
 const loading = ref(false)
 const loginFormRef = ref<FormInstance>()
 const captcha = ref({
@@ -89,7 +94,8 @@ const captcha = ref({
   height: 0,
   hasCaptcha: false,
   hasBackgroundImage: false,
-  hasSliderImage: false
+  hasSliderImage: false,
+  hasShownSuccess: false
 })
 
 const loginForm = reactive({
@@ -112,28 +118,71 @@ const loginRules: Record<string, Rule[]> = {
 const handleRefreshCaptcha = async () => {
   try {
     captcha.value.loading = true
+    console.log('开始获取验证码...')
     const response = await userStore.getSliderCaptcha()
-    if (response.success) {
-      captcha.value = {
-        ...captcha.value,
-        ...response.data,
-        hasCaptcha: true,
-        hasBackgroundImage: !!response.data.backgroundImage,
-        hasSliderImage: !!response.data.sliderImage
-      }
-    } else {
-      message.error(response.message || t('slider.refreshFailed'))
+    console.log('验证码响应数据:', response)
+
+    // 检查响应是否成功
+    if (!response.success) {
+      throw new Error(response.message || '获取验证码失败')
+    }
+
+    // 检查数据是否完整
+    if (!response.data) {
+      throw new Error('验证码数据为空')
+    }
+
+    const { backgroundImage, sliderImage, y, width, height, captchaKey } = response.data
+
+    // 更新验证码数据
+    captcha.value = {
+      ...captcha.value,
+      backgroundImage,
+      sliderImage,
+      y,
+      width: width || 0,
+      height: height || 0,
+      captchaKey,
+      hasCaptcha: true,
+      hasBackgroundImage: !!backgroundImage,
+      hasSliderImage: !!sliderImage,
+      value: 0,
+      success: false,
+      hasShownSuccess: false
     }
   } catch (error) {
     console.error('获取验证码失败:', error)
-    message.error(t('slider.refreshFailed'))
+    message.error(error instanceof Error ? error.message : t('slider.refreshFailed'))
   } finally {
     captcha.value.loading = false
   }
 }
 
-const handleCaptchaValidate = (x: number, y: number) => {
-  loginForm.captcha = `${x},${y}`
+const handleCaptchaValidate = async (x: number, y: number) => {
+  try {
+    console.log('验证码验证:', { x, y })
+    const response = await userStore.validateSliderCaptcha({
+      captchaKey: captcha.value.captchaKey,
+      x,
+      y
+    })
+
+    if (response.success) {
+      loginForm.captcha = `${x},${y}`
+      captcha.value.success = true
+      if (!captcha.value.hasShownSuccess) {
+        message.success(t('slider.success'))
+        captcha.value.hasShownSuccess = true
+      }
+    } else {
+      message.error(response.message || t('slider.failed'))
+      handleRefreshCaptcha()
+    }
+  } catch (error) {
+    console.error('验证码验证失败:', error)
+    message.error(error instanceof Error ? error.message : t('slider.error'))
+    handleRefreshCaptcha()
+  }
 }
 
 const handleLogin = async () => {
@@ -146,32 +195,76 @@ const handleLogin = async () => {
 
     // 解析验证码坐标
     const [x, y] = loginForm.captcha.split(',').map(Number)
+    if (!x || !y) {
+      message.error(t('login.form.captcha.required'))
+      return
+    }
+
+    // 获取设备信息
+    const browserInfo = getBrowserInfo({
+      browser: t('browser.unsupported.browser'),
+      windows: t('browser.unsupported.windows'),
+      macos: t('browser.unsupported.macos'),
+      linux: t('browser.unsupported.linux'),
+      android: t('browser.unsupported.android'),
+      ios: t('browser.unsupported.ios'),
+      os: t('browser.unsupported.os')
+    })
+    console.log('浏览器信息:', browserInfo)
+
+    // 如果浏览器或操作系统不支持，显示错误信息并返回
+    if (!browserInfo.isSupported) {
+      message.error({
+        content: browserInfo.unsupportedMessage,
+        duration: 0,
+        key: 'browser-compatibility'
+      })
+      return
+    }
+
+    const deviceInfo = {
+      deviceName: browserInfo.deviceName,
+      deviceType: browserInfo.deviceType,
+      os: browserInfo.os,
+      browser: browserInfo.browser,
+      userAgent: browserInfo.userAgent,
+      screenWidth: browserInfo.screen.width,
+      screenHeight: browserInfo.screen.height,
+      screenColorDepth: browserInfo.screen.colorDepth,
+      screenPixelRatio: browserInfo.screen.pixelRatio,
+      language: browserInfo.locale.language,
+      timezone: browserInfo.locale.timezone,
+      hardwareConcurrency: browserInfo.hardware.hardwareConcurrency,
+      deviceMemory: browserInfo.hardware.deviceMemory,
+      maxTouchPoints: browserInfo.hardware.maxTouchPoints
+    }
+    console.log('设备信息:', deviceInfo)
+
+    console.log('开始登录...', {
+      userName: loginForm.username,
+      sliderX: x,
+      sliderY: y,
+      captchaKey: captcha.value.captchaKey,
+      ...deviceInfo
+    })
 
     const response = await userStore.login({
       userName: loginForm.username,
       password: loginForm.password,
       sliderX: x,
       sliderY: y,
-      captchaKey: captcha.value.captchaKey
+      captchaKey: captcha.value.captchaKey,
+      ...deviceInfo
     })
 
-    if (response.success) {
+    if (response.success && response.code !== 400) {
       message.success(t('login.messages.success'))
-      router.push('/dashboard')
+      router.push('/')
     } else {
-      message.error(response.message || t('login.messages.failed'))
-      // 登录失败时刷新验证码
       handleRefreshCaptcha()
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('登录失败:', error)
-    // 获取详细的错误信息
-    const errorMessage = error.response?.data?.message ||
-      error.response?.data?.error ||
-      error.message ||
-      t('login.messages.failed')
-    message.error(errorMessage)
-    // 登录失败时刷新验证码
     handleRefreshCaptcha()
   } finally {
     loading.value = false
@@ -190,6 +283,24 @@ const handleThemeChange = (theme: 'light' | 'dark') => {
 
 // 组件挂载时获取验证码
 onMounted(() => {
+  // 检查浏览器和操作系统兼容性
+  const browserInfo = getBrowserInfo({
+    browser: t('browser.unsupported.browser'),
+    windows: t('browser.unsupported.windows'),
+    macos: t('browser.unsupported.macos'),
+    linux: t('browser.unsupported.linux'),
+    android: t('browser.unsupported.android'),
+    ios: t('browser.unsupported.ios'),
+    os: t('browser.unsupported.os')
+  })
+  if (!browserInfo.isSupported) {
+    message.error({
+      content: browserInfo.unsupportedMessage,
+      duration: 0,
+      key: 'browser-compatibility'
+    })
+  }
+
   handleRefreshCaptcha()
 })
 </script>

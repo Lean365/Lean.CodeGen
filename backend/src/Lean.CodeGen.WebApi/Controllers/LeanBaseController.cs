@@ -1,12 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
+using Lean.CodeGen.Domain.Context;
 using Lean.CodeGen.Common.Models;
 using Lean.CodeGen.Common.Enums;
-using Lean.CodeGen.Application.Services.Admin;
+using Lean.CodeGen.Common.Localization;
 using System.Threading.Tasks;
 using System.Linq;
 using Microsoft.AspNetCore.Http;
 using System.Globalization;
 using Microsoft.Extensions.Configuration;
+using System.Security.Claims;
 
 namespace Lean.CodeGen.WebApi.Controllers;
 
@@ -27,17 +29,22 @@ public abstract class LeanBaseController : ControllerBase
   /// </summary>
   protected readonly IConfiguration Configuration;
 
+  protected readonly ILeanUserContext _userContext;
+
   /// <summary>
   /// 构造函数
   /// </summary>
   /// <param name="localizationService">本地化服务</param>
   /// <param name="configuration">配置</param>
+  /// <param name="userContext">用户上下文</param>
   protected LeanBaseController(
       ILeanLocalizationService localizationService,
-      IConfiguration configuration)
+      IConfiguration configuration,
+      ILeanUserContext userContext)
   {
     LocalizationService = localizationService;
     Configuration = configuration;
+    _userContext = userContext;
   }
 
   /// <summary>
@@ -286,5 +293,10 @@ public abstract class LeanBaseController : ControllerBase
   protected IActionResult Error(string message, LeanErrorCode code = LeanErrorCode.SystemError, LeanBusinessType businessType = LeanBusinessType.Other)
   {
     return ApiResult(LeanApiResult.Error(message, code, businessType));
+  }
+
+  protected long GetUserId()
+  {
+    return _userContext.CurrentUserId ?? 0;
   }
 }

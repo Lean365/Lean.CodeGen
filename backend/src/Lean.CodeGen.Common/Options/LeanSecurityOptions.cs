@@ -62,6 +62,11 @@ public class LeanSecurityOptions
   /// SQL注入配置
   /// </summary>
   public SqlInjectionOptions SqlInjection { get; set; } = new();
+
+  /// <summary>
+  /// 登录配置
+  /// </summary>
+  public LeanLoginOptions Login { get; set; } = new();
 }
 
 /// <summary>

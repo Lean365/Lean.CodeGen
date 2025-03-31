@@ -1,94 +1,90 @@
 export default {
   menu: {
-    home: {
-      title: '首页',
-      index: '首页'
-    },
+    // 静态菜单
     dashboard: {
-      title: '仪表盘',
-      index: '首页',
+      _self: '仪表盘',
+      index: '主页',
       analysis: '分析页',
-      monitor: '监控页',
-      workplace: '工作台'
-    },
-    identity: {
-      title: '身份认证',
-      user: {
-        title: '用户管理',
-        list: '用户列表',
-        add: '添加用户',
-        edit: '编辑用户',
-        detail: '用户详情'
-      },
-      role: {
-        title: '角色管理',
-        list: '角色列表',
-        add: '添加角色',
-        edit: '编辑角色',
-        detail: '角色详情'
-      },
-      permission: {
-        title: '权限管理',
-        list: '权限列表',
-        add: '添加权限',
-        edit: '编辑权限'
-      }
-    },
-    system: {
-      title: '系统管理',
-      menu: {
-        title: '菜单管理',
-        list: '菜单列表',
-        add: '添加菜单',
-        edit: '编辑菜单'
-      },
-      dict: {
-        title: '字典管理',
-        list: '字典列表',
-        add: '添加字典',
-        edit: '编辑字典'
-      },
-      config: {
-        title: '参数配置',
-        list: '参数列表',
-        add: '添加参数',
-        edit: '编辑参数'
-      }
-    },
-    tools: {
-      title: '系统工具',
-      codegen: {
-        title: '代码生成',
-        list: '业务列表',
-        add: '添加业务',
-        edit: '编辑业务',
-        preview: '代码预览',
-        config: '生成配置'
-      },
-      swagger: 'API文档',
-      cache: '缓存监控',
-      job: {
-        title: '定时任务',
-        list: '任务列表',
-        add: '添加任务',
-        edit: '编辑任务',
-        log: '调度日志'
-      }
-    },
-    settings: {
-      title: '系统设置',
-      profile: {
-        title: '个人中心',
-        base: '基本信息',
-        security: '安全设置',
-        notification: '通知设置'
-      }
+      monitor: '监控页'
     },
     about: {
-      title: '关于我们',
-      index: '关于我们',
+      _self: '关于',
+      index: '关于',
       terms: '服务条款',
       privacy: '隐私政策'
+    },
+    // 动态菜单
+    identity: {
+      _self: '身份认证',
+      user: '用户管理',
+      role: '角色管理',
+      menu: '菜单管理',
+      dept: '部门管理',
+      post: '岗位管理'
+    },
+    admin: {
+      _self: '系统管理',
+      dicttype: '字典类型',
+      dictdata: '字典数据',
+      config: '参数配置',
+      language: '语言管理',
+      translation: '翻译管理',
+      localization: '本地化'
+    },
+    generator: {
+      _self: '代码生成',
+      gentask: '生成任务',
+      gentemplate: '生成模板',
+      genconfig: '生成配置',
+      genhistory: '生成历史',
+      datasource: '数据源',
+      dbtable: '数据库表',
+      tableconfig: '表配置'
+    },
+    workflow: {
+      _self: '工作流',
+      workflowdefinition: '流程定义',
+      workflowinstance: '流程实例',
+      workflowtask: '流程任务',
+      workflowform: '流程表单',
+      workflowvariable: '流程变量',
+      workflowvariabledata: '变量数据',
+      workflowactivitytype: '活动类型',
+      workflowactivityproperty: '活动属性',
+      workflowactivityinstance: '活动实例',
+      workflowoutput: '流程输出',
+      workflowoutcome: '流程结果',
+      workflowhistory: '流程历史',
+      workflowcorrelation: '流程关联'
+    },
+    signalr: {
+      _self: '实时通信',
+      onlineuser: '在线用户',
+      onlinemessage: '在线消息'
+    },
+    audit: {
+      _self: '审计日志',
+      auditlog: '审计日志',
+      operationlog: '操作日志',
+      loginlog: '登录日志',
+      exceptionlog: '异常日志',
+      sqldifflog: 'SQL差异日志'
     }
+  },
+  button: {
+    query: '查询',
+    create: '新增',
+    update: '修改',
+    delete: '删除',
+    clear: '清空',
+    template: '模板',
+    import: '导入',
+    export: '导出',
+    preview: '预览',
+    print: '打印',
+    audit: '审核',
+    revoke: '撤销',
+    translate: '翻译',
+    icon: '图标'
   }
 }

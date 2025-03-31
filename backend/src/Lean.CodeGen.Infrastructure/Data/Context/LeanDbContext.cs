@@ -141,7 +141,7 @@ public class LeanDbContext
       var domainAssembly = Assembly.Load("Lean.CodeGen.Domain");
       _logger.Info($"加载 Domain 程序集成功");
 
-      // 3. 获取 Entities 目录下的所有类型
+      // 3. 获取所有实体类型
       var allTypes = domainAssembly.GetTypes()
           .Where(t => t.Namespace?.StartsWith("Lean.CodeGen.Domain.Entities") == true)
           .ToList();
@@ -182,7 +182,8 @@ public class LeanDbContext
       {
         try
         {
-          _db.CodeFirst.InitTables(entityType);
+          // 配置表名和列名
+          _db.CodeFirst.SetStringDefaultLength(200).InitTables(entityType);
           _logger.Info($"\u001b[32m初始化表成功 >>\u001b[0m {entityType.Name}");
         }
         catch (Exception ex)

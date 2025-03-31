@@ -7,6 +7,7 @@ using Lean.CodeGen.Common.Attributes;
 using Microsoft.Extensions.Configuration;
 using Lean.CodeGen.Application.Services.Admin;
 using Lean.CodeGen.Application.Dtos.Captcha;
+using Microsoft.Extensions.Logging;
 
 namespace Lean.CodeGen.WebApi.Controllers.Identity;
 
@@ -19,6 +20,7 @@ namespace Lean.CodeGen.WebApi.Controllers.Identity;
 public class LeanAuthController : LeanBaseController
 {
   private readonly ILeanAuthService _authService;
+  private readonly ILogger<LeanAuthController> _logger;
 
   /// <summary>
   /// 构造函数
@@ -26,10 +28,13 @@ public class LeanAuthController : LeanBaseController
   public LeanAuthController(
       ILeanAuthService authService,
       ILeanLocalizationService localizationService,
-      IConfiguration configuration)
-      : base(localizationService, configuration)
+      IConfiguration configuration,
+      ILeanUserContext userContext,
+      ILogger<LeanAuthController> logger)
+      : base(localizationService, configuration, userContext)
   {
     _authService = authService;
+    _logger = logger;
   }
 
   /// <summary>
@@ -46,7 +51,7 @@ public class LeanAuthController : LeanBaseController
     {
       return await ErrorAsync(result.Message ?? "登录失败");
     }
-    return Success(result.Data, LeanBusinessType.Other);
+    return Success(result.Data, LeanBusinessType.Grant);
   }
 
   /// <summary>
@@ -85,15 +90,40 @@ public class LeanAuthController : LeanBaseController
   /// <summary>
   /// 用户登出
   /// </summary>
+  /// <param name="request">登出请求参数</param>
   /// <returns>登出结果</returns>
   [HttpPost("logout")]
-  public async Task<IActionResult> LogoutAsync()
+  [AllowAnonymous]
+  public async Task<IActionResult> LogoutAsync([FromBody] LeanLogoutDto request)
   {
-    var result = await _authService.LogoutAsync();
+    try
+    {
+      var result = await _authService.LogoutAsync(request);
+      if (!result.Success)
+      {
+        return await ErrorAsync(result.Message ?? "登出失败");
+      }
+      return Success(null, LeanBusinessType.Other);
+    }
+    catch (Exception ex)
+    {
+      return await ErrorAsync($"登出失败：{ex.Message}");
+    }
+  }
+
+  /// <summary>
+  /// 获取当前登录用户信息
+  /// </summary>
+  /// <returns>用户信息</returns>
+  [HttpGet("CurrentUser")]
+  [LeanPermission("identity:user:profile", "获取当前用户信息")]
+  public async Task<IActionResult> GetCurrentUserAsync()
+  {
+    var result = await _authService.GetCurrentUserAsync();
     if (!result.Success)
     {
-      return await ErrorAsync(result.Message ?? "登出失败");
+      return await ErrorAsync(result.Message ?? "获取用户信息失败");
     }
-    return Success(null, LeanBusinessType.Other);
+    return Success(result.Data, LeanBusinessType.Other);
   }
 }

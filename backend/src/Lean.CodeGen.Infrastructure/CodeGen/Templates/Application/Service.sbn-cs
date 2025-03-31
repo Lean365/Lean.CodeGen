@@ -455,7 +455,7 @@ public class Lean{{ service_name }}Service : LeanBaseService, I{{ service_name }
     /// 获取导入模板
     /// </summary>
     /// <returns>模板文件字节数组</returns>
-    public async Task<byte[]> GetImportTemplateAsync()
+    public async Task<byte[]> GetTemplateAsync()
     {
         try
         {

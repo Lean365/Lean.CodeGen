@@ -47,10 +47,10 @@ export const useMenuStore = defineStore('menu', (): MenuState => {
 
     try {
       isFetching.value = true
-      console.log('开始获取用户菜单...')
-      console.log('当前重试次数:', retryCount.value)
+      // console.log('开始获取用户菜单...')
+      // console.log('当前重试次数:', retryCount.value)
       const { data } = await getCurrentUserMenu()
-      console.log('获取到的菜单数据:', data)
+      // console.log('获取到的菜单数据:', data)
       
       // 如果获取到的菜单为空，抛出错误
       if (!data || data.length === 0) {
@@ -58,24 +58,24 @@ export const useMenuStore = defineStore('menu', (): MenuState => {
       }
 
       menuList.value = data
-      console.log('菜单数据已更新到store')
+      // console.log('菜单数据已更新到store')
       await generateRoutes()
-      console.log('路由已生成')
+      // console.log('路由已生成')
       await addRoutes()
-      console.log('路由已添加到router')
+      // console.log('路由已添加到router')
       retryCount.value = 0 // 重置重试次数
       return data
     } catch (error: unknown) {
       const axiosError = error as AxiosError
-      console.error('获取用户菜单失败:', error)
-      console.log('错误详情:', {
-        message: axiosError.message,
-        status: axiosError.response?.status,
-        data: axiosError.response?.data
-      })
+      // console.error('获取用户菜单失败:', error)
+      // console.log('错误详情:', {
+      //   message: axiosError.message,
+      //   status: axiosError.response?.status,
+      //   data: axiosError.response?.data
+      // })
       if (retryCount.value < maxRetries) {
         retryCount.value++
-        console.log(`准备第${retryCount.value}次重试...`)
+        // console.log(`准备第${retryCount.value}次重试...`)
         return await fetchUserMenu()
       } else {
         throw new Error('获取用户菜单失败，已达到最大重试次数')
@@ -98,12 +98,12 @@ export const useMenuStore = defineStore('menu', (): MenuState => {
 
   // 生成单个路由
   const generateRoute = (menu: LeanMenuDto): RouteRecordRaw => {
-    console.log('生成路由配置:', {
-      path: menu.path,
-      name: menu.menuName,
-      component: menu.component,
-      isTopLevel: !menu.path.includes('/')
-    });
+    // console.log('生成路由配置:', {
+    //   path: menu.path,
+    //   name: menu.menuName,
+    //   component: menu.component,
+    //   isTopLevel: !menu.path.includes('/')
+    // });
 
     const route: RouteRecordRaw = {
       path: menu.path,
@@ -125,13 +125,13 @@ export const useMenuStore = defineStore('menu', (): MenuState => {
         try {
           // 移除开头的斜杠并规范化路径
           const componentPath = menu.component.startsWith('/') ? menu.component.slice(1) : menu.component
-          console.log('Loading component:', componentPath)
+          //console.log('Loading component:', componentPath)
           
           // 对于子菜单，尝试加载对应的组件
           return new Promise((resolve, reject) => {
             // 使用相对路径
             const importPath = `../../views/${componentPath}.vue`
-            console.log('Importing component from:', importPath)
+            // console.log('Importing component from:', importPath)
             
             // 使用动态导入
             import(/* @vite-ignore */ importPath)
@@ -169,7 +169,7 @@ export const useMenuStore = defineStore('menu', (): MenuState => {
   // 添加路由
   const addRoutes = async () => {
     try {
-      console.log('开始添加路由...');
+      // console.log('开始添加路由...');
       const menus = menuList.value;
       console.log('获取到的菜单数据:', menus);
 
@@ -178,11 +178,11 @@ export const useMenuStore = defineStore('menu', (): MenuState => {
       console.log('顶级菜单:', topLevelMenus);
 
       for (const menu of topLevelMenus) {
-        console.log('处理顶级菜单:', {
-          path: menu.path,
-          name: menu.menuName,
-          component: menu.component
-        });
+        // console.log('处理顶级菜单:', {
+        //   path: menu.path,
+        //   name: menu.menuName,
+        //   component: menu.component
+        // });
 
         // 先添加顶级路由
         const topRoute = {
@@ -197,22 +197,22 @@ export const useMenuStore = defineStore('menu', (): MenuState => {
           },
           children: []
         };
-        console.log('添加顶级路由:', topRoute);
+        // console.log('添加顶级路由:', topRoute);
         router.addRoute(topRoute);
 
         // 再添加子路由
         if (menu.children && menu.children.length > 0) {
-          console.log('处理顶级菜单的子路由:', {
-            parentPath: menu.path,
-            childrenCount: menu.children.length
-          });
+          // console.log('处理顶级菜单的子路由:', {
+          //   parentPath: menu.path,
+          //   childrenCount: menu.children.length
+          // });
 
           for (const child of menu.children) {
             const childRoute = generateRoute(child);
-            console.log('添加子路由:', {
-              parentPath: menu.path,
-              childRoute
-            });
+            // console.log('添加子路由:', {
+            //   parentPath: menu.path,
+            //   childRoute
+            // });
             router.addRoute(menu.path, childRoute);
           }
         }
@@ -220,11 +220,11 @@ export const useMenuStore = defineStore('menu', (): MenuState => {
 
       // 添加其他路由
       const otherMenus = menus.filter((menu: LeanMenuDto) => menu.path.includes('/'));
-      console.log('其他菜单:', otherMenus);
+      //console.log('其他菜单:', otherMenus);
 
       for (const menu of otherMenus) {
         const route = generateRoute(menu);
-        console.log('添加其他路由:', route);
+        //console.log('添加其他路由:', route);
         router.addRoute(route);
       }
 

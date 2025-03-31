@@ -57,6 +57,8 @@ public class LeanDbInitializer
       // 3. 初始化用户数据
       await new LeanUserSeed(db, _securityOptions).InitializeAsync();
 
+
+
       // 4. 初始化角色数据
       await new LeanRoleSeed(db).InitializeAsync();
 
@@ -98,6 +100,9 @@ public class LeanDbInitializer
 
       // 17. 初始化任务日志数据
       await new LeanTaskLogSeed(db).InitializeAsync();
+
+      // 18. 初始化身份关联数据
+      await new LeanIdentityRelationSeed(db).InitializeAsync();
 
       _logger.Info("种子数据初始化完成");
     }

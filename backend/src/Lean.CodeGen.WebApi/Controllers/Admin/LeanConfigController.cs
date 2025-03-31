@@ -32,8 +32,9 @@ public class LeanConfigController : LeanBaseController
   public LeanConfigController(
       ILeanConfigService configService,
       ILeanLocalizationService localizationService,
-      IConfiguration configuration)
-      : base(localizationService, configuration)
+      IConfiguration configuration,
+      ILeanUserContext userContext)
+      : base(localizationService, configuration, userContext)
   {
     _configService = configService;
   }
@@ -143,9 +144,9 @@ public class LeanConfigController : LeanBaseController
   /// </summary>
   [HttpGet("template")]
   [LeanPermission("system:config:import", "导入系统配置")]
-  public async Task<IActionResult> GetImportTemplateAsync()
+  public async Task<IActionResult> GetTemplateAsync()
   {
-    var bytes = await _configService.GetImportTemplateAsync();
+    var bytes = await _configService.GetTemplateAsync();
     var fileName = $"config_template_{DateTime.Now:yyyyMMddHHmmss}.xlsx";
     return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
   }

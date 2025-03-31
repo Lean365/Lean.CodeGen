@@ -34,12 +34,12 @@ public interface ILeanOnlineMessageService
     /// <summary>
     /// 获取用户未读消息列表
     /// </summary>
-    Task<List<LeanOnlineMessageDto>> GetUnreadMessagesAsync(string userId);
+    Task<List<LeanOnlineMessageDto>> GetUnreadMessagesAsync(long userId);
 
     /// <summary>
     /// 获取用户消息历史
     /// </summary>
-    Task<LeanPageResult<LeanOnlineMessageDto>> GetMessageHistoryAsync(string userId, int pageSize, int pageIndex);
+    Task<LeanPageResult<LeanOnlineMessageDto>> GetMessageHistoryAsync(long userId, int pageSize, int pageIndex);
 
     /// <summary>
     /// 标记消息已读
@@ -60,4 +60,16 @@ public interface ILeanOnlineMessageService
     /// 清理过期消息
     /// </summary>
     Task CleanExpiredMessagesAsync(int days = 30);
+
+    /// <summary>
+    /// 创建消息
+    /// </summary>
+    /// <param name="message">消息实体</param>
+    Task CreateMessageAsync(LeanOnlineMessage message);
+
+    /// <summary>
+    /// 获取消息详情
+    /// </summary>
+    /// <param name="messageId">消息ID</param>
+    Task<LeanOnlineMessageDto> GetMessageByIdAsync(long messageId);
 }

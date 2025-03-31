@@ -14,7 +14,6 @@ using Lean.CodeGen.WebApi.Configurations;
 using Lean.CodeGen.WebApi.Filters;
 using Lean.CodeGen.Common.Options;
 using Lean.CodeGen.Common.Extensions;
-using Lean.CodeGen.WebApi.Hubs;
 using Lean.CodeGen.Infrastructure.Services;
 using Lean.CodeGen.Application.Services.Security;
 using Lean.CodeGen.Domain.Interfaces.Caching;
@@ -23,7 +22,6 @@ using Lean.CodeGen.Infrastructure.Extensions;
 using Lean.CodeGen.Infrastructure.Data.Context;
 using Lean.CodeGen.Infrastructure.Data.Initializer;
 using Lean.CodeGen.Infrastructure.Services.Logging;
-using Lean.CodeGen.WebApi.Http;
 using Lean.CodeGen.Common.Http;
 using Lean.CodeGen.Application.Services.Admin;
 using StackExchange.Redis;
@@ -38,6 +36,21 @@ using Microsoft.Extensions.Options;
 using Lean.CodeGen.Common.Helpers;
 using Lean.CodeGen.WebApi.Services;
 using Microsoft.AspNetCore.Hosting;
+using Lean.CodeGen.Application.Services.Identity;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Lean.CodeGen.WebApi.Hubs;
+using Lean.CodeGen.Domain.Interfaces.Hubs;
+using Lean.CodeGen.Infrastructure.Context.User;
+using Lean.CodeGen.Infrastructure.Context.Tenant;
+using Lean.CodeGen.Domain.Context;
+using Lean.CodeGen.Application.Services.Routine;
+using Lean.CodeGen.Domain.Entities.Identity;
+using Lean.CodeGen.Domain.Entities.Workflow;
+using Lean.CodeGen.Domain.Entities.Signalr;
+using Lean.CodeGen.WebApi.Extensions;
 
 // 创建Web应用程序构建器
 var builder = WebApplication.CreateBuilder(args);
@@ -45,108 +58,37 @@ var builder = WebApplication.CreateBuilder(args);
 // 设置控制台编码为 UTF-8
 Console.OutputEncoding = System.Text.Encoding.UTF8;
 
-// 添加 NLog 日志支持
+// 清除默认日志提供程序并添加NLog
+builder.Logging.ClearProviders();
+builder.Logging.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Information);
 builder.Host.UseNLog();
 
-// 配置安全选项
-builder.Services.Configure<LeanSecurityOptions>(
-    builder.Configuration.GetSection(LeanSecurityOptions.Position));
-
-// 配置 JWT 选项
-builder.Services.Configure<LeanJwtOptions>(
-    builder.Configuration.GetSection("JwtSettings"));
-
-// 配置本地化选项
-builder.Services.Configure<LeanLocalizationOptions>(
-    builder.Configuration.GetSection(LeanLocalizationOptions.Position));
-
-// 配置数据库选项
-builder.Services.Configure<LeanDatabaseOptions>(
-    builder.Configuration.GetSection(LeanDatabaseOptions.Position));
-
-// 配置 IP 选项
-builder.Services.Configure<LeanIpOptions>(
-    builder.Configuration.GetSection("Ip"));
-
-// 配置邮件选项
-builder.Services.Configure<LeanMailOptions>(
-    builder.Configuration.GetSection("Mail"));
-
-// 添加数据库上下文
-builder.Services.AddScoped<LeanDbContext>();
+// 添加配置服务（包含所有配置选项）
+builder.Services.AddLeanConfiguration(builder.Configuration);
 
 // 添加应用服务（包含仓储注册）
 builder.Services.AddApplicationServices();
 
+// 添加基础设施服务（包含帮助类和上下文服务）
+builder.Services.AddInfrastructureServices();
+
 // 添加数据库初始化器
 builder.Services.AddScoped<LeanDbInitializer>();
 
-// 配置缓存选项
-builder.Services.Configure<LeanCacheOptions>(
-    builder.Configuration.GetSection(LeanCacheOptions.Position));
-
 // 添加缓存服务
-var cacheOptions = builder.Configuration
-    .GetSection(LeanCacheOptions.Position)
-    .Get<LeanCacheOptions>();
+builder.Services.AddLeanCache(builder.Configuration);
 
-if (cacheOptions?.EnableRedis == true && !string.IsNullOrEmpty(cacheOptions.Redis.ConnectionString))
-{
-  // 添加Redis缓存
-  builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
-      ConnectionMultiplexer.Connect(cacheOptions.Redis.ConnectionString));
-  builder.Services.AddScoped<ILeanCacheService, LeanRedisCacheService>();
-}
-else
-{
-  // 添加内存缓存
-  builder.Services.AddMemoryCache();
-  builder.Services.AddScoped<ILeanCacheService, LeanMemoryCacheService>();
-}
+// 添加 Web 服务（包含控制器、HTTP上下文等）
+builder.Services.AddLeanWebServices();
 
-// 添加控制器服务
-builder.Services.AddControllers(options =>
-{
-  // 添加权限过滤器
-  options.Filters.Add<LeanPermissionFilter>();
-  // 添加限流过滤器
-  options.Filters.Add<LeanRateLimitFilter>();
-});
+// 添加 CORS 服务
+builder.Services.AddLeanCors();
 
-// 添加CORS服务
-builder.Services.AddCors(options =>
-{
-  options.AddDefaultPolicy(policy =>
-  {
-    policy.WithOrigins(
-            "http://localhost:5173", // Vite 开发服务器默认端口
-            "http://localhost:5153",
-            "https://localhost:5153",
-            "https://localhost:7152",
-            "http://localhost:5152")
-          .AllowAnyMethod()
-          .AllowAnyHeader()
-          .AllowCredentials()
-          .WithExposedHeaders("Content-Disposition", "X-Suggested-Filename")
-          .SetPreflightMaxAge(TimeSpan.FromMinutes(10));
-  });
-});
+// 添加 SignalR 服务
+builder.Services.AddLeanSignalR();
 
-// 配置防伪服务
-var securityOptions = builder.Configuration
-    .GetSection(LeanSecurityOptions.Position)
-    .Get<LeanSecurityOptions>();
-
-builder.Services.AddAntiforgery(options =>
-{
-  // 配置防伪令牌头部
-  options.HeaderName = securityOptions?.Antiforgery.HeaderName ?? "X-XSRF-TOKEN";
-  // 配置防伪令牌Cookie
-  options.Cookie.Name = securityOptions?.Antiforgery.CookieName ?? "XSRF-TOKEN";
-});
-
-// 添加SignalR实时通信服务
-builder.Services.AddSignalR();
+// 添加防伪服务
+builder.Services.AddLeanAntiforgery(builder.Configuration);
 
 // 添加API文档服务
 builder.Services.AddEndpointsApiExplorer();
@@ -156,33 +98,8 @@ builder.Services.AddLeanSwagger();
 // 添加JWT身份认证服务
 builder.Services.AddLeanJwt(builder.Configuration);
 
-// 添加本地化服务
-builder.Services.AddScoped<ILeanLocalizationService, LeanLocalizationService>();
-builder.Services.AddScoped<ILeanConfigService, LeanConfigService>();
-builder.Services.AddScoped<ILeanHttpContextAccessor, LeanHttpContextAccessor>();
-
-// 注册滑块验证码服务
-builder.Services.Configure<LeanSliderCaptchaOptions>(builder.Configuration.GetSection("SliderCaptcha"));
-builder.Services.AddSingleton<LeanSliderCaptchaHelper>(sp =>
-{
-  var env = sp.GetRequiredService<IWebHostEnvironment>();
-  var options = sp.GetRequiredService<IOptions<LeanSliderCaptchaOptions>>();
-  return new LeanSliderCaptchaHelper(env.WebRootPath, options);
-});
-builder.Services.AddHostedService<LeanSliderCaptchaInitializer>();
-
-// 注册系统信息帮助类
-builder.Services.AddScoped<LeanServerInfoHelper>();
-builder.Services.AddScoped<LeanClientInfoHelper>();
-
-// 注册 IP 帮助类
-builder.Services.AddSingleton<LeanIpHelper>();
-
-// 注册邮件帮助类
-builder.Services.AddScoped<LeanMailHelper>();
-
-// 注册定时任务帮助类
-builder.Services.AddSingleton<LeanQuartzHelper>();
+// 添加滑块验证码服务
+builder.Services.AddLeanSliderCaptcha(builder.Configuration);
 
 // 构建应用程序
 var app = builder.Build();
@@ -195,6 +112,13 @@ if (builder.Configuration.GetSection("Database:EnableInitData").Get<bool>())
       scope.ServiceProvider.GetRequiredService<LeanDbContext>(),
       scope.ServiceProvider.GetRequiredService<IOptions<LeanSecurityOptions>>());
   await initializer.InitializeAsync();
+}
+else
+{
+  // 即使不初始化数据，也要确保表结构正确
+  using var scope = app.Services.CreateScope();
+  var dbContext = scope.ServiceProvider.GetRequiredService<LeanDbContext>();
+  dbContext.ConfigureEntities();
 }
 
 // 配置中间件
@@ -225,11 +149,15 @@ app.UseAuthorization();
 app.UseMiddleware<LeanExceptionMiddleware>();
 
 // 配置SignalR实时通信Hub
-app.MapHub<LeanSignalrHub>("/signalr/hubs");
+app.MapHub<LeanSignalRHub>("/signalr/hubs");
+app.MapHub<LeanOnlineUserHub>("/signalr/hubs/online");
+app.MapHub<LeanOnlineMessageHub>("/signalr/hubs/message");
+
 // 输出欢迎信息
 using var welcomeScope = app.Services.CreateScope();
 var logService = welcomeScope.ServiceProvider.GetRequiredService<ILeanLogService>();
 logService.LogWelcomeInfo();
+
 // 启用端点映射
 app.MapControllers();
 

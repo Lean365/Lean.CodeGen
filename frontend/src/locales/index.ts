@@ -43,6 +43,10 @@ import workflowZhCN from './workflow/zh-CN'
 import securityEnUS from './security/en-US'
 import securityZhCN from './security/zh-CN'
 
+// 导入皮肤设置翻译
+import skinEnUS from './skin/en-US'
+import skinZhCN from './skin/zh-CN'
+
 // 合并翻译
 const messages = {
   'en-US': {
@@ -56,7 +60,8 @@ const messages = {
     ...dashboardEnUS,
     ...generateEnUS,
     ...workflowEnUS,
-    ...securityEnUS
+    ...securityEnUS,
+    ...skinEnUS
   },
   'zh-CN': {
     ...commonZhCN,
@@ -69,17 +74,16 @@ const messages = {
     ...dashboardZhCN,
     ...generateZhCN,
     ...workflowZhCN,
-    ...securityZhCN
+    ...securityZhCN,
+    ...skinZhCN
   }
 }
-
-type MessageSchema = typeof messages
 
 const i18n = createI18n({
   legacy: false,
   locale: localStorage.getItem('language') || 'zh-CN',
   fallbackLocale: 'zh-CN',
   messages
-} as any);
+})
 
 export default i18n; 

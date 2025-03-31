@@ -158,6 +158,83 @@ namespace Lean.CodeGen.Application.Services.Audit
     }
 
     /// <summary>
+    /// 添加登录日志
+    /// </summary>
+    public async Task<bool> AddLoginLogAsync(
+        long userId,
+        string userName,
+        string deviceId,
+        string ip,
+        string location,
+        string browser,
+        string os,
+        string? errorMsg = null)
+    {
+      try
+      {
+        var log = new LeanLoginLog
+        {
+          UserId = userId,
+          UserName = userName,
+          DeviceId = deviceId,
+          LoginIp = ip,
+          LoginLocation = location,
+          Browser = browser,
+          Os = os,
+          LoginType = (int)LeanLoginType.Password,
+          LoginStatus = string.IsNullOrEmpty(errorMsg) ? 0 : 1,
+          ErrorMsg = errorMsg
+        };
+
+        await _loginLogRepository.CreateAsync(log);
+        return true;
+      }
+      catch (Exception ex)
+      {
+        _logger.Error(ex, "记录登录日志失败");
+        return false;
+      }
+    }
+
+    /// <summary>
+    /// 添加登录错误日志
+    /// </summary>
+    public async Task<bool> AddLoginErrorLogAsync(
+        string userName,
+        string deviceId,
+        string ip,
+        string location,
+        string browser,
+        string os,
+        string errorMsg)
+    {
+      try
+      {
+        var log = new LeanLoginLog
+        {
+          UserId = 0, // 未知用户ID
+          UserName = userName,
+          DeviceId = deviceId,
+          LoginIp = ip,
+          LoginLocation = location,
+          Browser = browser,
+          Os = os,
+          LoginType = (int)LeanLoginType.Password,
+          LoginStatus = 1, // 登录失败
+          ErrorMsg = errorMsg
+        };
+
+        await _loginLogRepository.CreateAsync(log);
+        return true;
+      }
+      catch (Exception ex)
+      {
+        _logger.Error(ex, "记录登录错误日志失败");
+        return false;
+      }
+    }
+
+    /// <summary>
     /// 记录登出日志
     /// </summary>
     /// <param name="userId">用户ID</param>

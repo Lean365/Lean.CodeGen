@@ -1,268 +1,328 @@
 <template>
-  <div class="user-container">
-    <!-- 搜索工具栏 -->
-    <div class="toolbar">
-      <a-form layout="inline" :model="searchForm">
-        <a-form-item>
-          <a-input v-model:value="searchForm.username" :placeholder="t('user.search.username')" />
-        </a-form-item>
-        <a-form-item>
-          <a-select v-model:value="searchForm.status" style="width: 120px">
-            <a-select-option value="">{{ t('user.search.status.all') }}</a-select-option>
-            <a-select-option value="enabled">{{ t('user.search.status.enabled') }}</a-select-option>
-            <a-select-option value="disabled">{{ t('user.search.status.disabled') }}</a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item>
-          <a-button type="primary" @click="handleSearch">
-            <template #icon>
-              <SearchOutlined />
-            </template>
-            {{ t('common.search') }}
-          </a-button>
-          <a-button style="margin-left: 8px" @click="handleReset">
-            <template #icon>
-              <ReloadOutlined />
-            </template>
-            {{ t('common.reset') }}
-          </a-button>
-        </a-form-item>
-      </a-form>
+  <div class="user-manage">
+    <!-- 搜索区域 -->
+    <LeanQuery :loading="loading" @search="handleSearch" @reset="handleReset">
+      <a-form-item label="用户名">
+        <a-input v-model:value="searchForm.username" placeholder="请输入用户名" />
+      </a-form-item>
+      <a-form-item label="状态">
+        <LeanSelect v-model:value="searchForm.status" :options="statusOptions" placeholder="请选择状态" allow-clear />
+      </a-form-item>
+      <a-form-item label="创建时间">
+        <a-range-picker v-model:value="searchForm.dateRange" />
+      </a-form-item>
+    </LeanQuery>
 
-      <a-button type="primary" @click="handleAdd">
-        <template #icon>
-          <PlusOutlined />
-        </template>
-        {{ t('user.add') }}
-      </a-button>
-    </div>
-
-    <!-- 用户列表 -->
-    <a-table :columns="columns" :data-source="users" :loading="loading" :pagination="pagination"
-      @change="handleTableChange">
-      <!-- 用户名列 -->
-      <template #bodyCell="{ column, record }">
-        <template v-if="column.key === 'username'">
-          <a @click="handleEdit(record)">{{ record.username }}</a>
-        </template>
-
-        <!-- 状态列 -->
-        <template v-else-if="column.key === 'status'">
-          <a-tag :color="record.status === 'enabled' ? 'success' : 'error'">
-            {{ t(\`user.status.\${record.status}\`) }}
-          </a-tag>
-        </template>
-
-        <!-- 操作列 -->
-        <template v-else-if="column.key === 'action'">
-          <a-space>
-            <a-button type="link" @click="handleEdit(record)">
-              {{ t('common.edit') }}
-            </a-button>
-            <a-button type="link" @click="handleDelete(record)">
-              {{ t('common.delete') }}
-            </a-button>
-          </a-space>
-        </template>
+    <!-- 工具栏 -->
+    <LeanToolbar>
+      <template #left>
+        <a-button type="primary" @click="handleAdd">
+          <template #icon>
+            <PlusOutlined />
+          </template>
+          新增用户
+        </a-button>
+        <a-button danger :disabled="!selectedRowKeys.length" @click="handleBatchDelete">
+          <template #icon>
+            <DeleteOutlined />
+          </template>
+          批量删除
+        </a-button>
       </template>
-    </a-table>
+      <template #right>
+        <a-button @click="handleExport">
+          <template #icon>
+            <DownloadOutlined />
+          </template>
+          导出
+        </a-button>
+      </template>
+    </LeanToolbar>
 
-    <!-- 用户表单对话框 -->
-    <a-modal v-model:visible="modalVisible" :title="modalTitle" @ok="handleModalOk" @cancel="handleModalCancel">
-      <a-form ref="userFormRef" :model="userForm" :rules="userRules" :label-col="{ span: 6 }"
-        :wrapper-col="{ span: 16 }">
-        <a-form-item name="username" :label="t('user.form.username')">
-          <a-input v-model:value="userForm.username" />
+    <!-- 表格区域 -->
+    <LeanTable :columns="columns" :data-source="tableData" :loading="loading" :current="current" :page-size="pageSize"
+      :row-selection="rowSelection" @change="handleTableChange">
+      <!-- 状态列 -->
+      <template #status="{ record }">
+        <a-tag :color="record.status === '1' ? 'success' : 'error'">
+          {{ record.status === '1' ? '启用' : '禁用' }}
+        </a-tag>
+      </template>
+
+      <!-- 操作列 -->
+      <template #action="{ record }">
+        <a-space>
+          <a @click="handleEdit(record)">编辑</a>
+          <a-divider type="vertical" />
+          <a-popconfirm title="确定要删除该用户吗？" @confirm="handleDelete(record)">
+            <a class="text-danger">删除</a>
+          </a-popconfirm>
+        </a-space>
+      </template>
+    </LeanTable>
+
+    <!-- 分页区域 -->
+    <LeanPagination v-model:current="current" v-model:pageSize="pageSize" :total="total" :loading="loading"
+      @change="handlePageChange" />
+
+    <!-- 用户表单弹窗 -->
+    <LeanModal v-model:open="modalVisible" :title="modalTitle" :confirm-loading="submitLoading" @ok="handleSubmit"
+      @cancel="handleCancel">
+      <a-form ref="formRef" :model="formState" :rules="rules" :label-col="{ span: 4 }" :wrapper-col="{ span: 20 }">
+        <a-form-item label="用户名" name="username">
+          <a-input v-model:value="formState.username" placeholder="请输入用户名" />
         </a-form-item>
-        <a-form-item v-if="!userForm.id" name="password" :label="t('user.form.password')">
-          <a-input-password v-model:value="userForm.password" />
+        <a-form-item label="密码" name="password" :rules="[{ required: !formState.id, message: '请输入密码' }]">
+          <a-input-password v-model:value="formState.password" placeholder="请输入密码" />
         </a-form-item>
-        <a-form-item name="email" :label="t('user.form.email')">
-          <a-input v-model:value="userForm.email" />
+        <a-form-item label="状态" name="status">
+          <LeanSelect v-model:value="formState.status" :options="statusOptions" placeholder="请选择状态" />
         </a-form-item>
-        <a-form-item name="status" :label="t('user.form.status')">
-          <a-switch v-model:checked="userForm.status" :checked-value="'enabled'" :un-checked-value="'disabled'" />
+        <a-form-item label="角色" name="roleIds">
+          <LeanSelect v-model:value="formState.roleIds" :options="roleOptions" mode="multiple" placeholder="请选择角色" />
         </a-form-item>
       </a-form>
-    </a-modal>
+    </LeanModal>
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref, reactive } from 'vue'
-import { useI18n } from 'vue-i18n'
+<script lang="ts" setup>
+import { ref, computed } from 'vue'
+import { message } from 'ant-design-vue'
 import type { FormInstance } from 'ant-design-vue'
-import {
-  SearchOutlined,
-  ReloadOutlined,
-  PlusOutlined
-} from '@ant-design/icons-vue'
+import type { Dayjs } from 'dayjs'
+import { PlusOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons-vue'
+import { getUserList, createUser, updateUser, deleteUser, batchDeleteUser } from '@/api/identity/user'
+import { getRoleList } from '@/api/identity/role'
 
-const { t } = useI18n()
-
-// 搜索表单
-const searchForm = reactive({
-  username: '',
-  status: ''
-})
-
-// 表格列定义
+// 表格列配置
 const columns = [
   {
-    title: t('user.table.username'),
-    dataIndex: 'username',
-    key: 'username',
-    sorter: true
+    title: '序号',
+    dataIndex: 'index',
+    width: 60
   },
   {
-    title: t('user.table.email'),
-    dataIndex: 'email',
-    key: 'email'
+    title: '用户名',
+    dataIndex: 'username'
   },
   {
-    title: t('user.table.status'),
+    title: '状态',
     dataIndex: 'status',
-    key: 'status',
-    filters: [
-      { text: t('user.status.enabled'), value: 'enabled' },
-      { text: t('user.status.disabled'), value: 'disabled' }
-    ]
+    slots: { customRender: 'status' }
   },
   {
-    title: t('user.table.lastLoginTime'),
-    dataIndex: 'lastLoginTime',
-    key: 'lastLoginTime',
-    sorter: true
+    title: '创建时间',
+    dataIndex: 'creationTime'
   },
   {
-    title: t('common.action'),
-    key: 'action',
-    width: 150
+    title: '操作',
+    dataIndex: 'action',
+    slots: { customRender: 'action' },
+    width: 120
   }
 ]
 
-// 表格数据
+// 状态选项
+const statusOptions = [
+  { label: '启用', value: '1' },
+  { label: '禁用', value: '0' }
+]
+
+// 角色选项
+const roleOptions = ref<any[]>([])
+
+// 数据
+const tableData = ref<any[]>([])
 const loading = ref(false)
-const users = ref([])
-const pagination = reactive({
-  current: 1,
-  pageSize: 10,
-  total: 0,
-  showSizeChanger: true,
-  showQuickJumper: true
+const current = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
+const selectedRowKeys = ref<string[]>([])
+const modalVisible = ref(false)
+const submitLoading = ref(false)
+const formRef = ref<FormInstance>()
+
+// 搜索表单
+const searchForm = ref<{
+  username: string
+  status: string | undefined
+  dateRange: [Dayjs, Dayjs] | undefined
+}>({
+  username: '',
+  status: undefined,
+  dateRange: undefined
 })
 
-// 表单对话框
-const modalVisible = ref(false)
-const modalTitle = ref('')
-const userFormRef = ref<FormInstance>()
-const userForm = reactive({
+// 表单数据
+const formState = ref({
   id: '',
   username: '',
   password: '',
-  email: '',
-  status: 'enabled'
+  status: '1',
+  roleIds: []
 })
 
-// 表单验证规则
-const userRules = {
-  username: [
-    { required: true, message: t('user.rules.username.required') },
-    { min: 2, max: 20, message: t('user.rules.username.length') }
-  ],
-  password: [
-    { required: true, message: t('user.rules.password.required') },
-    { min: 6, max: 20, message: t('user.rules.password.length') }
-  ],
-  email: [
-    { required: true, message: t('user.rules.email.required') },
-    { type: 'email', message: t('user.rules.email.format') }
-  ]
+// 表单校验规则
+const rules = {
+  username: [{ required: true, message: '请输入用户名' }],
+  status: [{ required: true, message: '请选择状态' }],
+  roleIds: [{ required: true, message: '请选择角色' }]
 }
 
-// 搜索处理
-const handleSearch = () => {
-  pagination.current = 1
-  fetchUsers()
-}
-
-// 重置搜索
-const handleReset = () => {
-  searchForm.username = ''
-  searchForm.status = ''
-  handleSearch()
-}
-
-// 表格变化处理
-const handleTableChange = (pag: any, filters: any, sorter: any) => {
-  pagination.current = pag.current
-  pagination.pageSize = pag.pageSize
-  fetchUsers()
-}
-
-// 添加用户
-const handleAdd = () => {
-  Object.assign(userForm, {
-    id: '',
-    username: '',
-    password: '',
-    email: '',
-    status: 'enabled'
-  })
-  modalTitle.value = t('user.add')
-  modalVisible.value = true
-}
-
-// 编辑用户
-const handleEdit = (record: any) => {
-  Object.assign(userForm, record)
-  modalTitle.value = t('user.edit')
-  modalVisible.value = true
-}
-
-// 删除用户
-const handleDelete = async (record: any) => {
-  // TODO: 实现删除逻辑
-}
-
-// 对话框确认
-const handleModalOk = async () => {
-  try {
-    await userFormRef.value?.validate()
-    // TODO: 实现保存逻辑
-    modalVisible.value = false
-    fetchUsers()
-  } catch (error) {
-    console.error('表单验证失败:', error)
+// 表格选择配置
+const rowSelection = {
+  selectedRowKeys: selectedRowKeys.value,
+  onChange: (keys: string[]) => {
+    selectedRowKeys.value = keys
   }
 }
 
-// 对话框取消
-const handleModalCancel = () => {
-  modalVisible.value = false
-  userFormRef.value?.resetFields()
-}
+// 弹窗标题
+const modalTitle = computed(() => formState.value.id ? '编辑用户' : '新增用户')
 
-// 获取用户列表
-const fetchUsers = async () => {
+// 加载数据
+const loadData = async () => {
+  loading.value = true
   try {
-    loading.value = true
-    // TODO: 实现获取用户列表逻辑
+    const res = await getUserList({
+      page: current.value,
+      pageSize: pageSize.value,
+      username: searchForm.value.username,
+      status: searchForm.value.status,
+      dateRange: searchForm.value.dateRange
+    })
+    tableData.value = res.data.data
+    total.value = res.data.total
   } finally {
     loading.value = false
   }
 }
 
+// 加载角色列表
+const loadRoleList = async () => {
+  const res = await getRoleList()
+  roleOptions.value = res.data.data.map((item: any) => ({
+    label: item.name,
+    value: item.id
+  }))
+}
+
+// 处理搜索
+const handleSearch = () => {
+  current.value = 1
+  loadData()
+}
+
+// 处理重置
+const handleReset = () => {
+  searchForm.value = {
+    username: '',
+    status: undefined,
+    dateRange: undefined
+  }
+  current.value = 1
+  loadData()
+}
+
+// 处理表格变化
+const handleTableChange = (pagination: any, filters: any, sorter: any) => {
+  // 处理排序和筛选
+  loadData()
+}
+
+// 处理分页变化
+const handlePageChange = (page: number, size: number) => {
+  current.value = page
+  pageSize.value = size
+  loadData()
+}
+
+// 处理新增
+const handleAdd = () => {
+  formState.value = {
+    id: '',
+    username: '',
+    password: '',
+    status: '1',
+    roleIds: []
+  }
+  modalVisible.value = true
+}
+
+// 处理编辑
+const handleEdit = (record: any) => {
+  formState.value = {
+    ...record,
+    password: '' // 编辑时不显示密码
+  }
+  modalVisible.value = true
+}
+
+// 处理删除
+const handleDelete = async (record: any) => {
+  try {
+    await deleteUser(record.id)
+    message.success('删除成功')
+    loadData()
+  } catch (error) {
+    console.error('删除失败：', error)
+  }
+}
+
+// 处理批量删除
+const handleBatchDelete = async () => {
+  if (!selectedRowKeys.value.length) return
+  try {
+    await batchDeleteUser(selectedRowKeys.value)
+    message.success('批量删除成功')
+    selectedRowKeys.value = []
+    loadData()
+  } catch (error) {
+    console.error('批量删除失败：', error)
+  }
+}
+
+// 处理导出
+const handleExport = () => {
+  // 实现导出逻辑
+}
+
+// 处理表单提交
+const handleSubmit = async () => {
+  try {
+    await formRef.value?.validate()
+    submitLoading.value = true
+    if (formState.value.id) {
+      await updateUser(formState.value.id, formState.value)
+      message.success('更新成功')
+    } else {
+      await createUser(formState.value)
+      message.success('创建成功')
+    }
+    modalVisible.value = false
+    loadData()
+  } catch (error) {
+    console.error('提交失败：', error)
+  } finally {
+    submitLoading.value = false
+  }
+}
+
+// 处理取消
+const handleCancel = () => {
+  modalVisible.value = false
+  formRef.value?.resetFields()
+}
+
 // 初始化
-fetchUsers()
+loadData()
+loadRoleList()
 </script>
 
 <style lang="less" scoped>
-.user-container {
-  .toolbar {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 16px;
-  }
+.user-manage {
+  padding: 16px;
+  min-height: 100%;
 }
 </style>

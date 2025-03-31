@@ -1,15 +1,12 @@
 <!-- App.vue -->
 <template>
-  <a-config-provider :locale="antdLocale" :theme="{
-    algorithm: currentTheme === 'dark' ? darkAlgorithm : defaultAlgorithm,
-    ...skinStore.currentTheme
-  }">
+  <a-config-provider :theme="themeConfig" :locale="antdLocale">
     <router-view></router-view>
   </a-config-provider>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { RouterView } from 'vue-router'
 import { ConfigProvider, theme } from 'ant-design-vue'
 import { useAppStore } from '@/stores/app'
@@ -34,7 +31,7 @@ const { locale } = useI18n()
 const currentTheme = computed(() => appStore.theme)
 
 const antdLocale = computed(() => {
-  switch (locale.value) {
+  switch (appStore.locale) {
     // 中文（简体）
     case 'zh-CN':
       return zhCN
@@ -66,6 +63,29 @@ const antdLocale = computed(() => {
     default:
       return enUS
   }
+})
+
+const themeConfig = computed(() => {
+  const baseTheme = skinStore.currentTheme
+  const algorithm = appStore.isDark ? theme.darkAlgorithm : theme.defaultAlgorithm
+  return {
+    algorithm,
+    token: {
+      ...baseTheme.token,
+      borderRadius: 4,
+      fontSize: 14,
+      colorBgContainer: appStore.isDark ? '#141414' : '#ffffff',
+      colorBgElevated: appStore.isDark ? '#1f1f1f' : '#ffffff',
+      colorBorder: appStore.isDark ? '#303030' : '#f0f0f0',
+      colorText: appStore.isDark ? '#ffffff' : '#000000',
+      colorTextSecondary: appStore.isDark ? 'rgba(255, 255, 255, 0.85)' : 'rgba(0, 0, 0, 0.85)'
+    }
+  }
+})
+
+// 监听语言变化
+watch(() => appStore.locale, (newLocale) => {
+  locale.value = newLocale
 })
 </script>
 

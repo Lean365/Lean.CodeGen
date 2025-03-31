@@ -16,15 +16,13 @@ public static class LeanSeedDataExtensions
     if (!isUpdate)
     {
       entity.CreateTime = DateTime.Now;
-      entity.CreateUserId = 0;
-      entity.CreateUserName = "system";
+      entity.CreateBy = "system";
       entity.TenantId = 0; // 设置默认租户ID为0，表示系统租户
     }
     else
     {
       entity.UpdateTime = DateTime.Now;
-      entity.UpdateUserId = 0;
-      entity.UpdateUserName = "system";
+      entity.UpdateBy = "system";
     }
     return entity;
   }
@@ -35,8 +33,7 @@ public static class LeanSeedDataExtensions
   public static T CopyAuditFields<T>(this T target, T source) where T : LeanBaseEntity
   {
     target.CreateTime = source.CreateTime;
-    target.CreateUserId = source.CreateUserId;
-    target.CreateUserName = source.CreateUserName;
+    target.CreateBy = source.CreateBy;
     target.TenantId = source.TenantId; // 复制租户ID
     return target;
   }

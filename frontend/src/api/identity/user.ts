@@ -13,6 +13,7 @@ import type {
 } from '@/types/identity/user'
 import type { UserInfo } from '@/types/identity/auth'
 import request from '@/utils/request'
+import type { Dayjs } from 'dayjs'
 
 // 获取当前用户信息
 export function getCurrentUserAsync(): Promise<ApiResponse<LeanUserInfoDto>> {
@@ -154,4 +155,40 @@ export function changePasswordAsync(data: ChangePasswordRequest): Promise<ApiRes
     method: 'put',
     data
   })
+}
+
+export interface UserQueryParams {
+  page: number
+  pageSize: number
+  username?: string
+  status?: string
+  dateRange?: [Dayjs, Dayjs] | undefined
+}
+
+export interface UserData {
+  id: string
+  username: string
+  status: string
+  creationTime: string
+  roleIds: string[]
+}
+
+export const getUserList = (params: UserQueryParams) => {
+  return request.get<{ data: UserData[]; total: number }>('/api/identity/users', { params })
+}
+
+export const createUser = (data: Partial<UserData>) => {
+  return request.post('/api/identity/users', data)
+}
+
+export const updateUser = (id: string, data: Partial<UserData>) => {
+  return request.put(`/api/identity/users/${id}`, data)
+}
+
+export const deleteUser = (id: string) => {
+  return request.delete(`/api/identity/users/${id}`)
+}
+
+export const batchDeleteUser = (ids: string[]) => {
+  return request.delete('/api/identity/users/batch', { data: ids })
 } 

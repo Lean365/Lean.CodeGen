@@ -32,6 +32,13 @@ public interface ILeanAuthService
   /// <summary>
   /// 登出
   /// </summary>
+  /// <param name="request">登出请求</param>
   /// <returns>操作结果</returns>
-  Task<LeanApiResult> LogoutAsync();
+  Task<LeanApiResult> LogoutAsync(LeanLogoutDto request);
+
+  /// <summary>
+  /// 获取当前登录用户信息
+  /// </summary>
+  /// <returns>用户信息</returns>
+  Task<LeanApiResult<LeanUserDto>> GetCurrentUserAsync();
 }

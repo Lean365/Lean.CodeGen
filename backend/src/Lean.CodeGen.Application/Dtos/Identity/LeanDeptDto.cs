@@ -82,12 +82,12 @@ public class LeanDeptDto : LeanBaseDto
   /// <summary>
   /// 创建时间
   /// </summary>
-  public DateTime CreateTime { get; set; }
+  public new DateTime CreateTime { get; set; }
 
   /// <summary>
   /// 更新时间
   /// </summary>
-  public DateTime? UpdateTime { get; set; }
+  public new DateTime? UpdateTime { get; set; }
 }
 
 /// <summary>
@@ -540,9 +540,9 @@ public class LeanDeptImportResultDto : LeanImportResult
   public new List<LeanDeptImportErrorDto> Errors { get; set; } = new();
 
   /// <summary>
-  /// 错误信息
+  /// 错误消息
   /// </summary>
-  public string? ErrorMessage { get; set; }
+  public new string ErrorMessage { get; set; } = string.Empty;
 
   /// <summary>
   /// 添加错误信息

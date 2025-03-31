@@ -43,8 +43,9 @@ public class LeanMailTmplController : LeanBaseController
       ILeanMailTmplService mailTmplService,
       ILeanLocalizationService localizationService,
       IConfiguration configuration,
+      ILeanUserContext userContext,
       NLog.ILogger logger)
-      : base(localizationService, configuration)
+      : base(localizationService, configuration, userContext)
   {
     _mailTmplService = mailTmplService;
     _logger = logger;
@@ -183,9 +184,9 @@ public class LeanMailTmplController : LeanBaseController
   /// </summary>
   [HttpGet("template")]
   [LeanPermission("routine:mail-tmpl:import", "导入邮件模板")]
-  public async Task<IActionResult> GetImportTemplateAsync()
+  public async Task<IActionResult> GetTemplateAsync()
   {
-    var bytes = await _mailTmplService.GetImportTemplateAsync();
+    var bytes = await _mailTmplService.GetTemplateAsync();
     var fileName = $"mail_template_template_{DateTime.Now:yyyyMMddHHmmss}.xlsx";
     return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
   }

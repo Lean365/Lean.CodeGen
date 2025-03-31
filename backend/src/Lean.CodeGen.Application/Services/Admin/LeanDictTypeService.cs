@@ -367,7 +367,7 @@ public class LeanDictTypeService : LeanBaseService, ILeanDictTypeService
     /// <summary>
     /// 获取导入模板
     /// </summary>
-    public Task<byte[]> GetImportTemplateAsync()
+    public Task<byte[]> GetTemplateAsync()
     {
         var template = new List<LeanDictTypeImportDto>();
         var bytes = LeanExcelHelper.Export(template);

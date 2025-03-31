@@ -1,4 +1,23 @@
-import type { ApiResponse } from '../common/api'
+import type { LeanApiResult } from '../common/api'
+
+// 设备指纹信息
+export interface DeviceFingerprint {
+  platform: string
+  userAgent: string
+  screen: {
+    width: number
+    height: number
+    colorDepth: number
+    pixelRatio: number
+    availWidth: number
+    availHeight: number
+  }
+  language: string
+  timezone: string
+  hardwareConcurrency: number
+  deviceMemory?: number
+  maxTouchPoints: number
+}
 
 // 登录请求参数
 export interface LoginRequest {
@@ -7,6 +26,22 @@ export interface LoginRequest {
   sliderX: number
   sliderY: number
   captchaKey: string
+  deviceName?: string
+  deviceType?: number
+  isTrusted?: number
+  loginIp?: string
+  browser?: string
+  os?: string
+  userAgent?: string
+  screenWidth?: number
+  screenHeight?: number
+  screenColorDepth?: number
+  screenPixelRatio?: number
+  language?: string
+  timezone?: string
+  hardwareConcurrency?: number
+  deviceMemory?: number
+  maxTouchPoints?: number
 }
 
 // 登录响应数据
@@ -17,12 +52,31 @@ export interface LoginResponse {
 
 // 用户信息
 export interface UserInfo {
-  id: string
+  id: number
   userName: string
   displayName: string
+  englishName: string
   email: string
   roles: string[]
   permissions: string[]
+  avatar?: string
+  depts: {
+    deptId: number
+    deptName: string
+  }[]
+  posts: {
+    postId: number
+    postName: string
+  }[]
+  userRoles: {
+    roleId: number
+    roleName: string
+  }[]
+  loginIp?: string
+  browser?: string
+  os?: string
+  userAgent?: string
+  isMobile?: boolean
 }
 
 // 滑块验证码数据
@@ -39,5 +93,5 @@ export interface SliderCaptcha {
 }
 
 // API响应类型
-export type LoginApiResponse = ApiResponse<LoginResponse>
-export type SliderCaptchaResponse = ApiResponse<SliderCaptcha> 
+export type LoginApiResponse = LeanApiResult<LoginResponse>
+export type SliderCaptchaResponse = LeanApiResult<SliderCaptcha> 

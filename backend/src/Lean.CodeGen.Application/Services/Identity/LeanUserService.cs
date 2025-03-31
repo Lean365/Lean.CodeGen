@@ -289,7 +289,7 @@ namespace Lean.CodeGen.Application.Services.Identity
     /// 5. 创建时间范围
     /// 查询结果按创建时间倒序排序
     /// </remarks>
-    public async Task<LeanPageResult<LeanUserDto>> QueryAsync(LeanUserQueryDto input)
+    public async Task<LeanPageResult<LeanUserDto>> GetPageAsync(LeanUserQueryDto input)
     {
       using (LogPerformance("查询用户列表"))
       {
@@ -498,7 +498,7 @@ namespace Lean.CodeGen.Application.Services.Identity
         PageIndex = 1
       };
 
-      var users = await QueryAsync(queryInput);
+      var users = await GetPageAsync(queryInput);
       var exportDtos = users.Items.Select(x => new LeanUserExportDto
       {
         UserName = x.UserName,
@@ -566,7 +566,7 @@ namespace Lean.CodeGen.Application.Services.Identity
     /// <remarks>
     /// TODO: 实现获取用户导入模板功能
     /// </remarks>
-    public async Task<byte[]> GetImportTemplateAsync()
+    public async Task<byte[]> GetTemplateAsync()
     {
       var template = new List<LeanUserImportDto>
     {

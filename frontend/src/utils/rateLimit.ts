@@ -2,7 +2,7 @@
  * 速率限制工具
  */
 import i18n from '@/locales'
-import { formatDateTime } from './format'
+import { formatDateTime } from './formatter'
 
 const { t } = i18n.global
 

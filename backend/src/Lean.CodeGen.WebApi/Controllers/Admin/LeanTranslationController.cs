@@ -25,8 +25,9 @@ public class LeanTranslationController : LeanBaseController
   public LeanTranslationController(
       ILeanTranslationService translationService,
       ILeanLocalizationService localizationService,
-      IConfiguration configuration)
-      : base(localizationService, configuration)
+      IConfiguration configuration,
+      ILeanUserContext userContext)
+      : base(localizationService, configuration, userContext)
   {
     _translationService = translationService;
   }
@@ -181,9 +182,9 @@ public class LeanTranslationController : LeanBaseController
   /// 获取导入模板
   /// </summary>
   [HttpGet("template")]
-  public async Task<IActionResult> GetImportTemplateAsync()
+  public async Task<IActionResult> GetTemplateAsync()
   {
-    var bytes = await _translationService.GetImportTemplateAsync();
+    var bytes = await _translationService.GetTemplateAsync();
     return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "translation-template.xlsx");
   }
 

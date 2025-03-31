@@ -377,7 +377,7 @@ public class LeanDictDataService : LeanBaseService, ILeanDictDataService
   /// <summary>
   /// 获取导入模板
   /// </summary>
-  public Task<byte[]> GetImportTemplateAsync()
+  public Task<byte[]> GetTemplateAsync()
   {
     var template = new List<LeanDictDataImportTemplateDto>
     {

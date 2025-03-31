@@ -3,339 +3,431 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using Lean.CodeGen.Common.Models;
 using Lean.CodeGen.Domain.Entities;
 using Lean.CodeGen.Domain.Interfaces.Repositories;
 using Lean.CodeGen.Infrastructure.Data.Context;
+using Lean.CodeGen.Infrastructure.Extensions;
 using Lean.CodeGen.Application.Services.Base;
+using Lean.CodeGen.Domain.Context;
 using SqlSugar;
 
-namespace Lean.CodeGen.Infrastructure.Repositories;
-
-/// <summary>
-/// 通用仓储实现（使用 long 作为主键类型）
-/// </summary>
-/// <typeparam name="TEntity">实体类型</typeparam>
-/// <remarks>
-/// 该类继承自 LeanRepository{TEntity, long}，专门用于处理使用 long 类型作为主键的实体。
-/// 通常用于系统中的大多数实体，因为它们都继承自 LeanBaseEntity。
-/// </remarks>
-public class LeanRepository<TEntity> : LeanRepository<TEntity, long>, ILeanRepository<TEntity>
-  where TEntity : LeanBaseEntity, new()
-{
-  private readonly LeanBaseServiceContext _serviceContext;
-
-  /// <summary>
-  /// 初始化仓储实例
-  /// </summary>
-  /// <param name="dbContext">数据库上下文</param>
-  /// <param name="serviceContext">服务上下文</param>
-  public LeanRepository(LeanDbContext dbContext, LeanBaseServiceContext serviceContext) : base(dbContext)
-  {
-    _serviceContext = serviceContext;
-  }
-
-  /// <summary>
-  /// 创建实体前的处理
-  /// </summary>
-  protected override void BeforeCreate(TEntity entity)
-  {
-    base.BeforeCreate(entity);
-
-    // 设置创建信息
-    entity.CreateTime = DateTime.Now;
-    entity.CreateUserId = _serviceContext.CurrentUserId;
-    entity.CreateUserName = _serviceContext.CurrentUserName;
-    entity.TenantId = _serviceContext.CurrentTenantId;
-  }
-
-  /// <summary>
-  /// 更新实体前的处理
-  /// </summary>
-  protected override void BeforeUpdate(TEntity entity)
-  {
-    base.BeforeUpdate(entity);
-
-    // 设置更新信息
-    entity.UpdateTime = DateTime.Now;
-    entity.UpdateUserId = _serviceContext.CurrentUserId;
-    entity.UpdateUserName = _serviceContext.CurrentUserName;
-  }
-}
-
-/// <summary>
-/// 通用仓储实现
-/// </summary>
-/// <typeparam name="TEntity">实体类型</typeparam>
-/// <typeparam name="TKey">主键类型</typeparam>
-/// <remarks>
-/// 该类提供了对实体的基本CRUD操作和一些高级查询功能：
-/// 1. 基本的增删改查操作
-/// 2. 批量操作支持
-/// 3. 事务管理
-/// 4. 分页查询
-/// 5. 条件查询等
-/// </remarks>
-public class LeanRepository<TEntity, TKey> : ILeanRepository<TEntity, TKey>
-  where TEntity : class, new()
+namespace Lean.CodeGen.Infrastructure.Repositories
 {
   /// <summary>
-  /// 数据库上下文
+  /// 基础仓储实现
   /// </summary>
-  protected readonly LeanDbContext DbContext;
-
-  /// <summary>
-  /// 初始化仓储实例
-  /// </summary>
-  /// <param name="dbContext">数据库上下文</param>
-  public LeanRepository(LeanDbContext dbContext)
+  /// <typeparam name="TEntity">实体类型</typeparam>
+  /// <typeparam name="TKey">主键类型</typeparam>
+  public class LeanRepository<TEntity, TKey> : ILeanRepository<TEntity, TKey>
+      where TEntity : class, new()
   {
-    DbContext = dbContext;
-  }
+    protected readonly ISqlSugarClient DbContext;
+    protected readonly LeanBaseServiceContext _serviceContext;
+    protected readonly ILeanUserContext _userContext;
 
-  /// <summary>
-  /// 创建实体前的处理
-  /// </summary>
-  protected virtual void BeforeCreate(TEntity entity)
-  {
-  }
-
-  /// <summary>
-  /// 更新实体前的处理
-  /// </summary>
-  protected virtual void BeforeUpdate(TEntity entity)
-  {
-  }
-
-  /// <summary>
-  /// 开始事务
-  /// </summary>
-  /// <remarks>
-  /// 如果当前没有活动的事务，则开启新事务。
-  /// 如果已有事务在进行中，则忽略此调用。
-  /// </remarks>
-  public virtual async Task BeginTransactionAsync()
-  {
-    await DbContext.BeginTransactionAsync();
-  }
-
-  /// <summary>
-  /// 提交事务
-  /// </summary>
-  /// <remarks>
-  /// 只有在事务已经开启的情况下才会执行提交操作。
-  /// 提交后会清除事务状态标记。
-  /// </remarks>
-  public virtual async Task CommitAsync()
-  {
-    await DbContext.CommitTransactionAsync();
-  }
-
-  /// <summary>
-  /// 回滚事务
-  /// </summary>
-  /// <remarks>
-  /// 只有在事务已经开启的情况下才会执行回滚操作。
-  /// 回滚后会清除事务状态标记。
-  /// </remarks>
-  public virtual async Task RollbackAsync()
-  {
-    await DbContext.RollbackTransactionAsync();
-  }
-
-  /// <summary>
-  /// 创建实体
-  /// </summary>
-  /// <param name="entity">要创建的实体对象</param>
-  /// <returns>新创建实体的主键值</returns>
-  /// <remarks>
-  /// 使用 InsertReturnIdentity 方法插入实体并返回自增主键值。
-  /// 支持不同类型的主键通过类型转换返回。
-  /// </remarks>
-  public virtual async Task<TKey> CreateAsync(TEntity entity)
-  {
-    BeforeCreate(entity);
-    var id = await DbContext.InsertReturnIdentityAsync(entity);
-    return (TKey)Convert.ChangeType(id, typeof(TKey));
-  }
-
-  /// <summary>
-  /// 批量创建实体
-  /// </summary>
-  /// <param name="entities">要创建的实体列表</param>
-  /// <returns>是否创建成功</returns>
-  /// <remarks>
-  /// 使用批量插入方式提高性能。
-  /// 如果列表为空则返回 false。
-  /// </remarks>
-  public virtual async Task<bool> CreateRangeAsync(List<TEntity> entities)
-  {
-    if (entities == null || !entities.Any())
-      return false;
-
-    foreach (var entity in entities)
+    protected LeanRepository(ISqlSugarClient dbContext, LeanBaseServiceContext serviceContext, ILeanUserContext userContext)
     {
-      BeforeCreate(entity);
+      DbContext = dbContext;
+      _serviceContext = serviceContext;
+      _userContext = userContext;
     }
 
-    return await DbContext.InsertRangeAsync(entities);
-  }
+    #region 查询操作
 
-  /// <summary>
-  /// 更新实体
-  /// </summary>
-  /// <param name="entity">要更新的实体对象</param>
-  /// <returns>是否更新成功</returns>
-  public virtual async Task<bool> UpdateAsync(TEntity entity)
-  {
-    BeforeUpdate(entity);
-    return await DbContext.UpdateAsync(entity);
-  }
-
-  /// <summary>
-  /// 批量更新实体
-  /// </summary>
-  /// <param name="entities">要更新的实体列表</param>
-  /// <returns>是否更新成功</returns>
-  /// <remarks>
-  /// 使用批量更新方式提高性能。
-  /// 如果列表为空则返回 false。
-  /// </remarks>
-  public virtual async Task<bool> UpdateRangeAsync(List<TEntity> entities)
-  {
-    if (entities == null || !entities.Any())
-      return false;
-
-    foreach (var entity in entities)
+    /// <summary>
+    /// 获取单个实体
+    /// </summary>
+    public virtual async Task<TEntity> GetAsync(TKey id)
     {
-      BeforeUpdate(entity);
+      return await DbContext.Queryable<TEntity>().InSingleAsync(id);
     }
 
-    return await DbContext.UpdateRangeAsync(entities);
+    /// <summary>
+    /// 根据条件获取单个实体
+    /// </summary>
+    public virtual async Task<TEntity> GetAsync(Expression<Func<TEntity, bool>> predicate)
+    {
+      return await DbContext.Queryable<TEntity>().FirstAsync(predicate);
+    }
+
+    /// <summary>
+    /// 获取所有实体
+    /// </summary>
+    public virtual async Task<List<TEntity>> GetListAsync()
+    {
+      return await DbContext.Queryable<TEntity>().ToListAsync();
+    }
+
+    /// <summary>
+    /// 根据条件获取实体列表
+    /// </summary>
+    public virtual async Task<List<TEntity>> GetListAsync(Expression<Func<TEntity, bool>> predicate)
+    {
+      return await DbContext.Queryable<TEntity>().Where(predicate).ToListAsync();
+    }
+
+    /// <summary>
+    /// 根据ID获取实体
+    /// </summary>
+    public virtual async Task<TEntity> GetByIdAsync(TKey id)
+    {
+      return await DbContext.Queryable<TEntity>().InSingleAsync(id);
+    }
+
+    /// <summary>
+    /// 获取第一个匹配的实体
+    /// </summary>
+    public virtual async Task<TEntity> FirstOrDefaultAsync(Expression<Func<TEntity, bool>> predicate)
+    {
+      return await DbContext.Queryable<TEntity>().FirstAsync(predicate);
+    }
+
+    /// <summary>
+    /// 是否存在匹配的实体
+    /// </summary>
+    public virtual async Task<bool> AnyAsync(Expression<Func<TEntity, bool>> predicate)
+    {
+      return await DbContext.Queryable<TEntity>().AnyAsync(predicate);
+    }
+
+    /// <summary>
+    /// 获取匹配的实体数量
+    /// </summary>
+    public virtual async Task<long> CountAsync(Expression<Func<TEntity, bool>> predicate)
+    {
+      return await DbContext.Queryable<TEntity>().CountAsync(predicate);
+    }
+
+    /// <summary>
+    /// 分页查询（支持排序）
+    /// </summary>
+    public virtual async Task<(long Total, List<TEntity> Items)> GetPageListAsync(
+        Expression<Func<TEntity, bool>> predicate,
+        int pageIndex,
+        int pageSize,
+        Expression<Func<TEntity, object>> orderBy = null,
+        bool isAsc = true)
+    {
+      RefAsync<int> total = 0;
+      var query = DbContext.Queryable<TEntity>().Where(predicate);
+
+      if (orderBy != null)
+      {
+        query = isAsc ? query.OrderBy(orderBy) : query.OrderByDescending(orderBy);
+      }
+
+      var items = await query.ToPageListAsync(pageIndex, pageSize, total);
+      return (total, items);
+    }
+
+    /// <summary>
+    /// 分页查询
+    /// </summary>
+    public virtual async Task<(List<TEntity> Items, long Total)> GetPagedListAsync(
+        Expression<Func<TEntity, bool>> predicate,
+        int pageIndex,
+        int pageSize)
+    {
+      RefAsync<int> total = 0;
+      var items = await DbContext.Queryable<TEntity>()
+          .Where(predicate)
+          .ToPageListAsync(pageIndex, pageSize, total);
+      return (items, total);
+    }
+
+    /// <summary>
+    /// 分批获取数据
+    /// </summary>
+    public virtual async Task<List<TEntity>> GetBatchAsync(
+        Expression<Func<TEntity, bool>> predicate,
+        int batchSize = 1000)
+    {
+      var result = new List<TEntity>();
+      var total = await DbContext.Queryable<TEntity>().CountAsync(predicate);
+      var pageCount = (int)Math.Ceiling(total / (double)batchSize);
+
+      for (var i = 1; i <= pageCount; i++)
+      {
+        var items = await DbContext.Queryable<TEntity>()
+            .Where(predicate)
+            .ToPageListAsync(i, batchSize);
+        result.AddRange(items);
+      }
+
+      return result;
+    }
+
+    #endregion
+
+    #region 新增操作
+
+    /// <summary>
+    /// 新增实体
+    /// </summary>
+    public virtual async Task<TKey> CreateAsync(TEntity entity)
+    {
+      if (entity is LeanBaseEntity baseEntity)
+      {
+        baseEntity.CreateTime = DateTime.Now;
+        baseEntity.CreateBy = _userContext.GetCurrentUserName();
+        baseEntity.TenantId = _userContext.GetCurrentTenantId();
+      }
+      await DbContext.Insertable(entity).ExecuteCommandAsync();
+      return (TKey)entity.GetType().GetProperty("Id").GetValue(entity);
+    }
+
+    /// <summary>
+    /// 批量新增实体
+    /// </summary>
+    public virtual async Task<bool> CreateRangeAsync(List<TEntity> entities)
+    {
+      if (entities == null || !entities.Any())
+        return false;
+
+      foreach (var entity in entities)
+      {
+        if (entity is LeanBaseEntity baseEntity)
+        {
+          baseEntity.CreateTime = DateTime.Now;
+          baseEntity.CreateBy = _userContext.GetCurrentUserName();
+          baseEntity.TenantId = _userContext.GetCurrentTenantId();
+        }
+      }
+
+      return await DbContext.Insertable(entities).ExecuteCommandAsync() > 0;
+    }
+
+    #endregion
+
+    #region 更新操作
+
+    /// <summary>
+    /// 更新实体
+    /// </summary>
+    public virtual async Task<bool> UpdateAsync(TEntity entity)
+    {
+      if (entity is LeanBaseEntity baseEntity)
+      {
+        baseEntity.UpdateTime = DateTime.Now;
+        baseEntity.UpdateBy = _userContext.GetCurrentUserName();
+      }
+      return await DbContext.Updateable(entity).ExecuteCommandAsync() > 0;
+    }
+
+    /// <summary>
+    /// 批量更新实体
+    /// </summary>
+    public virtual async Task<bool> UpdateRangeAsync(List<TEntity> entities)
+    {
+      if (entities == null || !entities.Any())
+        return false;
+
+      foreach (var entity in entities)
+      {
+        if (entity is LeanBaseEntity baseEntity)
+        {
+          baseEntity.UpdateTime = DateTime.Now;
+          baseEntity.UpdateBy = _userContext.GetCurrentUserName();
+        }
+      }
+
+      return await DbContext.Updateable(entities).ExecuteCommandAsync() > 0;
+    }
+
+    #endregion
+
+    #region 审核操作
+
+    /// <summary>
+    /// 审核实体
+    /// </summary>
+    public virtual async Task<bool> AuditAsync(TEntity entity)
+    {
+      if (entity is LeanBaseEntity baseEntity)
+      {
+        baseEntity.AuditTime = DateTime.Now;
+        baseEntity.AuditBy = _userContext.GetCurrentUserName();
+      }
+      return await DbContext.Updateable(entity).ExecuteCommandAsync() > 0;
+    }
+
+    /// <summary>
+    /// 批量审核实体
+    /// </summary>
+    public virtual async Task<bool> AuditRangeAsync(List<TEntity> entities)
+    {
+      if (entities == null || !entities.Any())
+        return false;
+
+      foreach (var entity in entities)
+      {
+        if (entity is LeanBaseEntity baseEntity)
+        {
+          baseEntity.AuditTime = DateTime.Now;
+          baseEntity.AuditBy = _userContext.GetCurrentUserName();
+        }
+      }
+
+      return await DbContext.Updateable(entities).ExecuteCommandAsync() > 0;
+    }
+
+    #endregion
+
+    #region 撤销操作
+
+    /// <summary>
+    /// 撤销实体
+    /// </summary>
+    public virtual async Task<bool> RevokeAsync(TEntity entity)
+    {
+      if (entity is LeanBaseEntity baseEntity)
+      {
+        baseEntity.AuditStatus = 0;
+        baseEntity.AuditTime = null;
+        baseEntity.AuditBy = null;
+      }
+      return await DbContext.Updateable(entity).ExecuteCommandAsync() > 0;
+    }
+
+    /// <summary>
+    /// 批量撤销实体
+    /// </summary>
+    public virtual async Task<bool> RevokeRangeAsync(List<TEntity> entities)
+    {
+      if (entities == null || !entities.Any())
+        return false;
+
+      foreach (var entity in entities)
+      {
+        if (entity is LeanBaseEntity baseEntity)
+        {
+          baseEntity.AuditStatus = 0;
+          baseEntity.AuditTime = null;
+          baseEntity.AuditBy = null;
+        }
+      }
+
+      return await DbContext.Updateable(entities).ExecuteCommandAsync() > 0;
+    }
+
+    #endregion
+
+    #region 删除操作
+
+    /// <summary>
+    /// 删除实体
+    /// </summary>
+    public virtual async Task<bool> DeleteAsync(TEntity entity)
+    {
+      if (entity is LeanBaseEntity baseEntity)
+      {
+        baseEntity.IsDeleted = 1;
+        baseEntity.DeleteTime = DateTime.Now;
+        baseEntity.DeleteBy = _userContext.GetCurrentUserName();
+      }
+      return await DbContext.Updateable(entity).ExecuteCommandAsync() > 0;
+    }
+
+    /// <summary>
+    /// 根据条件删除实体
+    /// </summary>
+    public virtual async Task<bool> DeleteAsync(Expression<Func<TEntity, bool>> predicate)
+    {
+      var entities = await DbContext.Queryable<TEntity>().Where(predicate).ToListAsync();
+      if (!entities.Any())
+        return false;
+
+      foreach (var entity in entities)
+      {
+        if (entity is LeanBaseEntity baseEntity)
+        {
+          baseEntity.IsDeleted = 1;
+          baseEntity.DeleteTime = DateTime.Now;
+          baseEntity.DeleteBy = _userContext.GetCurrentUserName();
+        }
+      }
+
+      return await DbContext.Updateable(entities).ExecuteCommandAsync() > 0;
+    }
+
+    /// <summary>
+    /// 批量删除实体
+    /// </summary>
+    public virtual async Task<bool> DeleteRangeAsync(List<TEntity> entities)
+    {
+      if (entities == null || !entities.Any())
+        return false;
+
+      foreach (var entity in entities)
+      {
+        if (entity is LeanBaseEntity baseEntity)
+        {
+          baseEntity.IsDeleted = 1;
+          baseEntity.DeleteTime = DateTime.Now;
+          baseEntity.DeleteBy = _userContext.GetCurrentUserName();
+        }
+      }
+
+      return await DbContext.Updateable(entities).ExecuteCommandAsync() > 0;
+    }
+
+    #endregion
   }
 
   /// <summary>
-  /// 删除实体
+  /// 业务仓储实现
   /// </summary>
-  /// <param name="entity">要删除的实体对象</param>
-  /// <returns>是否删除成功</returns>
-  public virtual async Task<bool> DeleteAsync(TEntity entity)
+  /// <typeparam name="TEntity">实体类型</typeparam>
+  public class LeanRepository<TEntity> : LeanRepository<TEntity, long>, ILeanRepository<TEntity>
+      where TEntity : LeanBaseEntity, new()
   {
-    return await DbContext.DeleteAsync(entity);
-  }
+    public LeanRepository(ISqlSugarClient dbContext, LeanBaseServiceContext serviceContext, ILeanUserContext userContext)
+        : base(dbContext, serviceContext, userContext)
+    {
+    }
 
-  /// <summary>
-  /// 根据条件删除实体
-  /// </summary>
-  /// <param name="predicate">删除条件表达式</param>
-  /// <returns>是否删除成功</returns>
-  public virtual async Task<bool> DeleteAsync(Expression<Func<TEntity, bool>> predicate)
-  {
-    return await DbContext.DeleteAsync(predicate);
-  }
+    #region 查询方法重写
 
-  /// <summary>
-  /// 批量删除实体
-  /// </summary>
-  /// <param name="entities">要删除的实体列表</param>
-  /// <returns>是否删除成功</returns>
-  /// <remarks>
-  /// 使用批量删除方式提高性能。
-  /// 如果列表为空则返回 false。
-  /// </remarks>
-  public virtual async Task<bool> DeleteRangeAsync(List<TEntity> entities)
-  {
-    if (entities == null || !entities.Any())
-      return false;
+    public override async Task<List<TEntity>> GetListAsync()
+    {
+      return await DbContext.Queryable<TEntity>().Where(e => e.IsDeleted != 1).ToListAsync();
+    }
 
-    return await DbContext.DeleteRangeAsync(entities);
-  }
+    public override async Task<List<TEntity>> GetListAsync(Expression<Func<TEntity, bool>> predicate)
+    {
+      var notDeletedPredicate = Expression.Lambda<Func<TEntity, bool>>(
+          Expression.AndAlso(
+              Expression.Equal(Expression.Property(Expression.Parameter(typeof(TEntity)), "IsDeleted"), Expression.Constant(0)),
+              predicate.Body),
+          predicate.Parameters);
+      return await DbContext.Queryable<TEntity>().Where(notDeletedPredicate).ToListAsync();
+    }
 
-  /// <summary>
-  /// 根据ID获取实体
-  /// </summary>
-  /// <param name="id">实体ID</param>
-  /// <returns>实体对象，如果不存在则返回null</returns>
-  public virtual async Task<TEntity?> GetByIdAsync(TKey id)
-  {
-    return await DbContext.GetByIdAsync<TEntity>(id);
-  }
+    public override async Task<(long Total, List<TEntity> Items)> GetPageListAsync(
+        Expression<Func<TEntity, bool>> predicate,
+        int pageIndex,
+        int pageSize,
+        Expression<Func<TEntity, object>> orderBy = null,
+        bool isAsc = true)
+    {
+      var notDeletedPredicate = Expression.Lambda<Func<TEntity, bool>>(
+          Expression.AndAlso(
+              Expression.Equal(Expression.Property(Expression.Parameter(typeof(TEntity)), "IsDeleted"), Expression.Constant(0)),
+              predicate.Body),
+          predicate.Parameters);
 
-  /// <summary>
-  /// 根据条件获取第一个实体
-  /// </summary>
-  /// <param name="predicate">查询条件表达式</param>
-  /// <returns>实体对象，如果不存在则返回null</returns>
-  public virtual async Task<TEntity?> FirstOrDefaultAsync(Expression<Func<TEntity, bool>> predicate)
-  {
-    return await DbContext.FirstOrDefaultAsync(predicate);
-  }
+      RefAsync<int> total = 0;
+      var query = DbContext.Queryable<TEntity>().Where(notDeletedPredicate);
 
-  /// <summary>
-  /// 根据条件获取实体列表
-  /// </summary>
-  /// <param name="predicate">查询条件表达式</param>
-  /// <returns>实体列表</returns>
-  public virtual async Task<List<TEntity>> GetListAsync(Expression<Func<TEntity, bool>> predicate)
-  {
-    return await DbContext.GetListAsync(predicate);
-  }
+      if (orderBy != null)
+      {
+        query = isAsc ? query.OrderBy(orderBy) : query.OrderByDescending(orderBy);
+      }
 
-  /// <summary>
-  /// 分页查询
-  /// </summary>
-  /// <param name="predicate">查询条件表达式</param>
-  /// <param name="pageSize">每页大小</param>
-  /// <param name="pageIndex">页码</param>
-  /// <param name="orderByExpression">排序表达式</param>
-  /// <param name="isAsc">是否升序</param>
-  /// <returns>总记录数和当前页数据列表</returns>
-  /// <remarks>
-  /// 支持动态排序和条件查询。
-  /// 使用 RefAsync 优化性能。
-  /// </remarks>
-  public virtual async Task<(long Total, List<TEntity> Items)> GetPageListAsync(
-    Expression<Func<TEntity, bool>> predicate,
-    int pageSize,
-    int pageIndex,
-    Expression<Func<TEntity, object>>? orderByExpression = null,
-    bool isAsc = true)
-  {
-    return await DbContext.GetPageListAsync(predicate, pageSize, pageIndex, orderByExpression, isAsc);
-  }
+      var items = await query.ToPageListAsync(pageIndex, pageSize, total);
+      return (total, items);
+    }
 
-  /// <summary>
-  /// 检查是否存在
-  /// </summary>
-  /// <param name="predicate">查询条件表达式</param>
-  /// <returns>是否存在符合条件的记录</returns>
-  public virtual async Task<bool> AnyAsync(Expression<Func<TEntity, bool>> predicate)
-  {
-    return await DbContext.AnyAsync(predicate);
-  }
-
-  /// <summary>
-  /// 根据条件获取数量
-  /// </summary>
-  /// <param name="predicate">查询条件表达式</param>
-  /// <returns>符合条件的记录数</returns>
-  public virtual async Task<long> CountAsync(Expression<Func<TEntity, bool>> predicate)
-  {
-    return await DbContext.CountAsync(predicate);
-  }
-
-  /// <summary>
-  /// 批量查询
-  /// </summary>
-  /// <param name="predicate">查询条件表达式</param>
-  /// <param name="batchSize">批次大小</param>
-  /// <returns>实体列表</returns>
-  /// <remarks>
-  /// 用于处理大数据量查询，通过分批次查询避免内存溢出。
-  /// 每次查询 batchSize 条记录，直到没有更多数据。
-  /// </remarks>
-  public virtual async Task<List<TEntity>> GetBatchAsync(Expression<Func<TEntity, bool>> predicate, int batchSize = 1000)
-  {
-    return await DbContext.GetBatchAsync(predicate, batchSize);
+    #endregion
   }
 }

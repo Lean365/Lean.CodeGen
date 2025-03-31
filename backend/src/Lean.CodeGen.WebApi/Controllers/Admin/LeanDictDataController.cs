@@ -30,8 +30,9 @@ public class LeanDictDataController : LeanBaseController
   public LeanDictDataController(
       ILeanDictDataService service,
       ILeanLocalizationService localizationService,
-      IConfiguration configuration)
-      : base(localizationService, configuration)
+      IConfiguration configuration,
+      ILeanUserContext userContext)
+      : base(localizationService, configuration, userContext)
   {
     _service = service;
   }
@@ -143,9 +144,9 @@ public class LeanDictDataController : LeanBaseController
   /// 获取导入模板
   /// </summary>
   [HttpGet("template")]
-  public async Task<IActionResult> GetImportTemplateAsync()
+  public async Task<IActionResult> GetTemplateAsync()
   {
-    var bytes = await _service.GetImportTemplateAsync();
+    var bytes = await _service.GetTemplateAsync();
     return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "dict-data-template.xlsx");
   }
 }

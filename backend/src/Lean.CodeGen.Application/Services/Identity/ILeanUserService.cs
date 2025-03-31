@@ -40,7 +40,7 @@ public interface ILeanUserService
   /// </summary>
   /// <param name="input">查询参数</param>
   /// <returns>用户列表</returns>
-  Task<LeanPageResult<LeanUserDto>> QueryAsync(LeanUserQueryDto input);
+  Task<LeanPageResult<LeanUserDto>> GetPageAsync(LeanUserQueryDto input);
 
   /// <summary>
   /// 修改用户状态
@@ -78,7 +78,7 @@ public interface ILeanUserService
   /// 获取导入模板
   /// </summary>
   /// <returns>模板文件字节数组</returns>
-  Task<byte[]> GetImportTemplateAsync();
+  Task<byte[]> GetTemplateAsync();
 
   /// <summary>
   /// 解锁用户

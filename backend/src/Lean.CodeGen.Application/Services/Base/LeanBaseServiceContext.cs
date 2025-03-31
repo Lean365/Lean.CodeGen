@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using Lean.CodeGen.Common.Options;
 using Lean.CodeGen.Application.Services.Security;
+using Lean.CodeGen.Domain.Context;
 using NLog;
 
 namespace Lean.CodeGen.Application.Services.Base;
@@ -15,19 +16,9 @@ namespace Lean.CodeGen.Application.Services.Base;
 public class LeanBaseServiceContext
 {
   /// <summary>
-  /// 当前用户ID
+  /// 用户上下文
   /// </summary>
-  public long? CurrentUserId { get; set; }
-
-  /// <summary>
-  /// 当前用户名
-  /// </summary>
-  public string? CurrentUserName { get; set; }
-
-  /// <summary>
-  /// 当前租户ID
-  /// </summary>
-  public long? CurrentTenantId { get; set; }
+  public ILeanUserContext UserContext { get; }
 
   /// <summary>
   /// 日志记录器
@@ -45,16 +36,24 @@ public class LeanBaseServiceContext
   public LeanSecurityOptions SecurityOptions { get; }
 
   /// <summary>
+  /// 当前用户名
+  /// </summary>
+  public string CurrentUserName => UserContext.GetCurrentUserName();
+
+  /// <summary>
   /// 构造函数
   /// </summary>
+  /// <param name="userContext">用户上下文</param>
   /// <param name="logger">日志记录器</param>
   /// <param name="sqlSafeService">SQL注入防护服务</param>
   /// <param name="securityOptions">安全配置选项</param>
   public LeanBaseServiceContext(
+      ILeanUserContext userContext,
       ILogger logger,
       ILeanSqlSafeService sqlSafeService,
       IOptions<LeanSecurityOptions> securityOptions)
   {
+    UserContext = userContext;
     Logger = logger;
     SqlSafeService = sqlSafeService;
     SecurityOptions = securityOptions.Value;

@@ -13,6 +13,7 @@ declare global {
   const JWT_CONFIG: typeof import('./utils/auth')['JWT_CONFIG']
   const LogLevel: typeof import('./utils/imports')['LogLevel']
   const NProgress: typeof import('./utils/imports')['NProgress']
+  const PRESET_THEMES: typeof import('./stores/skin')['PRESET_THEMES']
   const RATE_LIMIT_CONFIG: typeof import('./utils/rateLimit')['RATE_LIMIT_CONFIG']
   const SQL_INJECTION_CONFIG: typeof import('./utils/security')['SQL_INJECTION_CONFIG']
   const Sortable: typeof import('./utils/imports')['Sortable']
@@ -53,13 +54,18 @@ declare global {
   const effectScope: typeof import('vue')['effectScope']
   const escapeSpecialChars: typeof import('./utils/security')['escapeSpecialChars']
   const extendRef: typeof import('@vueuse/core')['extendRef']
-  const formatDate: typeof import('./utils/format')['formatDate']
-  const formatDateTime: typeof import('./utils/format')['formatDateTime']
-  const formatDuration: typeof import('./utils/format')['formatDuration']
-  const formatRelativeTime: typeof import('./utils/format')['formatRelativeTime']
-  const formatTime: typeof import('./utils/format')['formatTime']
+  const formatDate: typeof import('./utils/formatter')['formatDate']
+  const formatDateTime: typeof import('./utils/formatter')['formatDateTime']
+  const formatDuration: typeof import('./utils/formatter')['formatDuration']
+  const formatMoney: typeof import('./utils/formatter')['formatMoney']
+  const formatNumber: typeof import('./utils/formatter')['formatNumber']
+  const formatPercent: typeof import('./utils/formatter')['formatPercent']
+  const formatRelativeTime: typeof import('./utils/formatter')['formatRelativeTime']
+  const formatTime: typeof import('./utils/formatter')['formatTime']
+  const generateRoutes: typeof import('./utils/route')['generateRoutes']
   const generateXsrfToken: typeof import('./utils/xsrf')['generateXsrfToken']
   const getActivePinia: typeof import('pinia')['getActivePinia']
+  const getBrowserInfo: typeof import('./utils/browser')['getBrowserInfo']
   const getCurrentInstance: typeof import('vue')['getCurrentInstance']
   const getCurrentScope: typeof import('vue')['getCurrentScope']
   const getNextAvailableTime: typeof import('./utils/rateLimit')['getNextAvailableTime']
@@ -145,6 +151,7 @@ declare global {
   const shallowReactive: typeof import('vue')['shallowReactive']
   const shallowReadonly: typeof import('vue')['shallowReadonly']
   const shallowRef: typeof import('vue')['shallowRef']
+  const signalRService: typeof import('./utils/signalr')['signalRService']
   const storeToRefs: typeof import('pinia')['storeToRefs']
   const syncRef: typeof import('@vueuse/core')['syncRef']
   const syncRefs: typeof import('@vueuse/core')['syncRefs']
@@ -254,6 +261,7 @@ declare global {
   const useMediaQuery: typeof import('@vueuse/core')['useMediaQuery']
   const useMemoize: typeof import('@vueuse/core')['useMemoize']
   const useMemory: typeof import('@vueuse/core')['useMemory']
+  const useMessageStore: typeof import('./stores/message')['useMessageStore']
   const useModel: typeof import('vue')['useModel']
   const useMounted: typeof import('@vueuse/core')['useMounted']
   const useMouse: typeof import('@vueuse/core')['useMouse']
@@ -294,6 +302,7 @@ declare global {
   const useScrollLock: typeof import('@vueuse/core')['useScrollLock']
   const useSessionStorage: typeof import('@vueuse/core')['useSessionStorage']
   const useShare: typeof import('@vueuse/core')['useShare']
+  const useSkinStore: typeof import('./stores/skin')['useSkinStore']
   const useSlots: typeof import('vue')['useSlots']
   const useSorted: typeof import('@vueuse/core')['useSorted']
   const useSpeechRecognition: typeof import('@vueuse/core')['useSpeechRecognition']
@@ -355,6 +364,7 @@ declare global {
   const watchTriggerable: typeof import('@vueuse/core')['watchTriggerable']
   const watchWithFilter: typeof import('@vueuse/core')['watchWithFilter']
   const whenever: typeof import('@vueuse/core')['whenever']
+  const withInstall: typeof import('./utils/with-install')['withInstall']
 }
 // for type re-export
 declare global {
@@ -365,8 +375,14 @@ declare global {
   export type { Locale } from './stores/app'
   import('./stores/app')
   // @ts-ignore
+  export type { SkinType } from './stores/skin'
+  import('./stores/skin')
+  // @ts-ignore
   export type { Response } from './utils/request'
   import('./utils/request')
+  // @ts-ignore
+  export type { SFCWithInstall } from './utils/with-install'
+  import('./utils/with-install')
 }
 
 // for vue template auto import
@@ -381,6 +397,7 @@ declare module 'vue' {
     readonly JWT_CONFIG: UnwrapRef<typeof import('./utils/auth')['JWT_CONFIG']>
     readonly LogLevel: UnwrapRef<typeof import('./utils/imports')['LogLevel']>
     readonly NProgress: UnwrapRef<typeof import('./utils/imports')['NProgress']>
+    readonly PRESET_THEMES: UnwrapRef<typeof import('./stores/skin')['PRESET_THEMES']>
     readonly RATE_LIMIT_CONFIG: UnwrapRef<typeof import('./utils/rateLimit')['RATE_LIMIT_CONFIG']>
     readonly SQL_INJECTION_CONFIG: UnwrapRef<typeof import('./utils/security')['SQL_INJECTION_CONFIG']>
     readonly Sortable: UnwrapRef<typeof import('./utils/imports')['Sortable']>
@@ -421,13 +438,18 @@ declare module 'vue' {
     readonly effectScope: UnwrapRef<typeof import('vue')['effectScope']>
     readonly escapeSpecialChars: UnwrapRef<typeof import('./utils/security')['escapeSpecialChars']>
     readonly extendRef: UnwrapRef<typeof import('@vueuse/core')['extendRef']>
-    readonly formatDate: UnwrapRef<typeof import('./utils/format')['formatDate']>
-    readonly formatDateTime: UnwrapRef<typeof import('./utils/format')['formatDateTime']>
-    readonly formatDuration: UnwrapRef<typeof import('./utils/format')['formatDuration']>
-    readonly formatRelativeTime: UnwrapRef<typeof import('./utils/format')['formatRelativeTime']>
-    readonly formatTime: UnwrapRef<typeof import('./utils/format')['formatTime']>
+    readonly formatDate: UnwrapRef<typeof import('./utils/formatter')['formatDate']>
+    readonly formatDateTime: UnwrapRef<typeof import('./utils/formatter')['formatDateTime']>
+    readonly formatDuration: UnwrapRef<typeof import('./utils/formatter')['formatDuration']>
+    readonly formatMoney: UnwrapRef<typeof import('./utils/formatter')['formatMoney']>
+    readonly formatNumber: UnwrapRef<typeof import('./utils/formatter')['formatNumber']>
+    readonly formatPercent: UnwrapRef<typeof import('./utils/formatter')['formatPercent']>
+    readonly formatRelativeTime: UnwrapRef<typeof import('./utils/formatter')['formatRelativeTime']>
+    readonly formatTime: UnwrapRef<typeof import('./utils/formatter')['formatTime']>
+    readonly generateRoutes: UnwrapRef<typeof import('./utils/route')['generateRoutes']>
     readonly generateXsrfToken: UnwrapRef<typeof import('./utils/xsrf')['generateXsrfToken']>
     readonly getActivePinia: UnwrapRef<typeof import('pinia')['getActivePinia']>
+    readonly getBrowserInfo: UnwrapRef<typeof import('./utils/browser')['getBrowserInfo']>
     readonly getCurrentInstance: UnwrapRef<typeof import('vue')['getCurrentInstance']>
     readonly getCurrentScope: UnwrapRef<typeof import('vue')['getCurrentScope']>
     readonly getNextAvailableTime: UnwrapRef<typeof import('./utils/rateLimit')['getNextAvailableTime']>
@@ -513,6 +535,7 @@ declare module 'vue' {
     readonly shallowReactive: UnwrapRef<typeof import('vue')['shallowReactive']>
     readonly shallowReadonly: UnwrapRef<typeof import('vue')['shallowReadonly']>
     readonly shallowRef: UnwrapRef<typeof import('vue')['shallowRef']>
+    readonly signalRService: UnwrapRef<typeof import('./utils/signalr')['signalRService']>
     readonly storeToRefs: UnwrapRef<typeof import('pinia')['storeToRefs']>
     readonly syncRef: UnwrapRef<typeof import('@vueuse/core')['syncRef']>
     readonly syncRefs: UnwrapRef<typeof import('@vueuse/core')['syncRefs']>
@@ -622,6 +645,7 @@ declare module 'vue' {
     readonly useMediaQuery: UnwrapRef<typeof import('@vueuse/core')['useMediaQuery']>
     readonly useMemoize: UnwrapRef<typeof import('@vueuse/core')['useMemoize']>
     readonly useMemory: UnwrapRef<typeof import('@vueuse/core')['useMemory']>
+    readonly useMessageStore: UnwrapRef<typeof import('./stores/message')['useMessageStore']>
     readonly useModel: UnwrapRef<typeof import('vue')['useModel']>
     readonly useMounted: UnwrapRef<typeof import('@vueuse/core')['useMounted']>
     readonly useMouse: UnwrapRef<typeof import('@vueuse/core')['useMouse']>
@@ -662,6 +686,7 @@ declare module 'vue' {
     readonly useScrollLock: UnwrapRef<typeof import('@vueuse/core')['useScrollLock']>
     readonly useSessionStorage: UnwrapRef<typeof import('@vueuse/core')['useSessionStorage']>
     readonly useShare: UnwrapRef<typeof import('@vueuse/core')['useShare']>
+    readonly useSkinStore: UnwrapRef<typeof import('./stores/skin')['useSkinStore']>
     readonly useSlots: UnwrapRef<typeof import('vue')['useSlots']>
     readonly useSorted: UnwrapRef<typeof import('@vueuse/core')['useSorted']>
     readonly useSpeechRecognition: UnwrapRef<typeof import('@vueuse/core')['useSpeechRecognition']>
@@ -723,5 +748,6 @@ declare module 'vue' {
     readonly watchTriggerable: UnwrapRef<typeof import('@vueuse/core')['watchTriggerable']>
     readonly watchWithFilter: UnwrapRef<typeof import('@vueuse/core')['watchWithFilter']>
     readonly whenever: UnwrapRef<typeof import('@vueuse/core')['whenever']>
+    readonly withInstall: UnwrapRef<typeof import('./utils/with-install')['withInstall']>
   }
 }

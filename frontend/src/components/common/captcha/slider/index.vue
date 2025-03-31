@@ -129,7 +129,6 @@ const handleSliderRelease = async (value: number | number[]) => {
 
       if (result.success) {
         console.info('滑块验证通过')
-        message.success(t('slider.success'))
         isVerified.value = true
         emit('validate', value, props.captcha.y)
       } else {

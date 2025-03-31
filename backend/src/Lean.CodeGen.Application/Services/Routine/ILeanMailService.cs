@@ -79,7 +79,7 @@ public interface ILeanMailService
   /// 获取导入模板
   /// </summary>
   /// <returns>导入模板</returns>
-  Task<byte[]> GetImportTemplateAsync();
+  Task<byte[]> GetTemplateAsync();
 
   /// <summary>
   /// 发送邮件

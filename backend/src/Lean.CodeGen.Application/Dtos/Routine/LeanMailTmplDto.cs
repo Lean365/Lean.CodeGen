@@ -384,7 +384,7 @@ public class LeanMailTmplImportResultDto : LeanImportResult
   /// <summary>
   /// 错误列表
   /// </summary>
-  public List<LeanMailTmplImportErrorDto> Errors { get; set; } = new();
+  public new List<LeanMailTmplImportErrorDto> Errors { get; set; } = new();
 
   /// <summary>
   /// 添加错误

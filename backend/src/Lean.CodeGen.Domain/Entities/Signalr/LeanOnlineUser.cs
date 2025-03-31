@@ -28,13 +28,22 @@ public class LeanOnlineUser : LeanBaseEntity
   public string ConnectionId { get; set; } = default!;
 
   /// <summary>
+  /// 设备ID
+  /// </summary>
+  /// <remarks>
+  /// 设备的唯一标识
+  /// </remarks>
+  [SugarColumn(ColumnName = "device_id", ColumnDescription = "设备ID", Length = 100, IsNullable = false, ColumnDataType = "nvarchar")]
+  public string DeviceId { get; set; } = default!;
+
+  /// <summary>
   /// 用户ID
   /// </summary>
   /// <remarks>
   /// 关联的用户ID
   /// </remarks>
-  [SugarColumn(ColumnName = "user_id", ColumnDescription = "用户ID", Length = 50, IsNullable = true, ColumnDataType = "nvarchar")]
-  public string? UserId { get; set; }
+  [SugarColumn(ColumnName = "user_id", ColumnDescription = "用户ID", IsNullable = false, ColumnDataType = "bigint")]
+  public long UserId { get; set; }
 
   /// <summary>
   /// 用户名
@@ -78,7 +87,7 @@ public class LeanOnlineUser : LeanBaseEntity
   /// <remarks>
   /// 用户使用的浏览器信息
   /// </remarks>
-  [SugarColumn(ColumnName = "browser", ColumnDescription = "浏览器", Length = 100, IsNullable = true, ColumnDataType = "nvarchar")]
+  [SugarColumn(ColumnName = "browser", ColumnDescription = "浏览器", Length = 500, IsNullable = true, ColumnDataType = "nvarchar")]
   public string? Browser { get; set; }
 
   /// <summary>
@@ -87,7 +96,7 @@ public class LeanOnlineUser : LeanBaseEntity
   /// <remarks>
   /// 用户使用的操作系统信息
   /// </remarks>
-  [SugarColumn(ColumnName = "os", ColumnDescription = "操作系统", Length = 100, IsNullable = true, ColumnDataType = "nvarchar")]
+  [SugarColumn(ColumnName = "os", ColumnDescription = "操作系统", Length = 500, IsNullable = true, ColumnDataType = "nvarchar")]
   public string? Os { get; set; }
 
   /// <summary>

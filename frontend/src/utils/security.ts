@@ -92,6 +92,11 @@ export const escapeSpecialChars = (input: string): string => {
 export const validateAndCleanInput = (input: string): string => {
   if (!input) return ''
   
+  // 如果是 userAgent，直接返回原值
+  if (input.includes('Mozilla/') || input.includes('AppleWebKit/') || input.includes('Chrome/')) {
+    return input
+  }
+  
   // 检查是否包含高风险字符
   if (SQL_INJECTION_CONFIG.riskChars.some(char => input.includes(char))) {
     console.warn(t('security.sql.riskDetected'), input)

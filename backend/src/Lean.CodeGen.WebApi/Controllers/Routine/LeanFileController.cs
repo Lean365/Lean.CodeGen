@@ -41,8 +41,9 @@ public class LeanFileController : LeanBaseController
   public LeanFileController(
       ILeanFileService fileService,
       ILeanLocalizationService localizationService,
-      IConfiguration configuration)
-      : base(localizationService, configuration)
+      IConfiguration configuration,
+      ILeanUserContext userContext)
+      : base(localizationService, configuration, userContext)
   {
     _fileService = fileService;
   }
@@ -170,9 +171,9 @@ public class LeanFileController : LeanBaseController
   /// </summary>
   [HttpGet("import/template")]
   [LeanPermission("routine:file:import", "导入文件")]
-  public async Task<IActionResult> GetImportTemplateAsync()
+  public async Task<IActionResult> GetTemplateAsync()
   {
-    var bytes = await _fileService.GetImportTemplateAsync();
+    var bytes = await _fileService.GetTemplateAsync();
     return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"文件导入模板.xlsx");
   }
 }

@@ -1,13 +1,13 @@
 <template>
   <div class="footer">
     <div class="copyright">
-      Copyright © {{ new Date().getFullYear() }} {{ t('app.name') }}
+      {{ t('footer.copyright', { year: new Date().getFullYear() }) }}
     </div>
     <div class="links">
-      <a-space>
-        <router-link to="/about/terms">{{ t('about.terms') }}</router-link>
-        <router-link to="/about/privacy">{{ t('about.privacy') }}</router-link>
-      </a-space>
+      <a href="/about">{{ t('footer.about') }}</a>
+      <a href="/privacy">{{ t('footer.privacy') }}</a>
+      <a href="/terms">{{ t('footer.terms') }}</a>
+      <a href="https://beian.miit.gov.cn/" target="_blank">ICP123456</a>
     </div>
   </div>
 </template>
@@ -23,6 +23,7 @@ const { t } = useI18n()
   display: flex;
   justify-content: space-between;
   align-items: center;
+  height: 100%;
 
   .copyright {
     color: var(--color-text-secondary);
@@ -31,6 +32,7 @@ const { t } = useI18n()
   .links {
     a {
       color: var(--color-text-secondary);
+      margin-left: 24px;
       text-decoration: none;
 
       &:hover {

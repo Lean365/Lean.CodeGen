@@ -36,6 +36,11 @@ interface CustomColors {
   background: string
   text: string
   link: string
+  borderRadius: number
+  colorSaturation: number
+  fontSize: number
+  enableHover: boolean
+  shadowStyle: string
 }
 
 interface SkinState {
@@ -62,7 +67,13 @@ export const useSkinStore = defineStore('skin', {
             colorBgContainer: state.customColors.background,
             colorText: state.customColors.text,
             colorLink: state.customColors.link,
-            borderRadius: 2,
+            borderRadius: state.customColors.borderRadius,
+            fontSize: state.customColors.fontSize,
+            colorBgElevated: state.customColors.background,
+            boxShadow: state.customColors.shadowStyle === 'none' ? 'none' :
+              state.customColors.shadowStyle === 'light' ? '0 2px 8px rgba(0, 0, 0, 0.15)' :
+                state.customColors.shadowStyle === 'medium' ? '0 4px 12px rgba(0, 0, 0, 0.15)' :
+                  '0 8px 24px rgba(0, 0, 0, 0.15)'
           }
         }
       }

@@ -80,7 +80,7 @@ public interface ILeanFileService
   /// 获取导入模板
   /// </summary>
   /// <returns>模板文件字节数组</returns>
-  Task<byte[]> GetImportTemplateAsync();
+  Task<byte[]> GetTemplateAsync();
 
   /// <summary>
   /// 获取文件分页列表

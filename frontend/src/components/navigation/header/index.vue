@@ -1,5 +1,5 @@
 <template>
-  <a-layout-header class="header">
+  <a-layout-header class="header" :style="{ background: 'var(--color-bg-container)' }">
     <div class="header-content">
       <div class="left-section">
         <a-button type="text" class="action-button" @click="toggleCollapsed">
@@ -36,10 +36,21 @@ import {
 } from '@ant-design/icons-vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
+import { useUserStore } from '@/stores/user'
+import { useOnlineUserStore } from '@/stores/signalr/onlineUser'
+import { useOnlineMessageStore } from '@/stores/signalr/onlineMessage'
+import { useMessageStore } from '@/stores/message'
+import { useI18n } from 'vue-i18n'
+import { message } from 'ant-design-vue'
 
 const router = useRouter()
 const appStore = useAppStore()
+const userStore = useUserStore()
+const onlineUserStore = useOnlineUserStore()
+const onlineMessageStore = useOnlineMessageStore()
+const messageStore = useMessageStore()
 const isCollapsed = ref(false)
+const { t } = useI18n()
 
 const toggleCollapsed = () => {
   isCollapsed.value = !isCollapsed.value
@@ -77,8 +88,22 @@ const handleSettings = () => {
   router.push('/user/settings')
 }
 
-const handleLogout = () => {
-  router.push('/login')
+const handleLogout = async () => {
+  try {
+    // 调用登出方法
+    await userStore.logout()
+
+    // 登出成功后清理其他状态
+    onlineUserStore.clearOnlineUsers()
+    onlineMessageStore.clearMessages()
+    messageStore.clearMessages()
+
+    // 跳转到登录页
+    router.push('/login')
+  } catch (error) {
+    console.error('登出失败:', error)
+    message.error('登出失败，请重试')
+  }
 }
 
 const emit = defineEmits(['collapse'])
@@ -87,7 +112,6 @@ const emit = defineEmits(['collapse'])
 <style lang="less" scoped>
 .header {
   padding: 0;
-  background: var(--color-bg-container);
   border-bottom: 1px solid var(--color-border);
   z-index: 100;
 

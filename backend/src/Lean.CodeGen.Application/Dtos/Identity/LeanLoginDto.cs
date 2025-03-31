@@ -120,6 +120,16 @@ public class LeanLoginDto : LeanBaseDto
   /// 过期时间
   /// </summary>
   public DateTime ExpireTime { get; set; }
+
+  /// <summary>
+  /// 用户代理
+  /// </summary>
+  public string? UserAgent { get; set; }
+
+  /// <summary>
+  /// 是否移动设备
+  /// </summary>
+  public bool IsMobile { get; set; }
 }
 
 /// <summary>
@@ -299,13 +309,102 @@ public class LeanLoginRefreshTokenDto
 /// <summary>
 /// 退出登录参数
 /// </summary>
-public class LeanLoginLogoutDto
+public class LeanLogoutDto
 {
+  /// <summary>
+  /// 用户ID
+  /// </summary>
+  [Required(ErrorMessage = "用户ID不能为空")]
+  public long UserId { get; set; }
+
+  /// <summary>
+  /// 用户名
+  /// </summary>
+  [Required(ErrorMessage = "用户名不能为空")]
+  [StringLength(50, ErrorMessage = "用户名长度不能超过50个字符")]
+  public string UserName { get; set; } = default!;
+
+  /// <summary>
+  /// 登录IP
+  /// </summary>
+  [StringLength(50, ErrorMessage = "登录IP长度不能超过50个字符")]
+  public string? LoginIp { get; set; }
+
+  /// <summary>
+  /// 浏览器
+  /// </summary>
+  [StringLength(50, ErrorMessage = "浏览器信息长度不能超过50个字符")]
+  public string? Browser { get; set; }
+
+  /// <summary>
+  /// 操作系统
+  /// </summary>
+  [StringLength(50, ErrorMessage = "操作系统信息长度不能超过50个字符")]
+  public string? Os { get; set; }
+
   /// <summary>
   /// 设备ID
   /// </summary>
-  [Required(ErrorMessage = "设备ID不能为空")]
-  public string DeviceId { get; set; } = string.Empty;
+  [StringLength(50, ErrorMessage = "设备ID长度不能超过50个字符")]
+  public string? DeviceId { get; set; }
+
+  /// <summary>
+  /// 设备名称
+  /// </summary>
+  [StringLength(100, ErrorMessage = "设备名称长度不能超过100个字符")]
+  public string? DeviceName { get; set; }
+
+  /// <summary>
+  /// 设备类型
+  /// </summary>
+  public int DeviceType { get; set; }
+
+  /// <summary>
+  /// 是否信任设备
+  /// </summary>
+  public int IsTrusted { get; set; }
+
+  /// <summary>
+  /// 登录方式
+  /// 0-密码
+  /// 1-验证码
+  /// 2-令牌
+  /// 3-其他
+  /// </summary>
+  public int LoginType { get; set; }
+
+  /// <summary>
+  /// 记住我
+  /// 0-否
+  /// 1-是
+  /// </summary>
+  public int RememberMe { get; set; }
+
+  /// <summary>
+  /// 用户代理
+  /// </summary>
+  [StringLength(500, ErrorMessage = "用户代理长度不能超过500个字符")]
+  public string? UserAgent { get; set; }
+
+  /// <summary>
+  /// 屏幕宽度
+  /// </summary>
+  public int ScreenWidth { get; set; }
+
+  /// <summary>
+  /// 屏幕高度
+  /// </summary>
+  public int ScreenHeight { get; set; }
+
+  /// <summary>
+  /// 屏幕像素比
+  /// </summary>
+  public float ScreenPixelRatio { get; set; }
+
+  /// <summary>
+  /// 访问令牌
+  /// </summary>
+  public string Token { get; set; } = string.Empty;
 }
 
 /// <summary>
@@ -362,6 +461,65 @@ public class LeanLoginRequestDto
   /// </summary>
   [StringLength(50, ErrorMessage = "操作系统信息长度不能超过50个字符")]
   public string? Os { get; set; }
+
+  /// <summary>
+  /// 设备ID
+  /// </summary>
+  [StringLength(50, ErrorMessage = "设备ID长度不能超过50个字符")]
+  public string? DeviceId { get; set; }
+
+  /// <summary>
+  /// 设备名称
+  /// </summary>
+  [StringLength(100, ErrorMessage = "设备名称长度不能超过100个字符")]
+  public string? DeviceName { get; set; }
+
+  /// <summary>
+  /// 设备类型
+  /// </summary>
+  public int DeviceType { get; set; }
+
+  /// <summary>
+  /// 是否信任设备
+  /// </summary>
+  public int IsTrusted { get; set; }
+
+  /// <summary>
+  /// 登录方式
+  /// 0-密码
+  /// 1-验证码
+  /// 2-令牌
+  /// 3-其他
+  /// </summary>
+  public int LoginType { get; set; }
+
+  /// <summary>
+  /// 记住我
+  /// 0-否
+  /// 1-是
+  /// </summary>
+  public int RememberMe { get; set; }
+
+  /// <summary>
+  /// 用户代理
+  /// </summary>
+  [StringLength(500, ErrorMessage = "用户代理长度不能超过500个字符")]
+  public string? UserAgent { get; set; }
+
+  /// <summary>
+  /// 屏幕宽度
+  /// </summary>
+  public int ScreenWidth { get; set; }
+
+  /// <summary>
+  /// 屏幕高度
+  /// </summary>
+  public int ScreenHeight { get; set; }
+
+  /// <summary>
+  /// 屏幕像素比
+  /// </summary>
+  public float ScreenPixelRatio { get; set; }
 }
 
 /// <summary>

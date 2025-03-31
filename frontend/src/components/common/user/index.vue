@@ -1,7 +1,7 @@
 <template>
   <a-dropdown>
     <a-button type="text" class="action-button">
-      <a-avatar :size="28" :src="userStore.avatar" class="avatar">
+      <a-avatar :size="28" :src="userStore.userInfo?.avatar" class="avatar">
         <template #icon>
           <UserOutlined />
         </template>
@@ -52,8 +52,14 @@ const handleSettings = () => {
   router.push('/user/settings')
 }
 
-const handleLogout = () => {
-  emit('logout')
+const handleLogout = async () => {
+  try {
+    await userStore.logout()
+    router.push('/login')
+    emit('logout')
+  } catch (error) {
+    console.error('登出失败:', error)
+  }
 }
 </script>
 

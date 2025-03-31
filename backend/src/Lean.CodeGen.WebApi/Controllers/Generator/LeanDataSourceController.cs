@@ -28,8 +28,9 @@ namespace Lean.CodeGen.WebApi.Controllers.Generator
     public LeanDataSourceController(
         ILeanDataSourceService dataSourceService,
         ILeanLocalizationService localizationService,
-        IConfiguration configuration)
-        : base(localizationService, configuration)
+        IConfiguration configuration,
+        ILeanUserContext userContext)
+        : base(localizationService, configuration, userContext)
     {
       _dataSourceService = dataSourceService;
     }
